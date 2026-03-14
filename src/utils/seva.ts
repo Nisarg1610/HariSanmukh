@@ -179,13 +179,17 @@ export async function refreshSevaAssignments(householdId: string) {
       throw new Error('No active members found');
     }
 
-    // Delete old assignments
-    const { error: deleteError } = await supabase
-      .from('seva_assignments')
-      .delete()
-      .eq('sevas.household_id', householdId);
+    // Delete old assignments for this household's sevas
+    const sevaIds = sevas.map(s => s.id);
+    
+    if (sevaIds.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('seva_assignments')
+        .delete()
+        .in('seva_id', sevaIds);
 
-    if (deleteError && deleteError.code !== 'PGRST116') throw deleteError;
+      if (deleteError) throw deleteError;
+    }
 
     // Create new assignments with round-robin
     let memberIndex = 0;
@@ -219,11 +223,13 @@ export async function refreshSevaAssignments(householdId: string) {
     }
 
     // Insert new assignments
-    const { error: insertError } = await supabase
-      .from('seva_assignments')
-      .insert(newAssignments);
+    if (newAssignments.length > 0) {
+      const { error: insertError } = await supabase
+        .from('seva_assignments')
+        .insert(newAssignments);
 
-    if (insertError) throw insertError;
+      if (insertError) throw insertError;
+    }
 
     return true;
   } catch (err) {
