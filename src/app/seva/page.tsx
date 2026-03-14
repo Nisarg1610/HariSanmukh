@@ -57,7 +57,7 @@ export default function SevaPage() {
   const [sevaForm, setSevaForm] = useState({
     name: '',
     description: '',
-    cap: 1,
+    cap: 0,
   });
   const [addingSevaLoading, setAddingSevaLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -489,27 +489,27 @@ export default function SevaPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                    Cap (Number of Members)
-                  </label>
-                  <input
-                    type="number"
-                    value={sevaForm.cap}
-                    onChange={(e) =>
-                      setSevaForm({
-                        ...sevaForm,
-                        cap: parseInt(e.target.value) || 1,
-                      })
-                    }
-                    min="1"
-                    max={members.length}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Total members: {members.length}
-                  </p>
-                </div>
+              <div>
+  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+    Cap (Number of Members)
+  </label>
+  <input
+    type="number"
+    value={sevaForm.cap}
+    onChange={(e) =>
+      setSevaForm({
+        ...sevaForm,
+        cap: parseInt(e.target.value) || 0,
+      })
+    }
+    min="0"
+    max={members.length}
+    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+  />
+  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+    Total members: {members.length}
+  </p>
+</div>
 
                 <div className="flex gap-3">
                   <button
