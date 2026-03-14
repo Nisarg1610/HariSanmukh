@@ -1,9 +1,9 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { Plus, Trash2, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, RotateCcw, Bell, Edit2 } from 'lucide-react';
 import {
   getSevas,
   getUserSevaAssignments,
@@ -29,9 +29,7 @@ interface Assignment {
   seva_id: string;
   member_id: string;
   is_completed: boolean;
-  sevas?: {
-      description: ReactNode; id: string; name: string; cap: number 
-};
+  sevas?: { id: string; name: string; description?: string; cap: number };
   household_members?: { id: string; name: string };
 }
 
@@ -55,6 +53,7 @@ export default function SevaPage() {
 
   // Form states
   const [showAddSevaForm, setShowAddSevaForm] = useState(false);
+  const [editingSevaId, setEditingSevaId] = useState<string | null>(null);
   const [sevaForm, setSevaForm] = useState({
     name: '',
     description: '',
@@ -143,23 +142,60 @@ export default function SevaPage() {
 
     try {
       setAddingSevaLoading(true);
-      const newSeva = await createSeva(
-        householdId,
-        sevaForm.name,
-        sevaForm.description,
-        sevaForm.cap
-      );
 
-      if (newSeva) {
-        setSevas([...sevas, newSeva]);
-        setSevaForm({ name: '', description: '', cap: 1 });
-        setShowAddSevaForm(false);
+      if (editingSevaId) {
+        // Update existing seva
+        const updated = await updateSeva(
+          editingSevaId,
+          sevaForm.name,
+          sevaForm.description,
+          sevaForm.cap
+        );
+
+        if (updated) {
+          setSevas(
+            sevas.map((s) =>
+              s.id === editingSevaId
+                ? { ...s, name: updated.name, description: updated.description, cap: updated.cap }
+                : s
+            )
+          );
+          setEditingSevaId(null);
+        } else {
+          setError('Failed to update seva');
+        }
       } else {
-        setError('Failed to add seva');
+        // Create new seva
+        const newSeva = await createSeva(
+          householdId,
+          sevaForm.name,
+          sevaForm.description,
+          sevaForm.cap
+        );
+
+        if (newSeva) {
+          setSevas([...sevas, newSeva]);
+        } else {
+          setError('Failed to add seva');
+        }
       }
+
+      setSevaForm({ name: '', description: '', cap: 1 });
+      setShowAddSevaForm(false);
     } finally {
       setAddingSevaLoading(false);
     }
+  };
+
+  // Admin: Edit Seva
+  const handleEditSeva = (seva: Seva) => {
+    setEditingSevaId(seva.id);
+    setSevaForm({
+      name: seva.name,
+      description: seva.description || '',
+      cap: seva.cap,
+    });
+    setShowAddSevaForm(true);
   };
 
   // Admin: Delete Seva
@@ -194,7 +230,8 @@ export default function SevaPage() {
       if (success) {
         const assignmentsList = await getSevaAssignments(householdId);
         setAssignments(assignmentsList);
-        setPendingSevas([]);
+        const pendingList = await getPendingSevas(householdId);
+        setPendingSevas(pendingList);
         setError(null);
       } else {
         setError('Failed to refresh assignments');
@@ -318,14 +355,23 @@ export default function SevaPage() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
             Seva List
           </h1>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
-            title="Refresh assignments"
-          >
-            <RotateCcw size={24} className={refreshing ? 'animate-spin' : ''} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => alert('Notifications coming soon!')}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+              title="Notifications"
+            >
+              <Bell size={24} />
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
+              title="Refresh assignments"
+            >
+              <RotateCcw size={24} className={refreshing ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -393,7 +439,11 @@ export default function SevaPage() {
             </h2>
             {!showAddSevaForm && (
               <button
-                onClick={() => setShowAddSevaForm(true)}
+                onClick={() => {
+                  setEditingSevaId(null);
+                  setSevaForm({ name: '', description: '', cap: 1 });
+                  setShowAddSevaForm(true);
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-all"
               >
                 <Plus size={20} />
@@ -402,11 +452,11 @@ export default function SevaPage() {
             )}
           </div>
 
-          {/* Add Seva Form */}
+          {/* Add/Edit Seva Form */}
           {showAddSevaForm && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-200 dark:border-slate-700 mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                Create New Seva
+                {editingSevaId ? 'Edit Seva' : 'Create New Seva'}
               </h3>
               <form onSubmit={handleAddSeva} className="space-y-4">
                 <div>
@@ -449,7 +499,7 @@ export default function SevaPage() {
                     onChange={(e) =>
                       setSevaForm({
                         ...sevaForm,
-                        cap: Math.max(1, parseInt(e.target.value) || 1),
+                        cap: parseInt(e.target.value) || 1,
                       })
                     }
                     min="1"
@@ -467,12 +517,13 @@ export default function SevaPage() {
                     disabled={addingSevaLoading}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg disabled:opacity-50"
                   >
-                    {addingSevaLoading ? 'Adding...' : 'Add Seva'}
+                    {addingSevaLoading ? (editingSevaId ? 'Updating...' : 'Adding...') : (editingSevaId ? 'Update Seva' : 'Add Seva')}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setShowAddSevaForm(false);
+                      setEditingSevaId(null);
                       setSevaForm({ name: '', description: '', cap: 1 });
                     }}
                     className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
@@ -502,7 +553,7 @@ export default function SevaPage() {
                       Cap
                     </th>
                     <th className="text-center py-3 px-4 font-semibold text-gray-900 dark:text-white">
-                      Action
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -522,12 +573,22 @@ export default function SevaPage() {
                         {seva.cap}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleDeleteSeva(seva.id)}
-                          className="inline-flex p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={() => handleEditSeva(seva)}
+                            className="inline-flex p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
+                            title="Edit seva"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSeva(seva.id)}
+                            className="inline-flex p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                            title="Delete seva"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

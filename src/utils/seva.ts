@@ -24,7 +24,7 @@ export async function getSevaAssignments(householdId: string) {
       .from('seva_assignments')
       .select(`
         *,
-        sevas(id, name, cap),
+        sevas(id, name, description, cap),
         household_members(id, name)
       `)
       .eq('sevas.household_id', householdId);
@@ -171,7 +171,8 @@ export async function refreshSevaAssignments(householdId: string) {
       .from('household_members')
       .select('*')
       .eq('household_id', householdId)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .order('created_at', { ascending: true });
 
     if (membersError) throw membersError;
 
@@ -179,7 +180,7 @@ export async function refreshSevaAssignments(householdId: string) {
       throw new Error('No active members found');
     }
 
-    // Delete old assignments for this household's sevas
+    // Delete old assignments
     const sevaIds = sevas.map(s => s.id);
     
     if (sevaIds.length > 0) {
@@ -191,34 +192,24 @@ export async function refreshSevaAssignments(householdId: string) {
       if (deleteError) throw deleteError;
     }
 
-    // Create new assignments with round-robin
-    let memberIndex = 0;
+    // Create new assignments with round-robin rotation
     const newAssignments = [];
+    let memberIndex = 0;
 
+    // For each seva, assign 'cap' number of members
     for (const seva of sevas) {
-      // Assign 'cap' number of members to this seva
-      for (let i = 0; i < seva.cap && memberIndex < members.length; i++) {
+      for (let i = 0; i < seva.cap; i++) {
+        if (memberIndex >= members.length) {
+          memberIndex = 0; // Wrap around
+        }
+
         newAssignments.push({
           seva_id: seva.id,
           member_id: members[memberIndex].id,
           is_completed: false,
         });
-        memberIndex++;
-      }
-    }
 
-    // Reset index if needed to cycle through members
-    if (memberIndex >= members.length && newAssignments.length < sevas.reduce((sum, s) => sum + s.cap, 0)) {
-      memberIndex = 0;
-      for (const seva of sevas) {
-        for (let i = 0; i < seva.cap && newAssignments.length < sevas.reduce((sum, s) => sum + s.cap, 0); i++) {
-          newAssignments.push({
-            seva_id: seva.id,
-            member_id: members[memberIndex].id,
-            is_completed: false,
-          });
-          memberIndex = (memberIndex + 1) % members.length;
-        }
+        memberIndex++;
       }
     }
 
