@@ -381,55 +381,81 @@ export default function SevaPage() {
         )}
 
         {/* Subsection 1: Seva List */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Current Assignments
-          </h2>
+        {/* Subsection 1: Seva List */}
+<div className="mb-12">
+  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+    Current Assignments
+  </h2>
 
-          {assignments.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400">No assignments yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-slate-700">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-                      Seva Name
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-                      Assigned To
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assignments.map((assignment) => (
-                    <tr
-                      key={assignment.id}
-                      className="border-b border-gray-100 dark:border-slate-800"
-                    >
-                      <td className="py-3 px-4 text-gray-900 dark:text-white">
-                        {assignment.sevas?.name}
-                      </td>
-                      <td className="py-3 px-4 text-gray-900 dark:text-white">
-                        {assignment.household_members?.name}
-                      </td>
-                      <td className="py-3 px-4">
-                        {assignment.is_completed ? (
-                          <span className="text-green-600 dark:text-green-400 font-semibold">✓</span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+  {assignments.length === 0 ? (
+    <p className="text-gray-600 dark:text-gray-400">No assignments yet.</p>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-gray-200 dark:border-slate-700">
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Seva Name
+            </th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Assigned To
+            </th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Status
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {sevas.map((seva) => {
+            // Get all assignments for this seva
+            const sevaAssignments = assignments.filter((a) => a.seva_id === seva.id);
+            
+            return (
+              <tr
+                key={seva.id}
+                className="border-b border-gray-100 dark:border-slate-800"
+              >
+                <td className="py-3 px-4 text-gray-900 dark:text-white">
+                  {seva.name}
+                </td>
+                <td className="py-3 px-4 text-gray-900 dark:text-white">
+                  <div className="flex flex-wrap gap-2">
+                    {sevaAssignments.length === 0 ? (
+                      <span className="text-gray-400">—</span>
+                    ) : (
+                      sevaAssignments.map((assignment, idx) => (
+                        <span
+                          key={assignment.id}
+                          className={`px-2 py-1 rounded text-sm ${
+                            assignment.is_completed
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                              : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
+                          }`}
+                        >
+                          {assignment.household_members?.name}
+                          {assignment.is_completed && ' ✓'}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </td>
+                <td className="py-3 px-4">
+                  {sevaAssignments.every((a) => a.is_completed) && sevaAssignments.length > 0 ? (
+                    <span className="text-green-600 dark:text-green-400 font-semibold">✓ All</span>
+                  ) : sevaAssignments.some((a) => a.is_completed) ? (
+                    <span className="text-yellow-600 dark:text-yellow-400 font-semibold">Partial</span>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
 
         {/* Subsection 2: Manage Sevas */}
         <div className="mb-12">
