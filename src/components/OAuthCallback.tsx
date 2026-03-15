@@ -5,20 +5,16 @@ import { supabase } from '@/lib/supabase';
 
 export function OAuthCallback() {
   useEffect(() => {
-    // Handle OAuth callback from URL
-    const handleCallback = async () => {
-      const hash = window.location.hash;
-      if (hash) {
-        // Let Supabase handle the OAuth callback
-        const { data, error } = await supabase.auth.getSession();
-        if (data.session) {
-          // Session established, refresh page to show dashboard
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Force a hard reload so page.tsx re-runs with the new session
           window.location.href = '/';
         }
       }
-    };
+    );
 
-    handleCallback();
+    return () => subscription.unsubscribe();
   }, []);
 
   return null;

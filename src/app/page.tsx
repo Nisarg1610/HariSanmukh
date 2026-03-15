@@ -14,45 +14,34 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        setUser(authUser);
+useEffect(() => {
+  const init = async () => {
+    try {
+      // Wait for Supabase to process any OAuth callback in the URL
+      await supabase.auth.getSession();
 
-        if (authUser) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
-          setDbUser(data ?? null);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setUser(authUser);
 
-    init();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      if (authUser) {
         const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('id', session.user.id)
+          .eq('id', authUser.id)
           .single();
         setDbUser(data ?? null);
-      } else {
-        setDbUser(null);
       }
-    });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => subscription.unsubscribe();
-  }, []);
+  // Small delay to let Supabase parse the URL hash from Google redirect
+  const timer = setTimeout(init, 300);
+  return () => clearTimeout(timer);
+}, []);
 
   const handleGoogleLogin = async () => {
     try {
