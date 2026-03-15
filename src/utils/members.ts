@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 export async function getHouseholdMembers(householdId: string) {
+  if (!householdId) return [];
   const { data, error } = await supabase
     .from('household_members')
     .select('*')

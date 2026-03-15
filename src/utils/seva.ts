@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 export async function getSevas(householdId: string) {
+  if (!householdId) return [];
   const { data, error } = await supabase
     .from('sevas')
     .select('*')
@@ -12,6 +13,7 @@ export async function getSevas(householdId: string) {
 }
 
 export async function getSevaAssignments(householdId: string) {
+  if (!householdId) return [];
   const { data, error } = await supabase
     .from('seva_assignments')
     .select(`
@@ -26,6 +28,7 @@ export async function getSevaAssignments(householdId: string) {
 }
 
 export async function getPendingSevas(householdId: string) {
+  if (!householdId) return [];
   const { data, error } = await supabase
     .from('seva_assignments')
     .select(`

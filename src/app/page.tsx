@@ -15,51 +15,46 @@ export default function Home() {
   const [firstName, setFirstName] = useState('');
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        await supabase.auth.getSession();
+  const init = async () => {
+    try {
+      await supabase.auth.getSession();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setUser(authUser);
 
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        setUser(authUser);
+      if (authUser) {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+        setDbUser(data ?? null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (authUser) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
-          setDbUser(data ?? null);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
+  const timer = setTimeout(init, 300);
+
+  // DON'T use onAuthStateChange to set dbUser — it causes race conditions
+  // Only use it to detect logout
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setDbUser(null);
         setLoading(false);
       }
-    };
+    }
+  );
 
-    const timer = setTimeout(init, 300);
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          setDbUser(data ?? null);
-        } else {
-          setDbUser(null);
-        }
-      }
-    );
-
-    return () => {
-      clearTimeout(timer);
-      subscription.unsubscribe();
-    };
-  }, []);
+  return () => {
+    clearTimeout(timer);
+    subscription.unsubscribe();
+  };
+}, []);
 
   const handleGoogleLogin = async () => {
     try {
