@@ -5,11 +5,14 @@ export async function getSevas(householdId: string) {
   try {
     const { data, error } = await supabase
       .from('sevas')
-      .select()
-      .eq('household_id', householdId)
-      .order('created_at', { ascending: true });
+      .select('id, name, description, cap, household_id, created_at')
+      .eq('household_id', householdId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
     return data || [];
   } catch (err) {
     console.error('Error fetching sevas:', err);
@@ -17,42 +20,62 @@ export async function getSevas(householdId: string) {
   }
 }
 
-// Get seva assignments with member details
+// Get all assignments
+export async function getAllAssignments() {
+  try {
+    const { data, error } = await supabase
+      .from('seva_assignments')
+      .select('id, seva_id, member_id, is_completed, completed_date, assigned_date');
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (err) {
+    console.error('Error fetching assignments:', err);
+    return [];
+  }
+}
+
+// Get assignments with details for a household
 export async function getSevaAssignments(householdId: string) {
   try {
-    // First get all assignments
+    // Get sevas for this household
+    const sevas = await getSevas(householdId);
+    const sevaIds = sevas.map(s => s.id);
+
+    if (sevaIds.length === 0) {
+      return [];
+    }
+
+    // Get all assignments
     const { data: assignments, error: assignError } = await supabase
       .from('seva_assignments')
-      .select();
+      .select('id, seva_id, member_id, is_completed, completed_date, assigned_date')
+      .in('seva_id', sevaIds);
 
     if (assignError) throw assignError;
 
-    // Get sevas
-    const { data: sevasList, error: sevaError } = await supabase
-      .from('sevas')
-      .select()
-      .eq('household_id', householdId);
-
-    if (sevaError) throw sevaError;
-
     // Get members
-    const { data: membersList, error: memberError } = await supabase
+    const { data: members, error: memberError } = await supabase
       .from('household_members')
-      .select()
+      .select('id, name, first_name, last_name, status')
       .eq('household_id', householdId);
 
     if (memberError) throw memberError;
 
-    // Combine data manually
-    const combined = assignments.map((assignment) => ({
+    // Combine data
+    const combined = (assignments || []).map((assignment) => ({
       ...assignment,
-      sevas: sevasList.find((s) => s.id === assignment.seva_id),
-      household_members: membersList.find((m) => m.id === assignment.member_id),
+      sevas: sevas.find((s) => s.id === assignment.seva_id),
+      household_members: members?.find((m) => m.id === assignment.member_id),
     }));
 
     return combined;
   } catch (err) {
-    console.error('Error fetching assignments:', err);
+    console.error('Error in getSevaAssignments:', err);
     return [];
   }
 }
@@ -67,17 +90,17 @@ export async function createSeva(
   try {
     const { data, error } = await supabase
       .from('sevas')
-      .insert({
+      .insert([{
         household_id: householdId,
         name: name.trim(),
         description: description.trim(),
         cap,
-      })
-      .select()
-      .single();
+      }])
+      .select('id, name, description, cap, household_id, created_at');
 
     if (error) throw error;
-    return data;
+    
+    return data?.[0] || null;
   } catch (err) {
     console.error('Error creating seva:', err);
     return null;
@@ -100,11 +123,11 @@ export async function updateSeva(
         cap,
       })
       .eq('id', sevaId)
-      .select()
-      .single();
+      .select('id, name, description, cap, household_id, created_at');
 
     if (error) throw error;
-    return data;
+    
+    return data?.[0] || null;
   } catch (err) {
     console.error('Error updating seva:', err);
     return null;
@@ -128,7 +151,11 @@ export async function deleteSeva(sevaId: string) {
 }
 
 // Mark seva as completed
-export async function markSevaComplete(sevaAssignmentId: string, sevaId: string, memberId: string) {
+export async function markSevaComplete(
+  sevaAssignmentId: string,
+  sevaId: string,
+  memberId: string
+) {
   try {
     // Update assignment
     const { error: updateError } = await supabase
@@ -144,11 +171,11 @@ export async function markSevaComplete(sevaAssignmentId: string, sevaId: string,
     // Add to history
     const { error: historyError } = await supabase
       .from('seva_completion_history')
-      .insert({
+      .insert([{
         seva_id: sevaId,
         member_id: memberId,
         completed_date: new Date().toISOString(),
-      });
+      }]);
 
     if (historyError) throw historyError;
 
@@ -162,16 +189,15 @@ export async function markSevaComplete(sevaAssignmentId: string, sevaId: string,
 // Refresh/reassign sevas (round-robin)
 export async function refreshSevaAssignments(householdId: string) {
   try {
-    // Get all sevas
+    // Get sevas
     const sevas = await getSevas(householdId);
-    
-    // Get all active members
+
+    // Get active members
     const { data: members, error: membersError } = await supabase
       .from('household_members')
-      .select()
+      .select('id, first_name, last_name, name, status')
       .eq('household_id', householdId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: true });
+      .eq('status', 'active');
 
     if (membersError) throw membersError;
 
@@ -179,9 +205,9 @@ export async function refreshSevaAssignments(householdId: string) {
       throw new Error('No active members found');
     }
 
-    // Delete old assignments
+    // Delete old assignments for these sevas
     const sevaIds = sevas.map(s => s.id);
-    
+
     if (sevaIds.length > 0) {
       const { error: deleteError } = await supabase
         .from('seva_assignments')
@@ -191,21 +217,21 @@ export async function refreshSevaAssignments(householdId: string) {
       if (deleteError) throw deleteError;
     }
 
-    // Create new assignments with round-robin rotation
+    // Create new assignments with round-robin
     const newAssignments = [];
     let memberIndex = 0;
 
-    // For each seva, assign 'cap' number of members
     for (const seva of sevas) {
       for (let i = 0; i < seva.cap; i++) {
         if (memberIndex >= members.length) {
-          memberIndex = 0; // Wrap around
+          memberIndex = 0;
         }
 
         newAssignments.push({
           seva_id: seva.id,
           member_id: members[memberIndex].id,
           is_completed: false,
+          assigned_date: new Date().toISOString(),
         });
 
         memberIndex++;
@@ -228,41 +254,39 @@ export async function refreshSevaAssignments(householdId: string) {
   }
 }
 
-// Get pending sevas (uncompleted)
+// Get pending sevas
 export async function getPendingSevas(householdId: string) {
   try {
-    // Get all assignments
+    // Get sevas
+    const sevas = await getSevas(householdId);
+    const sevaIds = sevas.map(s => s.id);
+
+    if (sevaIds.length === 0) {
+      return [];
+    }
+
+    // Get uncompleted assignments
     const { data: assignments, error: assignError } = await supabase
       .from('seva_assignments')
-      .select()
+      .select('id, seva_id, member_id, is_completed, completed_date, assigned_date')
+      .in('seva_id', sevaIds)
       .eq('is_completed', false);
 
     if (assignError) throw assignError;
 
-    // Get sevas for this household
-    const { data: sevasList, error: sevaError } = await supabase
-      .from('sevas')
-      .select()
-      .eq('household_id', householdId);
-
-    if (sevaError) throw sevaError;
-
     // Get members
-    const { data: membersList, error: memberError } = await supabase
+    const { data: members, error: memberError } = await supabase
       .from('household_members')
-      .select()
+      .select('id, name, first_name, last_name, status')
       .eq('household_id', householdId);
 
     if (memberError) throw memberError;
 
-    // Filter and combine
-    const sevaIds = sevasList.map(s => s.id);
-    const filtered = assignments.filter(a => sevaIds.includes(a.seva_id));
-
-    const combined = filtered.map((assignment) => ({
+    // Combine
+    const combined = (assignments || []).map((assignment) => ({
       ...assignment,
-      sevas: sevasList.find((s) => s.id === assignment.seva_id),
-      household_members: membersList.find((m) => m.id === assignment.member_id),
+      sevas: sevas.find((s) => s.id === assignment.seva_id),
+      household_members: members?.find((m) => m.id === assignment.member_id),
     }));
 
     return combined;
