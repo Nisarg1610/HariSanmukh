@@ -346,7 +346,7 @@ export default function SevaPage() {
                     value={form.cap}
                     onChange={(e) => setForm({ ...form, cap: Math.max(1, parseInt(e.target.value) || 0) })}
                     min={0}
-                    max={members.length || 10}
+                    max={members.length || 0}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
