@@ -101,7 +101,8 @@ export default function SevaPage() {
           .select('*')
           .eq('id', authUser.id)
           .single();
-
+        console.log("DB USER:", dbUser);
+console.log("HOUSEHOLD ID:", dbUser.household_id);
         if (!dbUser) {
           window.location.href = '/';
           return;
