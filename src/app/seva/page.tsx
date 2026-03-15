@@ -82,7 +82,7 @@ export default function SevaPage() {
       await fetchAll(householdId);
       setShowForm(false);
       setEditingId(null);
-      setForm({ name: '', description: '', cap: 1 });
+      setForm({ name: '', description: '', cap: 0 });
     } catch {
       setError('Failed to save seva');
     } finally {
