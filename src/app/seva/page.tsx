@@ -354,7 +354,7 @@ export default function SevaPage() {
                   <button type="submit" disabled={formLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg disabled:opacity-50">
                     {formLoading ? 'Saving...' : editingId ? 'Update' : 'Create Seva'}
                   </button>
-                  <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm({ name: '', description: '', cap: 1 }); }} className="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 font-semibold py-2.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600">
+                  <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm({ name: '', description: '', cap: 0 }); }} className="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 font-semibold py-2.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600">
                     Cancel
                   </button>
                 </div>
