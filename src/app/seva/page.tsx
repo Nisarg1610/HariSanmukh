@@ -279,6 +279,7 @@ export default function SevaPage() {
 
   // USER VIEW
  // USER VIEW
+// USER VIEW
 if (userRole === 'user') {
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-24">
@@ -295,9 +296,9 @@ if (userRole === 'user') {
 
         {/* Seva Table */}
         <div className="overflow-x-auto">
-          {sevas.length === 0 ? (
+          {assignments.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400 py-8">
-              No sevas created yet.
+              No sevas assigned yet.
             </p>
           ) : (
             <table className="w-full">
@@ -389,7 +390,6 @@ if (userRole === 'user') {
     </main>
   );
 }
-
   // ADMIN VIEW
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-24">
