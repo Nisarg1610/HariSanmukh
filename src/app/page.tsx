@@ -12,114 +12,116 @@ export default function Home() {
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ─── Define BEFORE useEffect ────────────────────────────────
-const setupProfile = async (authUser: any) => {
-  try {
-    console.log('setupProfile called for:', authUser.email);
-    // Check if any household exists
-    const { data: anyHousehold, error: hErr1} = await supabase
-      .from('households')
-      .select('id')
-      .limit(1)
-      .maybeSingle();
-       console.log('anyHousehold:', anyHousehold, 'error:', hErr1);
+  const setupProfile = async (authUser: any) => {
+    try {
+      console.log('setupProfile called for:', authUser.email);
 
-    // Check if email exists in household_members
-    const { data: existingMember, error: mErr } = await supabase
-      .from('household_members')
-      .select('*')
-      .eq('email', authUser.email.toLowerCase())
-      .maybeSingle();
-     console.log('existingMember:', existingMember, 'error:', mErr);
-    let householdId: string;
-    let role: 'admin' | 'user' = 'user';
-    let firstName = '';
-
-    if (!anyHousehold) {
-      // Very first user ever — make admin
-      firstName = authUser.email.split('@')[0];
-
-      const { data: household, error: hErr } = await supabase
-        .from('households')
-        .insert({ name: 'Main Household', created_by: authUser.id })
-        .select()
-        .single();
-      if (hErr || !household) throw hErr ?? new Error('Household creation failed');
-      householdId = household.id;
-      role = 'admin';
-
-      await supabase.from('household_members').insert({
-        household_id: householdId,
-        first_name: firstName,
-        last_name: 'Bhai',
-        email: authUser.email.toLowerCase(),
-        status: 'active',
-        linked_user_id: authUser.id,
-      });
-
-    } else if (existingMember) {
-      // Email found in household_members — grab name and household_id from card
-      householdId = existingMember.household_id;
-      firstName = existingMember.first_name?.trim() || authUser.email.split('@')[0];
-
-      // Link this auth user to the existing card
-      await supabase
-        .from('household_members')
-        .update({ linked_user_id: authUser.id })
-        .eq('email', authUser.email.toLowerCase());
-
-    } else {
-      // No card found — auto create card in existing household
-      const { data: household } = await supabase
+      const { data: anyHousehold, error: hErr1 } = await supabase
         .from('households')
         .select('id')
         .limit(1)
         .maybeSingle();
+      console.log('anyHousehold:', anyHousehold, 'error:', hErr1);
 
-      if (!household) throw new Error('No household found');
-      householdId = household.id;
-      firstName = authUser.email.split('@')[0];
+      const { data: existingMember, error: mErr } = await supabase
+        .from('household_members')
+        .select('*')
+        .eq('email', authUser.email.toLowerCase())
+        .maybeSingle();
+      console.log('existingMember:', existingMember, 'error:', mErr);
 
-      await supabase.from('household_members').insert({
-        household_id: householdId,
+      let householdId: string;
+      let role: 'admin' | 'user' = 'user';
+      let firstName = '';
+
+      if (!anyHousehold) {
+        console.log('no household — creating first admin');
+        firstName = authUser.email.split('@')[0];
+
+        const { data: household, error: hErr } = await supabase
+          .from('households')
+          .insert({ name: 'Main Household', created_by: authUser.id })
+          .select()
+          .single();
+        if (hErr || !household) throw hErr ?? new Error('Household creation failed');
+        householdId = household.id;
+        role = 'admin';
+
+        await supabase.from('household_members').insert({
+          household_id: householdId,
+          first_name: firstName,
+          last_name: 'Bhai',
+          email: authUser.email.toLowerCase(),
+          status: 'active',
+          linked_user_id: authUser.id,
+        });
+
+      } else if (existingMember) {
+        console.log('existing member found:', existingMember);
+        householdId = existingMember.household_id;
+        firstName = existingMember.first_name?.trim() || authUser.email.split('@')[0];
+
+        await supabase
+          .from('household_members')
+          .update({ linked_user_id: authUser.id })
+          .eq('email', authUser.email.toLowerCase());
+
+      } else {
+        console.log('no member card — creating new card');
+        const { data: household } = await supabase
+          .from('households')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+
+        if (!household) throw new Error('No household found');
+        householdId = household.id;
+        firstName = authUser.email.split('@')[0];
+
+        await supabase.from('household_members').insert({
+          household_id: householdId,
+          first_name: firstName,
+          last_name: 'Bhai',
+          email: authUser.email.toLowerCase(),
+          status: 'active',
+          linked_user_id: authUser.id,
+        });
+      }
+
+      console.log('inserting into users:', { firstName, householdId, role });
+      const { error: uErr } = await supabase.from('users').insert({
+        id: authUser.id,
+        email: authUser.email,
         first_name: firstName,
         last_name: 'Bhai',
-        email: authUser.email.toLowerCase(),
+        household_id: householdId!,
+        role,
         status: 'active',
-        linked_user_id: authUser.id,
       });
+      if (uErr) {
+        console.log('users insert error:', uErr);
+        throw uErr;
+      }
+
+      const { data: newDbUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      console.log('newDbUser:', newDbUser);
+      setDbUser(newDbUser);
+    } catch (err: any) {
+      console.error('setupProfile error:', err);
+      setError(err.message ?? 'Setup failed');
     }
+  };
 
-    // Insert into users with correct data from household_members
-    const { error: uErr } = await supabase.from('users').insert({
-      id: authUser.id,
-      email: authUser.email,
-      first_name: firstName,
-      last_name: 'Bhai',
-      household_id: householdId!,
-      role,
-      status: 'active',
-    });
-    if (uErr) throw uErr;
-
-    const { data: newDbUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
-
-    setDbUser(newDbUser);
-  } catch (err: any) {
-    console.error('setupProfile error:', err);
-    setError(err.message ?? 'Setup failed');
-  }
-};
-
-  // ─── useEffect AFTER setupProfile ───────────────────────────
   useEffect(() => {
     const init = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('init session:', session?.user?.email);
 
         if (session?.user) {
           setUser(session.user);
@@ -128,16 +130,20 @@ const setupProfile = async (authUser: any) => {
             .from('users')
             .select('*')
             .eq('id', session.user.id)
-            .maybeSingle()
+            .maybeSingle();
+          console.log('init users query result:', data);
 
           if (data) {
             setDbUser(data);
           } else {
+            console.log('init: no db user, calling setupProfile');
             await setupProfile(session.user);
           }
+        } else {
+          console.log('init: no session');
         }
       } catch (err) {
-        console.error(err);
+        console.error('init error:', err);
       } finally {
         setLoading(false);
       }
@@ -147,6 +153,8 @@ const setupProfile = async (authUser: any) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('onAuthStateChange event:', event, session?.user?.email);
+
         if (event === 'SIGNED_OUT') {
           setUser(null);
           setDbUser(null);
@@ -157,11 +165,13 @@ const setupProfile = async (authUser: any) => {
             .from('users')
             .select('*')
             .eq('id', session.user.id)
-            .maybeSingle()
+            .maybeSingle();
+          console.log('onAuthStateChange users query result:', data);
 
           if (data) {
             setDbUser(data);
           } else {
+            console.log('onAuthStateChange: no db user, calling setupProfile');
             await setupProfile(session.user);
           }
 
