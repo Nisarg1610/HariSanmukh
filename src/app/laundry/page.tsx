@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
 import { X } from 'lucide-react';
@@ -20,8 +20,7 @@ export default function LaundryPage() {
   const [error, setError] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
-  const [draggingMemberId, setDraggingMemberId] = useState<string | null>(null);
-  const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   const fetchAll = async (hId: string) => {
     const [a, m] = await Promise.all([
@@ -29,7 +28,7 @@ export default function LaundryPage() {
       getHouseholdMembers(hId),
     ]);
     setAssignments(a);
-    setMembers(m.filter((m: any) => m.status === 'active'));
+    setMembers(m.filter((mem: any) => mem.status === 'active'));
   };
 
   useEffect(() => {
@@ -56,36 +55,28 @@ export default function LaundryPage() {
     init();
   }, []);
 
-  // ── Drag handlers ──────────────────────────────────────────
-  const handleDragStart = (memberId: string) => {
-    setDraggingMemberId(memberId);
+  const handleMemberTap = (memberId: string) => {
+    // Toggle selection
+    setSelectedMemberId(prev => prev === memberId ? null : memberId);
   };
 
-  const handleDragOver = (e: React.DragEvent, day: string) => {
-    e.preventDefault();
-    setDragOverDay(day);
-  };
+  const handleDayTap = async (day: string) => {
+    if (!selectedMemberId) return;
 
-  const handleDrop = async (e: React.DragEvent, day: string) => {
-    e.preventDefault();
-    setDragOverDay(null);
-    if (!draggingMemberId) return;
-
-    // Check if already assigned to this day
+    // Check if already assigned
     const alreadyAssigned = assignments.some(
-      (a) => a.member_id === draggingMemberId && a.day_of_week === day
+      (a) => a.member_id === selectedMemberId && a.day_of_week === day
     );
-    if (alreadyAssigned) return;
+    if (alreadyAssigned) {
+      setSelectedMemberId(null);
+      return;
+    }
 
-    const result = await assignLaundry(householdId, draggingMemberId, day);
+    const result = await assignLaundry(householdId, selectedMemberId, day);
     if (result) {
       await fetchAll(householdId);
     }
-    setDraggingMemberId(null);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverDay(null);
+    setSelectedMemberId(null);
   };
 
   const handleRemove = async (assignmentId: string) => {
@@ -106,8 +97,9 @@ export default function LaundryPage() {
     return (
       <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
         <div className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Laundry</h1>
-
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+            Laundry
+          </h1>
           <div className="rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
             <table className="w-full">
               <thead>
@@ -122,11 +114,12 @@ export default function LaundryPage() {
                   const isMyDay = dayAssignments.some(
                     (a) => a.household_members?.first_name === userFirstName
                   );
-
                   return (
                     <tr
                       key={day}
-                      className={`border-b border-gray-100 dark:border-slate-800 last:border-0 ${isMyDay ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                      className={`border-b border-gray-100 dark:border-slate-800 last:border-0 ${
+                        isMyDay ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                      }`}
                     >
                       <td className="py-3 px-4 font-medium text-gray-900 dark:text-white w-32">
                         {day}
@@ -164,10 +157,14 @@ export default function LaundryPage() {
   }
 
   // ── ADMIN VIEW ─────────────────────────────────────────────
+  const selectedMember = members.find((m) => m.id === selectedMemberId);
+
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Laundry</h1>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          Laundry
+        </h1>
 
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -175,40 +172,48 @@ export default function LaundryPage() {
           </div>
         )}
 
-        {/* Member tiles to drag */}
+        {/* Member tiles */}
         <div className="mb-6">
-          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">
-            Drag members to assign days
+          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+            {selectedMemberId
+              ? `${selectedMember?.first_name} Bhai selected — tap a day to assign`
+              : 'Tap a member then tap a day to assign'}
           </p>
           <div className="flex flex-wrap gap-2">
             {members.map((member) => (
-              <div
+              <button
                 key={member.id}
-                draggable
-                onDragStart={() => handleDragStart(member.id)}
-                className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium cursor-grab active:cursor-grabbing select-none transition-all hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                onClick={() => handleMemberTap(member.id)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all select-none ${
+                  selectedMemberId === member.id
+                    ? 'bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 scale-105'
+                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                }`}
               >
                 {member.first_name} Bhai
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Days schedule */}
+        {/* Days */}
         <div className="space-y-2">
           {DAYS.map((day) => {
             const dayAssignments = assignments.filter((a) => a.day_of_week === day);
-            const isOver = dragOverDay === day;
+            const canAssign = selectedMemberId !== null;
+            const alreadyAssignedToDay = assignments.some(
+              (a) => a.member_id === selectedMemberId && a.day_of_week === day
+            );
 
             return (
               <div
                 key={day}
-                onDragOver={(e) => handleDragOver(e, day)}
-                onDrop={(e) => handleDrop(e, day)}
-                onDragLeave={handleDragLeave}
+                onClick={() => handleDayTap(day)}
                 className={`rounded-xl border-2 transition-all p-4 ${
-                  isOver
-                    ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500'
+                  canAssign && !alreadyAssignedToDay
+                    ? 'cursor-pointer border-blue-300 dark:border-blue-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                    : canAssign && alreadyAssignedToDay
+                    ? 'border-gray-200 dark:border-slate-700 opacity-50 cursor-not-allowed'
                     : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                 }`}
               >
@@ -219,17 +224,21 @@ export default function LaundryPage() {
                   <div className="flex flex-wrap gap-2 flex-1">
                     {dayAssignments.length === 0 ? (
                       <span className="text-gray-400 dark:text-gray-600 text-sm">
-                        {isOver ? 'Drop here' : 'No one assigned'}
+                        {canAssign && !alreadyAssignedToDay ? 'Tap to assign' : 'No one assigned'}
                       </span>
                     ) : (
                       dayAssignments.map((a) => (
                         <div
                           key={a.id}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-lg text-sm font-medium"
                         >
                           {a.household_members?.first_name} Bhai
                           <button
-                            onClick={() => handleRemove(a.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove(a.id);
+                            }}
                             className="ml-1 text-blue-600 dark:text-blue-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                           >
                             <X size={13} />
@@ -237,8 +246,8 @@ export default function LaundryPage() {
                         </div>
                       ))
                     )}
-                    {isOver && dayAssignments.length > 0 && (
-                      <span className="text-blue-400 text-sm">+ Drop here</span>
+                    {canAssign && !alreadyAssignedToDay && dayAssignments.length > 0 && (
+                      <span className="text-blue-400 text-xs self-center">+ tap to add</span>
                     )}
                   </div>
                 </div>
