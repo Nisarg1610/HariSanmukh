@@ -15,20 +15,22 @@ export default function Home() {
   // ─── Define BEFORE useEffect ────────────────────────────────
 const setupProfile = async (authUser: any) => {
   try {
+    console.log('setupProfile called for:', authUser.email);
     // Check if any household exists
-    const { data: anyHousehold } = await supabase
+    const { data: anyHousehold, error: hErr1} = await supabase
       .from('households')
       .select('id')
       .limit(1)
       .maybeSingle();
+       console.log('anyHousehold:', anyHousehold, 'error:', hErr1);
 
     // Check if email exists in household_members
-    const { data: existingMember } = await supabase
+    const { data: existingMember, error: mErr } = await supabase
       .from('household_members')
       .select('*')
       .eq('email', authUser.email.toLowerCase())
       .maybeSingle();
-
+     console.log('existingMember:', existingMember, 'error:', mErr);
     let householdId: string;
     let role: 'admin' | 'user' = 'user';
     let firstName = '';
