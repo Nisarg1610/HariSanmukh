@@ -1,77 +1,91 @@
 import { supabase } from '@/lib/supabase';
 
-// Get all members in household
 export async function getHouseholdMembers(householdId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('household_members')
-      .select()
-      .eq('household_id', householdId)
-      .order('created_at', { ascending: true });
+  const { data, error } = await supabase
+    .from('household_members')
+    .select('*')
+    .eq('household_id', householdId)
+    .order('created_at', { ascending: true });
 
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching members:', err);
+  if (error) {
+    console.error('getHouseholdMembers error:', error);
     return [];
   }
+  return data ?? [];
 }
 
-// Add member
-export async function addMember(householdId: string, firstName: string, lastName: string) {
-  try {
-    const { data, error } = await supabase
-      .from('household_members')
-      .insert({
-        household_id: householdId,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        name: `${firstName.trim()} ${lastName.trim()}`,
-        status: 'active',
-      })
-      .select()
-      .single();
+export async function addMember(
+  householdId: string,
+  firstName: string,
+  email: string
+) {
+  const { data, error } = await supabase
+    .from('household_members')
+    .insert({
+      household_id: householdId,
+      first_name: firstName,
+      last_name: 'Bhai',
+      email: email.toLowerCase().trim(),
+      status: 'active',
+    })
+    .select()
+    .single();
 
-    if (error) throw error;
-    return data;
-  } catch (err) {
-    console.error('Error adding member:', err);
+  if (error) {
+    console.error('addMember error:', error);
     return null;
   }
+  return data;
 }
 
-// Toggle member status
+export async function updateMember(
+  memberId: string,
+  firstName: string,
+  email: string
+) {
+  const { data, error } = await supabase
+    .from('household_members')
+    .update({
+      first_name: firstName,
+      email: email.toLowerCase().trim(),
+    })
+    .eq('id', memberId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('updateMember error:', error);
+    return null;
+  }
+  return data;
+}
+
 export async function toggleMemberStatus(memberId: string, currentStatus: string) {
-  try {
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    
-    const { data, error } = await supabase
-      .from('household_members')
-      .update({ status: newStatus })
-      .eq('id', memberId)
-      .select()
-      .single();
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
-    if (error) throw error;
-    return data;
-  } catch (err) {
-    console.error('Error toggling member status:', err);
+  const { data, error } = await supabase
+    .from('household_members')
+    .update({ status: newStatus })
+    .eq('id', memberId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('toggleMemberStatus error:', error);
     return null;
   }
+  return data;
 }
 
-// Delete member
 export async function deleteMember(memberId: string) {
-  try {
-    const { error } = await supabase
-      .from('household_members')
-      .delete()
-      .eq('id', memberId);
+  const { error } = await supabase
+    .from('household_members')
+    .delete()
+    .eq('id', memberId);
 
-    if (error) throw error;
-    return true;
-  } catch (err) {
-    console.error('Error deleting member:', err);
+  if (error) {
+    console.error('deleteMember error:', error);
     return false;
   }
+  return true;
 }
