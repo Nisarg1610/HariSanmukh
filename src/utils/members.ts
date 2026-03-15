@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 // Get all members in household
+// Get all members in household
 export async function getHouseholdMembers(householdId: string) {
   try {
     const { data, error } = await supabase

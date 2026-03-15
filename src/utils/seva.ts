@@ -20,41 +20,39 @@ export async function getSevas(householdId: string) {
 // Get seva assignments with member details
 export async function getSevaAssignments(householdId: string) {
   try {
-    const { data, error } = await supabase
+    // First get all assignments
+    const { data: assignments, error: assignError } = await supabase
       .from('seva_assignments')
-      .select(`
-        *,
-        sevas(id, name, description, cap),
-        household_members(id, name)
-      `)
-      .eq('sevas.household_id', householdId);
+      .select('*');
 
-    if (error) throw error;
-    return data || [];
+    if (assignError) throw assignError;
+
+    // Get sevas
+    const { data: sevasList, error: sevaError } = await supabase
+      .from('sevas')
+      .select('*')
+      .eq('household_id', householdId);
+
+    if (sevaError) throw sevaError;
+
+    // Get members
+    const { data: membersList, error: memberError } = await supabase
+      .from('household_members')
+      .select('*')
+      .eq('household_id', householdId);
+
+    if (memberError) throw memberError;
+
+    // Combine data manually
+    const combined = assignments.map((assignment) => ({
+      ...assignment,
+      sevas: sevasList.find((s) => s.id === assignment.seva_id),
+      household_members: membersList.find((m) => m.id === assignment.member_id),
+    }));
+
+    return combined;
   } catch (err) {
     console.error('Error fetching assignments:', err);
-    return [];
-  }
-}
-
-// Get assignments for specific user
-// Get assignments for specific user (match by first_name)
-export async function getUserSevaAssignments(householdId: string, userName: string) {
-  try {
-    const { data, error } = await supabase
-      .from('seva_assignments')
-      .select(`
-        *,
-        sevas(id, name, description, cap),
-        household_members(id, name, first_name, last_name)
-      `)
-      .eq('sevas.household_id', householdId)
-      .eq('household_members.first_name', userName);
-
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching user assignments:', err);
     return [];
   }
 }
@@ -233,18 +231,41 @@ export async function refreshSevaAssignments(householdId: string) {
 // Get pending sevas (uncompleted)
 export async function getPendingSevas(householdId: string) {
   try {
-    const { data, error } = await supabase
+    // Get all assignments
+    const { data: assignments, error: assignError } = await supabase
       .from('seva_assignments')
-      .select(`
-        *,
-        sevas(id, name),
-        household_members(id, name)
-      `)
-      .eq('sevas.household_id', householdId)
+      .select('*')
       .eq('is_completed', false);
 
-    if (error) throw error;
-    return data || [];
+    if (assignError) throw assignError;
+
+    // Get sevas for this household
+    const { data: sevasList, error: sevaError } = await supabase
+      .from('sevas')
+      .select('*')
+      .eq('household_id', householdId);
+
+    if (sevaError) throw sevaError;
+
+    // Get members
+    const { data: membersList, error: memberError } = await supabase
+      .from('household_members')
+      .select('*')
+      .eq('household_id', householdId);
+
+    if (memberError) throw memberError;
+
+    // Filter and combine
+    const sevaIds = sevasList.map(s => s.id);
+    const filtered = assignments.filter(a => sevaIds.includes(a.seva_id));
+
+    const combined = filtered.map((assignment) => ({
+      ...assignment,
+      sevas: sevasList.find((s) => s.id === assignment.seva_id),
+      household_members: membersList.find((m) => m.id === assignment.member_id),
+    }));
+
+    return combined;
   } catch (err) {
     console.error('Error fetching pending sevas:', err);
     return [];
