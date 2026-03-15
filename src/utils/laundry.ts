@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export async function getLaundryAssignments(householdId: string) {
   if (!householdId) return [];
@@ -39,20 +39,4 @@ export async function removeLaundryAssignment(assignmentId: string) {
 
   if (error) { console.error('removeLaundryAssignment error:', error); return false; }
   return true;
-}
-
-export async function removeInactiveMembersFromLaundry(householdId: string) {
-  const { data: inactiveMembers } = await supabase
-    .from('household_members')
-    .select('id')
-    .eq('household_id', householdId)
-    .eq('status', 'inactive');
-
-  if (!inactiveMembers || inactiveMembers.length === 0) return;
-
-  const inactiveIds = inactiveMembers.map((m) => m.id);
-  await supabase
-    .from('laundry_assignments')
-    .delete()
-    .in('member_id', inactiveIds);
 }

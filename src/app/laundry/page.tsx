@@ -56,14 +56,12 @@ export default function LaundryPage() {
   }, []);
 
   const handleMemberTap = (memberId: string) => {
-    // Toggle selection
     setSelectedMemberId(prev => prev === memberId ? null : memberId);
   };
 
   const handleDayTap = async (day: string) => {
     if (!selectedMemberId) return;
 
-    // Check if already assigned
     const alreadyAssigned = assignments.some(
       (a) => a.member_id === selectedMemberId && a.day_of_week === day
     );
@@ -104,8 +102,12 @@ export default function LaundryPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">Day</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">Member</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                    Day
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                    Member
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -158,6 +160,9 @@ export default function LaundryPage() {
 
   // ── ADMIN VIEW ─────────────────────────────────────────────
   const selectedMember = members.find((m) => m.id === selectedMemberId);
+  const unassignedMembers = members.filter(
+    (member) => !assignments.some((a) => a.member_id === member.id)
+  );
 
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
@@ -172,15 +177,17 @@ export default function LaundryPage() {
           </div>
         )}
 
-        {/* Member tiles */}
+        {/* Member tiles — only unassigned */}
         <div className="mb-6">
           <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
             {selectedMemberId
               ? `${selectedMember?.first_name} Bhai selected — tap a day to assign`
+              : unassignedMembers.length === 0
+              ? 'All members assigned ✓'
               : 'Tap a member then tap a day to assign'}
           </p>
           <div className="flex flex-wrap gap-2">
-            {members.map((member) => (
+            {unassignedMembers.map((member) => (
               <button
                 key={member.id}
                 onClick={() => handleMemberTap(member.id)}
@@ -213,7 +220,7 @@ export default function LaundryPage() {
                   canAssign && !alreadyAssignedToDay
                     ? 'cursor-pointer border-blue-300 dark:border-blue-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                     : canAssign && alreadyAssignedToDay
-                    ? 'border-gray-200 dark:border-slate-700 opacity-50 cursor-not-allowed'
+                    ? 'border-gray-200 dark:border-slate-700 opacity-50 cursor-not-allowed bg-white dark:bg-slate-800'
                     : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                 }`}
               >
@@ -224,30 +231,36 @@ export default function LaundryPage() {
                   <div className="flex flex-wrap gap-2 flex-1">
                     {dayAssignments.length === 0 ? (
                       <span className="text-gray-400 dark:text-gray-600 text-sm">
-                        {canAssign && !alreadyAssignedToDay ? 'Tap to assign' : 'No one assigned'}
+                        {canAssign && !alreadyAssignedToDay
+                          ? 'Tap to assign'
+                          : 'No one assigned'}
                       </span>
                     ) : (
-                      dayAssignments.map((a) => (
-                        <div
-                          key={a.id}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-lg text-sm font-medium"
-                        >
-                          {a.household_members?.first_name} Bhai
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemove(a.id);
-                            }}
-                            className="ml-1 text-blue-600 dark:text-blue-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      <>
+                        {dayAssignments.map((a) => (
+                          <div
+                            key={a.id}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-lg text-sm font-medium"
                           >
-                            <X size={13} />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                    {canAssign && !alreadyAssignedToDay && dayAssignments.length > 0 && (
-                      <span className="text-blue-400 text-xs self-center">+ tap to add</span>
+                            {a.household_members?.first_name} Bhai
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemove(a.id);
+                              }}
+                              className="ml-1 text-blue-600 dark:text-blue-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        ))}
+                        {canAssign && !alreadyAssignedToDay && (
+                          <span className="text-blue-400 text-xs self-center">
+                            + tap to add
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
