@@ -5,7 +5,7 @@ export async function getSevas(householdId: string) {
   try {
     const { data, error } = await supabase
       .from('sevas')
-      .select('*')
+      .select()
       .eq('household_id', householdId)
       .order('created_at', { ascending: true });
 
@@ -23,14 +23,14 @@ export async function getSevaAssignments(householdId: string) {
     // First get all assignments
     const { data: assignments, error: assignError } = await supabase
       .from('seva_assignments')
-      .select('*');
+      .select();
 
     if (assignError) throw assignError;
 
     // Get sevas
     const { data: sevasList, error: sevaError } = await supabase
       .from('sevas')
-      .select('*')
+      .select()
       .eq('household_id', householdId);
 
     if (sevaError) throw sevaError;
@@ -38,7 +38,7 @@ export async function getSevaAssignments(householdId: string) {
     // Get members
     const { data: membersList, error: memberError } = await supabase
       .from('household_members')
-      .select('*')
+      .select()
       .eq('household_id', householdId);
 
     if (memberError) throw memberError;
@@ -168,7 +168,7 @@ export async function refreshSevaAssignments(householdId: string) {
     // Get all active members
     const { data: members, error: membersError } = await supabase
       .from('household_members')
-      .select('*')
+      .select()
       .eq('household_id', householdId)
       .eq('status', 'active')
       .order('created_at', { ascending: true });
@@ -234,7 +234,7 @@ export async function getPendingSevas(householdId: string) {
     // Get all assignments
     const { data: assignments, error: assignError } = await supabase
       .from('seva_assignments')
-      .select('*')
+      .select()
       .eq('is_completed', false);
 
     if (assignError) throw assignError;
@@ -242,7 +242,7 @@ export async function getPendingSevas(householdId: string) {
     // Get sevas for this household
     const { data: sevasList, error: sevaError } = await supabase
       .from('sevas')
-      .select('*')
+      .select()
       .eq('household_id', householdId);
 
     if (sevaError) throw sevaError;
@@ -250,7 +250,7 @@ export async function getPendingSevas(householdId: string) {
     // Get members
     const { data: membersList, error: memberError } = await supabase
       .from('household_members')
-      .select('*')
+      .select()
       .eq('household_id', householdId);
 
     if (memberError) throw memberError;
