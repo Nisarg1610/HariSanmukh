@@ -14,20 +14,25 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
 
-  useEffect(() => {
+ useEffect(() => {
   const init = async () => {
     try {
-      await supabase.auth.getSession();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      setUser(authUser);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (authUser) {
+      if (session?.user) {
+        setUser(session.user);
         const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('id', authUser.id)
+          .eq('id', session.user.id)
           .single();
-        setDbUser(data ?? null);
+
+        if (data) {
+          setDbUser(data);
+        } else {
+          // No profile yet — auto create without asking for name
+          await handleSetupProfile(session.user);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -36,24 +41,32 @@ export default function Home() {
     }
   };
 
-  const timer = setTimeout(init, 300);
+  init();
 
-  // DON'T use onAuthStateChange to set dbUser — it causes race conditions
-  // Only use it to detect logout
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
     async (event, session) => {
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setDbUser(null);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (data) {
+          setDbUser(data);
+        } else {
+          await handleSetupProfile(session.user);
+        }
         setLoading(false);
       }
     }
   );
 
-  return () => {
-    clearTimeout(timer);
-    subscription.unsubscribe();
-  };
+  return () => subscription.unsubscribe();
 }, []);
 
   const handleGoogleLogin = async () => {
@@ -71,112 +84,99 @@ export default function Home() {
     }
   };
 
-  const handleSetupProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!firstName.trim()) { setError('Please enter your first name'); return; }
-    if (!user) return;
+ const handleSetupProfile = async (authUser: any) => {
+  try {
+    setSavingProfile(true);
+    setError(null);
 
-    try {
-      setSavingProfile(true);
-      setError(null);
+    const { data: anyHousehold } = await supabase
+      .from('households')
+      .select('id')
+      .limit(1)
+      .single();
 
-      // Check if any household exists (to determine if this is the first ever user)
-      const { data: anyHousehold } = await supabase
+    const { data: existingMember } = await supabase
+      .from('household_members')
+      .select('*')
+      .eq('email', authUser.email.toLowerCase())
+      .single();
+
+    let householdId: string;
+    let role: 'admin' | 'user' = 'user';
+    let firstName = existingMember?.first_name ?? authUser.email.split('@')[0];
+
+    if (!anyHousehold) {
+      // First ever user — admin
+      const { data: household, error: hErr } = await supabase
+        .from('households')
+        .insert({ name: `Main Household`, created_by: authUser.id })
+        .select()
+        .single();
+      if (hErr || !household) throw hErr ?? new Error('Household creation failed');
+      householdId = household.id;
+      role = 'admin';
+
+      await supabase.from('household_members').insert({
+        household_id: householdId,
+        first_name: firstName,
+        last_name: 'Bhai',
+        email: authUser.email.toLowerCase(),
+        status: 'active',
+        linked_user_id: authUser.id,
+      });
+
+    } else if (existingMember) {
+      // Pre-added by admin — link to existing card
+      householdId = existingMember.household_id;
+      await supabase
+        .from('household_members')
+        .update({ linked_user_id: authUser.id })
+        .eq('id', existingMember.id);
+
+    } else {
+      // New person — auto create member card
+      const { data: household } = await supabase
         .from('households')
         .select('id')
         .limit(1)
         .single();
+      householdId = household!.id;
 
-      // Check if this email was pre-added as a household member by admin
-      const { data: existingMember } = await supabase
-        .from('household_members')
-        .select('*')
-        .eq('email', user.email!.toLowerCase())
-        .single();
-
-      let householdId: string;
-      let role: 'admin' | 'user' = 'user';
-
-      if (!anyHousehold) {
-        // Very first user ever — make them admin and create household
-        const { data: household, error: hErr } = await supabase
-          .from('households')
-          .insert({ name: `${firstName.trim()}'s Household`, created_by: user.id })
-          .select()
-          .single();
-        if (hErr || !household) throw hErr ?? new Error('Household creation failed');
-        householdId = household.id;
-        role = 'admin';
-
-        // Also add them as a member card
-        await supabase.from('household_members').insert({
-          household_id: householdId,
-          first_name: firstName.trim(),
-          last_name: 'Bhai',
-          email: user.email!.toLowerCase(),
-          status: 'active',
-          linked_user_id: user.id,
-        });
-
-      } else if (existingMember) {
-        // Email matches a pre-added member card — link to it, no new card
-        householdId = existingMember.household_id;
-
-        await supabase
-          .from('household_members')
-          .update({
-            linked_user_id: user.id,
-            first_name: firstName.trim(),
-          })
-          .eq('id', existingMember.id);
-
-      } else {
-        // New person, not pre-added — create new member card in the household
-        const { data: household } = await supabase
-          .from('households')
-          .select('id')
-          .limit(1)
-          .single();
-
-        householdId = household!.id;
-
-        // Create their member card
-        await supabase.from('household_members').insert({
-          household_id: householdId,
-          first_name: firstName.trim(),
-          last_name: 'Bhai',
-          email: user.email!.toLowerCase(),
-          status: 'active',
-          linked_user_id: user.id,
-        });
-      }
-
-      // Create the user record
-      const { error: uErr } = await supabase.from('users').insert({
-        id: user.id,
-        email: user.email,
-        first_name: firstName.trim(),
-        last_name: 'Bhai',
+      await supabase.from('household_members').insert({
         household_id: householdId,
-        role,
+        first_name: firstName,
+        last_name: 'Bhai',
+        email: authUser.email.toLowerCase(),
         status: 'active',
+        linked_user_id: authUser.id,
       });
-      if (uErr) throw uErr;
-
-      const { data: newDbUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      setDbUser(newDbUser);
-    } catch (err: any) {
-      setError(err.message ?? 'Setup failed');
-    } finally {
-      setSavingProfile(false);
     }
-  };
 
+    const { error: uErr } = await supabase.from('users').insert({
+      id: authUser.id,
+      email: authUser.email,
+      first_name: firstName,
+      last_name: 'Bhai',
+      household_id: householdId,
+      role,
+      status: 'active',
+    });
+    if (uErr) throw uErr;
+
+    const { data: newDbUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUser.id)
+      .single();
+
+    setDbUser(newDbUser);
+    window.location.href = '/';
+  } catch (err: any) {
+    setError(err.message ?? 'Setup failed');
+  } finally {
+    setSavingProfile(false);
+  }
+};
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -231,70 +231,7 @@ export default function Home() {
     );
   }
 
-  // ─── LOGGED IN BUT NO PROFILE ────────────────────────────────
-  if (!dbUser) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-10">
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
-              HariSanmukh
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Welcome! Let's set up your profile.
-            </p>
-          </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {user.email}
-            </p>
-
-            <form onSubmit={handleSetupProfile} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  What's your first name?
-                </label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="e.g. Nisarg"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-500 dark:text-gray-400 font-medium">
-                    Bhai
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingProfile}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50 transition-all"
-              >
-                {savingProfile ? 'Setting up...' : 'Continue →'}
-              </button>
-            </form>
-
-            <button
-              onClick={handleLogout}
-              className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              Use a different account
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   // ─── DASHBOARD ───────────────────────────────────────────────
   return (

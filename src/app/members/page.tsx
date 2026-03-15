@@ -41,32 +41,60 @@ export default function MembersPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (!authUser) { window.location.href = '/'; return; }
+ useEffect(() => {
+  const init = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-        const { data: dbUser } = await supabase
+      if (session?.user) {
+        setUser(session.user);
+        const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('id', authUser.id)
+          .eq('id', session.user.id)
           .single();
 
-        if (!dbUser || dbUser.role !== 'admin') { window.location.href = '/'; return; }
+        if (data) {
+          setDbUser(data);
+        } else {
+          // No profile yet — auto create without asking for name
+          await handleSetupProfile(session.user);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setHouseholdId(dbUser.household_id);
-        const list = await getHouseholdMembers(dbUser.household_id);
-        setMembers(list);
-      } catch (err) {
-        console.error(err);
-        window.location.href = '/';
-      } finally {
+  init();
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setDbUser(null);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (data) {
+          setDbUser(data);
+        } else {
+          await handleSetupProfile(session.user);
+        }
         setLoading(false);
       }
-    };
-    init();
-  }, []);
+    }
+  );
+
+  return () => subscription.unsubscribe();
+}, []);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
