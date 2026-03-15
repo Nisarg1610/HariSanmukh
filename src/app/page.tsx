@@ -66,27 +66,27 @@ export default function Home() {
           .update({ linked_user_id: authUser.id })
           .eq('email', authUser.email.toLowerCase());
 
-      } else {
-        console.log('no member card — creating new card');
-        const { data: household } = await supabase
-          .from('households')
-          .select('id')
-          .limit(1)
-          .maybeSingle();
+      }  else {
+  const { data: household } = await supabase
+    .from('households')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
 
-        if (!household) throw new Error('No household found');
-        householdId = household.id;
-        firstName = authUser.email.split('@')[0];
+  if (!household) throw new Error('No household found');
+  householdId = household.id;
+  firstName = authUser.email.split('@')[0];
 
-        await supabase.from('household_members').insert({
-          household_id: householdId,
-          first_name: firstName,
-          last_name: 'Bhai',
-          email: authUser.email.toLowerCase(),
-          status: 'active',
-          linked_user_id: authUser.id,
-        });
-      }
+  // Use upsert instead of insert to avoid 409 conflict
+  await supabase.from('household_members').upsert({
+    household_id: householdId,
+    first_name: firstName,
+    last_name: 'Bhai',
+    email: authUser.email.toLowerCase(),
+    status: 'active',
+    linked_user_id: authUser.id,
+  }, { onConflict: 'email' });
+}
 
       console.log('inserting into users:', { firstName, householdId, role });
       const { error: uErr } = await supabase.from('users').insert({
