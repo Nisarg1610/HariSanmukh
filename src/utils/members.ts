@@ -44,6 +44,7 @@ export async function updateMember(
   firstName: string,
   email: string
 ) {
+  // Step 1 — Update household_members
   const { data, error } = await supabase
     .from('household_members')
     .update({
@@ -58,6 +59,13 @@ export async function updateMember(
     console.error('updateMember error:', error);
     return null;
   }
+
+  // Step 2 — Update users table by matching email
+  await supabase
+    .from('users')
+    .update({ first_name: firstName })
+    .eq('email', email.toLowerCase().trim());
+
   return data;
 }
 
