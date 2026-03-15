@@ -10,64 +10,155 @@ export default function Home() {
   const [dbUser, setDbUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState('');
 
- useEffect(() => {
-  const init = async () => {
+  // ─── Define BEFORE useEffect ────────────────────────────────
+  const setupProfile = async (authUser: any) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: anyHousehold } = await supabase
+        .from('households')
+        .select('id')
+        .limit(1)
+        .single();
 
-      if (session?.user) {
-        setUser(session.user);
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
+      const { data: existingMember } = await supabase
+        .from('household_members')
+        .select('*')
+        .eq('email', authUser.email.toLowerCase())
+        .single();
+
+      let householdId: string;
+      let role: 'admin' | 'user' = 'user';
+      let firstName = existingMember?.first_name ?? authUser.email.split('@')[0];
+
+      if (!anyHousehold) {
+        // First ever user — admin
+        const { data: household, error: hErr } = await supabase
+          .from('households')
+          .insert({ name: 'Main Household', created_by: authUser.id })
+          .select()
           .single();
+        if (hErr || !household) throw hErr ?? new Error('Household creation failed');
+        householdId = household.id;
+        role = 'admin';
 
-        if (data) {
-          setDbUser(data);
-        } else {
-          // No profile yet — auto create without asking for name
-          await handleSetupProfile(session.user);
-        }
+        await supabase.from('household_members').insert({
+          household_id: householdId,
+          first_name: firstName,
+          last_name: 'Bhai',
+          email: authUser.email.toLowerCase(),
+          status: 'active',
+          linked_user_id: authUser.id,
+        });
+
+      } else if (existingMember) {
+        // Pre-added by admin — link to existing card
+        householdId = existingMember.household_id;
+        await supabase
+          .from('household_members')
+          .update({ linked_user_id: authUser.id })
+          .eq('id', existingMember.id);
+
+      } else {
+        // New person — auto create member card
+        const { data: household } = await supabase
+          .from('households')
+          .select('id')
+          .limit(1)
+          .single();
+        householdId = household!.id;
+
+        await supabase.from('household_members').insert({
+          household_id: householdId,
+          first_name: firstName,
+          last_name: 'Bhai',
+          email: authUser.email.toLowerCase(),
+          status: 'active',
+          linked_user_id: authUser.id,
+        });
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+
+      const { error: uErr } = await supabase.from('users').insert({
+        id: authUser.id,
+        email: authUser.email,
+        first_name: firstName,
+        last_name: 'Bhai',
+        household_id: householdId,
+        role,
+        status: 'active',
+      });
+      if (uErr) throw uErr;
+
+      const { data: newDbUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      setDbUser(newDbUser);
+    } catch (err: any) {
+      console.error('setupProfile error:', err);
+      setError(err.message ?? 'Setup failed');
     }
   };
 
-  init();
+  // ─── useEffect AFTER setupProfile ───────────────────────────
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setDbUser(null);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        if (session?.user) {
+          setUser(session.user);
 
-        if (data) {
-          setDbUser(data);
-        } else {
-          await handleSetupProfile(session.user);
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (data) {
+            setDbUser(data);
+          } else {
+            await setupProfile(session.user);
+          }
         }
+      } catch (err) {
+        console.error(err);
+      } finally {
         setLoading(false);
       }
-    }
-  );
+    };
 
-  return () => subscription.unsubscribe();
-}, []);
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setDbUser(null);
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (data) {
+            setDbUser(data);
+          } else {
+            await setupProfile(session.user);
+          }
+
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
@@ -84,99 +175,6 @@ export default function Home() {
     }
   };
 
- const handleSetupProfile = async (authUser: any) => {
-  try {
-    setSavingProfile(true);
-    setError(null);
-
-    const { data: anyHousehold } = await supabase
-      .from('households')
-      .select('id')
-      .limit(1)
-      .single();
-
-    const { data: existingMember } = await supabase
-      .from('household_members')
-      .select('*')
-      .eq('email', authUser.email.toLowerCase())
-      .single();
-
-    let householdId: string;
-    let role: 'admin' | 'user' = 'user';
-    let firstName = existingMember?.first_name ?? authUser.email.split('@')[0];
-
-    if (!anyHousehold) {
-      // First ever user — admin
-      const { data: household, error: hErr } = await supabase
-        .from('households')
-        .insert({ name: `Main Household`, created_by: authUser.id })
-        .select()
-        .single();
-      if (hErr || !household) throw hErr ?? new Error('Household creation failed');
-      householdId = household.id;
-      role = 'admin';
-
-      await supabase.from('household_members').insert({
-        household_id: householdId,
-        first_name: firstName,
-        last_name: 'Bhai',
-        email: authUser.email.toLowerCase(),
-        status: 'active',
-        linked_user_id: authUser.id,
-      });
-
-    } else if (existingMember) {
-      // Pre-added by admin — link to existing card
-      householdId = existingMember.household_id;
-      await supabase
-        .from('household_members')
-        .update({ linked_user_id: authUser.id })
-        .eq('id', existingMember.id);
-
-    } else {
-      // New person — auto create member card
-      const { data: household } = await supabase
-        .from('households')
-        .select('id')
-        .limit(1)
-        .single();
-      householdId = household!.id;
-
-      await supabase.from('household_members').insert({
-        household_id: householdId,
-        first_name: firstName,
-        last_name: 'Bhai',
-        email: authUser.email.toLowerCase(),
-        status: 'active',
-        linked_user_id: authUser.id,
-      });
-    }
-
-    const { error: uErr } = await supabase.from('users').insert({
-      id: authUser.id,
-      email: authUser.email,
-      first_name: firstName,
-      last_name: 'Bhai',
-      household_id: householdId,
-      role,
-      status: 'active',
-    });
-    if (uErr) throw uErr;
-
-    const { data: newDbUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
-
-    setDbUser(newDbUser);
-    window.location.href = '/';
-  } catch (err: any) {
-    setError(err.message ?? 'Setup failed');
-  } finally {
-    setSavingProfile(false);
-  }
-};
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -211,7 +209,6 @@ export default function Home() {
                 <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
               </div>
             )}
-
             <button
               onClick={handleGoogleLogin}
               disabled={signingIn}
@@ -230,8 +227,6 @@ export default function Home() {
       </main>
     );
   }
-
-
 
   // ─── DASHBOARD ───────────────────────────────────────────────
   return (
@@ -253,41 +248,31 @@ export default function Home() {
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-          Welcome, {dbUser.first_name} Bhai 👋
+          Welcome, {dbUser?.first_name} Bhai 👋
         </h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm">
           {user.email}
         </p>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-              My Sevas
-            </p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">My Sevas</p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">—</p>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-              Completed
-            </p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Completed</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">—</p>
           </div>
           <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-              Members
-            </p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Members</p>
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">—</p>
           </div>
         </div>
 
-        {/* Role badge + getting started */}
         <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-6">
           <div className="flex items-center gap-3 mb-3">
-            <h3 className="font-bold text-gray-900 dark:text-white">
-              Getting Started
-            </h3>
-            {dbUser.role === 'admin' && (
+            <h3 className="font-bold text-gray-900 dark:text-white">Getting Started</h3>
+            {dbUser?.role === 'admin' && (
               <span className="bg-blue-600 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
                 Admin
               </span>
@@ -295,12 +280,12 @@ export default function Home() {
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Use the navigation below to manage sevas, grocery, laundry
-            {dbUser.role === 'admin' ? ', and members.' : '.'}
+            {dbUser?.role === 'admin' ? ', and members.' : '.'}
           </p>
         </div>
       </div>
 
-      <BottomNav isAdmin={dbUser.role === 'admin'} />
+      <BottomNav isAdmin={dbUser?.role === 'admin'} />
     </main>
   );
 }
