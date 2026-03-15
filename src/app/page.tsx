@@ -66,7 +66,7 @@ export default function Home() {
           .update({ linked_user_id: authUser.id })
           .eq('email', authUser.email.toLowerCase());
 
-      }  else {
+      }   else {
   const { data: household } = await supabase
     .from('households')
     .select('id')
@@ -77,27 +77,37 @@ export default function Home() {
   householdId = household.id;
   firstName = authUser.email.split('@')[0];
 
-  // Use upsert instead of insert to avoid 409 conflict
-  await supabase.from('household_members').upsert({
-    household_id: householdId,
-    first_name: firstName,
-    last_name: 'Bhai',
-    email: authUser.email.toLowerCase(),
-    status: 'active',
-    linked_user_id: authUser.id,
-  }, { onConflict: 'email' });
+  // First insert into household_members
+  const { error: memberErr } = await supabase
+    .from('household_members')
+    .insert({
+      household_id: householdId,
+      first_name: firstName,
+      last_name: 'Bhai',
+      email: authUser.email.toLowerCase(),
+      status: 'active',
+      linked_user_id: authUser.id,
+    });
+
+  if (memberErr) {
+    console.log('household_members insert error:', memberErr);
+    throw memberErr;
+  }
+
+  console.log('member card created successfully');
 }
 
-      console.log('inserting into users:', { firstName, householdId, role });
-      const { error: uErr } = await supabase.from('users').insert({
-        id: authUser.id,
-        email: authUser.email,
-        first_name: firstName,
-        last_name: 'Bhai',
-        household_id: householdId!,
-        role,
-        status: 'active',
-      });
+// Then insert into users
+console.log('inserting into users:', { firstName, householdId, role });
+const { error: uErr } = await supabase.from('users').insert({
+  id: authUser.id,
+  email: authUser.email,
+  first_name: firstName,
+  last_name: 'Bhai',
+  household_id: householdId!,
+  role,
+  status: 'active',
+});
       if (uErr) {
         console.log('users insert error:', uErr);
         throw uErr;
