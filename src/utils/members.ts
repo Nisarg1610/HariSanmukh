@@ -18,13 +18,15 @@ export async function getHouseholdMembers(householdId: string) {
 }
 
 // Add member
-export async function addMember(householdId: string, name: string) {
+export async function addMember(householdId: string, firstName: string, lastName: string) {
   try {
     const { data, error } = await supabase
       .from('household_members')
       .insert({
         household_id: householdId,
-        name: name.trim(),
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        name: `${firstName.trim()} ${lastName.trim()}`,
         status: 'active',
       })
       .select()

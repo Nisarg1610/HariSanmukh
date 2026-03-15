@@ -14,6 +14,8 @@ import {
 interface Member {
   id: string;
   name: string;
+  first_name: string;
+  last_name: string;
   status: 'active' | 'inactive';
   created_at: string;
 }
@@ -23,7 +25,8 @@ export default function MembersPage() {
   const [householdId, setHouseholdId] = useState<string>('');
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [memberName, setMemberName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [addingMember, setAddingMember] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,18 +76,19 @@ export default function MembersPage() {
     e.preventDefault();
     setError(null);
 
-    if (!memberName.trim()) {
-      setError('Please enter member name');
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter first and last name');
       return;
     }
 
     try {
       setAddingMember(true);
-      const newMember = await addMember(householdId, memberName);
+      const newMember = await addMember(householdId, firstName, lastName);
 
       if (newMember) {
         setMembers([...members, newMember]);
-        setMemberName('');
+        setFirstName('');
+        setLastName('');
         setShowAddForm(false);
       } else {
         setError('Failed to add member');
@@ -174,13 +178,26 @@ export default function MembersPage() {
             <form onSubmit={handleAddMember} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Member Name
+                  First Name
                 </label>
                 <input
                   type="text"
-                  value={memberName}
-                  onChange={(e) => setMemberName(e.target.value)}
-                  placeholder="Enter member name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Enter first name"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Enter last name"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -197,7 +214,8 @@ export default function MembersPage() {
                   type="button"
                   onClick={() => {
                     setShowAddForm(false);
-                    setMemberName('');
+                    setFirstName('');
+                    setLastName('');
                   }}
                   className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white font-semibold py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500"
                 >
@@ -230,7 +248,7 @@ export default function MembersPage() {
               >
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 dark:text-white">
-                    {member.name}
+                    {member.first_name} {member.last_name}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {member.status === 'active' ? '✓ Active' : '⏸ Inactive'}

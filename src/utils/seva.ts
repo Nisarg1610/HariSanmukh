@@ -38,6 +38,7 @@ export async function getSevaAssignments(householdId: string) {
 }
 
 // Get assignments for specific user
+// Get assignments for specific user (match by first_name)
 export async function getUserSevaAssignments(householdId: string, userName: string) {
   try {
     const { data, error } = await supabase
@@ -45,10 +46,10 @@ export async function getUserSevaAssignments(householdId: string, userName: stri
       .select(`
         *,
         sevas(id, name, description, cap),
-        household_members(id, name)
+        household_members(id, name, first_name, last_name)
       `)
       .eq('sevas.household_id', householdId)
-      .eq('household_members.name', userName);
+      .eq('household_members.first_name', userName);
 
     if (error) throw error;
     return data || [];

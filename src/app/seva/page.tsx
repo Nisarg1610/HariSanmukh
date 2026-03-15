@@ -30,7 +30,7 @@ interface Assignment {
   member_id: string;
   is_completed: boolean;
   sevas?: { id: string; name: string; description?: string; cap: number };
-  household_members?: { id: string; name: string };
+  household_members?: { id: string; name: string; first_name: string; last_name: string };
 }
 
 interface Member {
@@ -278,73 +278,117 @@ export default function SevaPage() {
   }
 
   // USER VIEW
-  if (userRole === 'user') {
-    return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-24">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-            Seva
-          </h1>
+ // USER VIEW
+if (userRole === 'user') {
+  return (
+    <main className="min-h-screen bg-white dark:bg-slate-950 pb-24">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+          Seva
+        </h1>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Seva List */}
-          <div className="space-y-3">
-            {userAssignments.length === 0 ? (
-              <p className="text-center text-gray-600 dark:text-gray-400 py-8">
-                No sevas assigned yet.
-              </p>
-            ) : (
-              userAssignments.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                        {assignment.sevas?.name}
-                      </h3>
-                      {assignment.sevas?.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {assignment.sevas.description}
-                        </p>
-                      )}
-                    </div>
-                    {assignment.is_completed && (
-                      <span className="text-2xl">✓</span>
-                    )}
-                  </div>
-
-                  {!assignment.is_completed && (
-                    <button
-                      onClick={() =>
-                        handleMarkComplete(
-                          assignment.id,
-                          assignment.seva_id,
-                          assignment.member_id
-                        )
-                      }
-                      disabled={completingId === assignment.id}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg disabled:opacity-50"
-                    >
-                      {completingId === assignment.id ? 'Completing...' : 'Mark Done'}
-                    </button>
-                  )}
-                </div>
-              ))
-            )}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
           </div>
-        </div>
+        )}
 
-        <BottomNav isAdmin={false} />
-      </main>
-    );
-  }
+        {/* Seva Table */}
+        <div className="overflow-x-auto">
+          {sevas.length === 0 ? (
+            <p className="text-center text-gray-600 dark:text-gray-400 py-8">
+              No sevas created yet.
+            </p>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-slate-700">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+                    Seva Name
+                  </th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+                    Assigned To
+                  </th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-900 dark:text-white">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sevas.map((seva) => {
+                  // Get all assignments for this seva
+                  const sevaAssignments = assignments.filter((a) => a.seva_id === seva.id);
+                  
+                  // Check if current user is assigned to this seva
+                  const userAssignment = sevaAssignments.find(
+                    (a) => a.household_members?.first_name === userName
+                  );
+
+                  return (
+                    <tr
+                      key={seva.id}
+                      className={`border-b border-gray-100 dark:border-slate-800 ${
+                        userAssignment ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                      }`}
+                    >
+                      <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
+                        {seva.name}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-2">
+                          {sevaAssignments.length === 0 ? (
+                            <span className="text-gray-400">—</span>
+                          ) : (
+                            sevaAssignments.map((assignment) => (
+                              <span
+                                key={assignment.id}
+                                className={`px-2 py-1 rounded text-sm font-medium ${
+                                  assignment.household_members?.first_name === userName
+                                    ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                                }`}
+                              >
+                                {assignment.household_members?.first_name}
+                                {assignment.is_completed && ' ✓'}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {userAssignment && !userAssignment.is_completed ? (
+                          <button
+                            onClick={() =>
+                              handleMarkComplete(
+                                userAssignment.id,
+                                userAssignment.seva_id,
+                                userAssignment.member_id
+                              )
+                            }
+                            disabled={completingId === userAssignment.id}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg disabled:opacity-50"
+                          >
+                            {completingId === userAssignment.id ? 'Completing...' : 'Mark Done'}
+                          </button>
+                        ) : userAssignment?.is_completed ? (
+                          <span className="text-green-600 dark:text-green-400 font-bold text-lg">✓</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      <BottomNav isAdmin={false} />
+    </main>
+  );
+}
 
   // ADMIN VIEW
   return (
