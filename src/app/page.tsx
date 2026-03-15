@@ -117,71 +117,68 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('init session:', session?.user?.email);
+useEffect(() => {
+  let profileSetupDone = false; // 🔒 lock
 
-        if (session?.user) {
-          setUser(session.user);
+  const init = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          console.log('init users query result:', data);
+      if (session?.user) {
+        setUser(session.user);
 
-          if (data) {
-            setDbUser(data);
-          } else {
-            console.log('init: no db user, calling setupProfile');
-            await setupProfile(session.user);
-          }
-        } else {
-          console.log('init: no session');
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          setDbUser(data);
+        } else if (!profileSetupDone) {
+          profileSetupDone = true; // 🔒 lock
+          await setupProfile(session.user);
         }
-      } catch (err) {
-        console.error('init error:', err);
-      } finally {
+      }
+    } catch (err) {
+      console.error('init error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  init();
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      console.log('onAuthStateChange event:', event, session?.user?.email);
+
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setDbUser(null);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
+
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          setDbUser(data);
+        } else if (!profileSetupDone) {
+          profileSetupDone = true; // 🔒 lock
+          await setupProfile(session.user);
+        }
+
         setLoading(false);
       }
-    };
+    }
+  );
 
-    init();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('onAuthStateChange event:', event, session?.user?.email);
-
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setDbUser(null);
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
-
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          console.log('onAuthStateChange users query result:', data);
-
-          if (data) {
-            setDbUser(data);
-          } else {
-            console.log('onAuthStateChange: no db user, calling setupProfile');
-            await setupProfile(session.user);
-          }
-
-          setLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
+  return () => subscription.unsubscribe();
+}, []);
 
   const handleGoogleLogin = async () => {
     try {
