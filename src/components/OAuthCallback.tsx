@@ -6,10 +6,10 @@ import { supabase } from '@/lib/supabase';
 export function OAuthCallback() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          // Force a hard reload so page.tsx re-runs with the new session
-          window.location.href = '/';
+      (event, session) => {
+        // Only redirect on the actual OAuth callback, not every page load
+        if (event === 'SIGNED_IN' && window.location.hash.includes('access_token')) {
+          window.location.replace('/');
         }
       }
     );
