@@ -128,7 +128,7 @@ const setupProfile = async (authUser: any) => {
             .from('users')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle()
 
           if (data) {
             setDbUser(data);
@@ -157,7 +157,7 @@ const setupProfile = async (authUser: any) => {
             .from('users')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle()
 
           if (data) {
             setDbUser(data);
