@@ -25,7 +25,7 @@ export default function SevaPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', cap: 1 });
+  const [form, setForm] = useState({ name: '', description: '', cap: 0 });
   const [formLoading, setFormLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
@@ -344,8 +344,8 @@ export default function SevaPage() {
                   <input
                     type="number"
                     value={form.cap}
-                    onChange={(e) => setForm({ ...form, cap: Math.max(1, parseInt(e.target.value) || 1) })}
-                    min={1}
+                    onChange={(e) => setForm({ ...form, cap: Math.max(1, parseInt(e.target.value) || 0) })}
+                    min={0}
                     max={members.length || 10}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
