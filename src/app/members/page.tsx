@@ -27,74 +27,51 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Add form
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState({ firstName: '', email: '' });
   const [addingMember, setAddingMember] = useState(false);
 
-  // Edit form
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ firstName: '', email: '' });
   const [savingEdit, setSavingEdit] = useState(false);
 
-  // Action loading states
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
- useEffect(() => {
-  const init = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        setUser(session.user);
-        const { data } = await supabase
+        if (!session?.user) {
+          window.location.href = '/';
+          return;
+        }
+
+        const { data: dbUser } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        if (data) {
-          setDbUser(data);
-        } else {
-          // No profile yet — auto create without asking for name
-          await handleSetupProfile(session.user);
+        if (!dbUser || dbUser.role !== 'admin') {
+          window.location.href = '/';
+          return;
         }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  init();
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setDbUser(null);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (data) {
-          setDbUser(data);
-        } else {
-          await handleSetupProfile(session.user);
-        }
+        setHouseholdId(dbUser.household_id);
+        const list = await getHouseholdMembers(dbUser.household_id);
+        setMembers(list);
+      } catch (err) {
+        console.error(err);
+        window.location.href = '/';
+      } finally {
         setLoading(false);
       }
-    }
-  );
+    };
 
-  return () => subscription.unsubscribe();
-}, []);
+    init();
+  }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,8 +102,8 @@ export default function MembersPage() {
 
   const handleSaveEdit = async (memberId: string) => {
     setError(null);
-    if (!editForm.firstName.trim() || !editForm.email.trim()) {
-      setError('Please enter first name and email');
+    if (!editForm.firstName.trim()) {
+      setError('Please enter first name');
       return;
     }
     try {
@@ -187,7 +164,7 @@ export default function MembersPage() {
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
+
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Members</h1>
           <div className="grid grid-cols-2 gap-3">
@@ -202,14 +179,12 @@ export default function MembersPage() {
           </div>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Add Member Form */}
         {showAddForm ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-gray-200 dark:border-slate-700 mb-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add New Member</h3>
@@ -266,7 +241,6 @@ export default function MembersPage() {
           </button>
         )}
 
-        {/* Members List */}
         <div className="space-y-3">
           {members.length === 0 ? (
             <p className="text-center text-gray-500 dark:text-gray-400 py-12">
@@ -283,7 +257,6 @@ export default function MembersPage() {
                 }`}
               >
                 {editingId === member.id ? (
-                  /* Edit mode */
                   <div className="p-4 space-y-3">
                     <input
                       type="text"
@@ -318,16 +291,13 @@ export default function MembersPage() {
                     </div>
                   </div>
                 ) : (
-                  /* View mode */
                   <div className="p-4 flex items-center gap-3">
-                    {/* Avatar */}
                     <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                       <span className="text-blue-700 dark:text-blue-300 font-bold text-sm">
                         {member.first_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 dark:text-white truncate">
                         {member.first_name} Bhai
@@ -337,9 +307,7 @@ export default function MembersPage() {
                       </p>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Edit */}
                       <button
                         onClick={() => handleEdit(member)}
                         className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
@@ -348,11 +316,9 @@ export default function MembersPage() {
                         <Edit2 size={17} />
                       </button>
 
-                      {/* Toggle active/inactive */}
                       <button
                         onClick={() => handleToggle(member)}
                         disabled={togglingId === member.id}
-                        title={member.status === 'active' ? 'Set inactive' : 'Set active'}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 ${
                           member.status === 'active'
                             ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-200'
@@ -362,7 +328,6 @@ export default function MembersPage() {
                         {togglingId === member.id ? '...' : member.status === 'active' ? 'Active' : 'Inactive'}
                       </button>
 
-                      {/* Delete */}
                       <button
                         onClick={() => handleDelete(member.id)}
                         disabled={deletingId === member.id}
