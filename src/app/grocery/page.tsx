@@ -16,6 +16,7 @@ interface GroceryItem {
   id?: string;
   name: string;
   quantity: string;
+  category: string;
 }
 
 export default function GroceryPage() {
@@ -27,11 +28,9 @@ export default function GroceryPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly');
 
-  // List state
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [copied, setCopied] = useState(false);
 
-  // Admin states
   const [editMode, setEditMode] = useState(false);
   const [editItems, setEditItems] = useState<GroceryItem[]>([]);
   const [saving, setSaving] = useState(false);
@@ -41,7 +40,6 @@ export default function GroceryPage() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // User states
   const [suggestionText, setSuggestionText] = useState('');
   const [submittingSuggestion, setSubmittingSuggestion] = useState(false);
   const [suggestionSent, setSuggestionSent] = useState(false);
@@ -70,7 +68,6 @@ export default function GroceryPage() {
         setUserRole(dbUser.role);
         setUserFirstName(dbUser.first_name);
 
-        // Get member id for suggestions
         const { data: member } = await supabase
           .from('household_members')
           .select('id')
@@ -79,9 +76,7 @@ export default function GroceryPage() {
         if (member) setMemberId(member.id);
 
         await fetchItems(dbUser.household_id, 'weekly');
-        if (dbUser.role === 'admin') {
-          await fetchSuggestions(dbUser.household_id);
-        }
+        if (dbUser.role === 'admin') await fetchSuggestions(dbUser.household_id);
       } catch (err) {
         console.error(err);
         window.location.href = '/';
@@ -92,15 +87,24 @@ export default function GroceryPage() {
     init();
   }, []);
 
-  // Refetch when tab changes
   useEffect(() => {
     if (householdId) fetchItems(householdId, activeTab);
   }, [activeTab, householdId]);
 
+  // Group items by category
+  const groupedItems = items.reduce((acc, item) => {
+    const cat = item.category || 'General';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {} as Record<string, GroceryItem[]>);
+
   const handleCopy = () => {
-    const text = items
-      .map((item) => `${item.name}${item.quantity ? ` - ${item.quantity}` : ''}`)
-      .join('\n');
+    const text = Object.entries(groupedItems)
+      .map(([cat, catItems]) =>
+        `${cat}:\n${catItems.map((i) => `  - ${i.name}${i.quantity ? ` (${i.quantity})` : ''}`).join('\n')}`
+      )
+      .join('\n\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -121,9 +125,8 @@ export default function GroceryPage() {
     }
   };
 
-  // Admin: start editing
   const handleStartEdit = () => {
-    setEditItems(items.map((i) => ({ name: i.name, quantity: i.quantity || '' })));
+    setEditItems(items.map((i) => ({ name: i.name, quantity: i.quantity || '', category: i.category || 'General' })));
     setEditMode(true);
   };
 
@@ -144,61 +147,65 @@ export default function GroceryPage() {
   };
 
   const handleAddRow = () => {
-    setEditItems([...editItems, { name: '', quantity: '' }]);
+    setEditItems([...editItems, { name: '', quantity: '', category: 'General' }]);
   };
 
   const handleRemoveRow = (index: number) => {
     setEditItems(editItems.filter((_, i) => i !== index));
   };
 
-  // Admin: AI paste
-  const handleAIPaste = async () => {
-    if (!pasteText.trim()) return;
-    try {
-      setAiProcessing(true);
-      setError(null);
+  // Grok AI paste
+const handleAIPaste = async () => {
+  if (!pasteText.trim()) return;
+  try {
+    setAiProcessing(true);
+    setError(null);
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `Convert this grocery list to a clean JSON array. Each item should have "name" and "quantity" fields. Quantity can be empty string if not specified. Return ONLY the JSON array, no other text, no markdown.
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{
+          role: 'user',
+          content: `Convert this grocery list to a clean JSON array. Each item should have "name" and "quantity" fields. Quantity can be empty string if not specified. Return ONLY the JSON array, no other text, no markdown, no explanation.
 
 Input:
 ${pasteText}
 
-Example output format:
-[{"name":"Milk","quantity":"2L"},{"name":"Bread","quantity":"1 loaf"}]`,
-          }],
-        }),
-      });
+Example output:
+[{"name":"Milk","quantity":"2L"},{"name":"Bread","quantity":"1 loaf"},{"name":"Eggs","quantity":"12"}]`,
+        }],
+        max_tokens: 1000,
+        temperature: 0.1,
+      }),
+    });
 
-      const data = await response.json();
-      const text = data.content?.[0]?.text ?? '';
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content ?? '';
 
-      try {
-        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-        if (Array.isArray(parsed)) {
-          setEditItems(parsed);
-          setEditMode(true);
-          setPasteMode(false);
-          setPasteText('');
-        } else {
-          setError('AI returned unexpected format. Try again.');
-        }
-      } catch {
-        setError('Could not parse AI response. Try again.');
+    try {
+      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+      if (Array.isArray(parsed)) {
+        setEditItems(parsed);
+        setEditMode(true);
+        setPasteMode(false);
+        setPasteText('');
+      } else {
+        setError('AI returned unexpected format. Try again.');
       }
-    } catch (err) {
-      setError('AI processing failed. Check your connection.');
-    } finally {
-      setAiProcessing(false);
+    } catch {
+      setError('Could not parse AI response. Try again.');
     }
-  };
+  } catch (err) {
+    setError('AI processing failed. Check your connection.');
+  } finally {
+    setAiProcessing(false);
+  }
+};
 
   const handleShowSuggestions = async () => {
     setShowSuggestions(true);
@@ -216,17 +223,12 @@ Example output format:
     );
   }
 
-  // ── SHARED TABS ────────────────────────────────────────────
   const TabBar = () => (
     <div className="flex gap-2 mb-6">
       {(['weekly', 'monthly'] as const).map((tab) => (
         <button
           key={tab}
-          onClick={() => {
-            setActiveTab(tab);
-            setEditMode(false);
-            setPasteMode(false);
-          }}
+          onClick={() => { setActiveTab(tab); setEditMode(false); setPasteMode(false); }}
           className={`px-5 py-2 rounded-full text-sm font-semibold transition-all capitalize ${
             activeTab === tab
               ? 'bg-blue-600 text-white'
@@ -239,36 +241,34 @@ Example output format:
     </div>
   );
 
-  // ── USER VIEW ──────────────────────────────────────────────
-  if (userRole === 'user') {
-    return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Grocery</h1>
-          <TabBar />
+  const GroceryList = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+        <p className="font-semibold text-gray-900 dark:text-white capitalize">{activeTab} List</p>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+        >
+          {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
 
-          {/* List */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 mb-6">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-              <p className="font-semibold text-gray-900 dark:text-white capitalize">
-                {activeTab} List
-              </p>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                {copied ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-
-            {items.length === 0 ? (
-              <p className="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
-                No items yet.
-              </p>
-            ) : (
+      {items.length === 0 ? (
+        <p className="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
+          No items yet.
+        </p>
+      ) : (
+        <div>
+          {Object.entries(groupedItems).map(([category, catItems]) => (
+            <div key={category}>
+              <div className="px-4 py-2 bg-gray-50 dark:bg-slate-900/50">
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  {category}
+                </p>
+              </div>
               <ul className="divide-y divide-gray-100 dark:divide-slate-700">
-                {items.map((item, i) => (
+                {catItems.map((item, i) => (
                   <li key={i} className="flex items-center justify-between px-4 py-3">
                     <span className="text-gray-900 dark:text-white">{item.name}</span>
                     {item.quantity && (
@@ -277,18 +277,29 @@ Example output format:
                   </li>
                 ))}
               </ul>
-            )}
-          </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── USER VIEW ──────────────────────────────────────────────
+  if (userRole === 'user') {
+    return (
+      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Grocery</h1>
+          <TabBar />
+          <div className="mb-6"><GroceryList /></div>
 
           {/* Suggestion box */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-            <p className="font-semibold text-gray-900 dark:text-white mb-3">
-              Suggest something
-            </p>
+            <p className="font-semibold text-gray-900 dark:text-white mb-3">Suggest something</p>
             <textarea
               value={suggestionText}
               onChange={(e) => setSuggestionText(e.target.value)}
-              placeholder={`Suggest items to add to the ${activeTab} list...`}
+              placeholder={`Suggest items or changes for the ${activeTab} list...`}
               rows={3}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
@@ -316,13 +327,11 @@ Example output format:
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
       <div className="max-w-2xl mx-auto px-4 py-8">
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Grocery</h1>
           <button
             onClick={handleShowSuggestions}
             className="relative p-2 text-gray-500 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
-            title="Member suggestions"
           >
             <Bell size={22} />
             {unreadCount > 0 && (
@@ -346,10 +355,7 @@ Example output format:
           <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
               <p className="font-semibold text-gray-900 dark:text-white">Member Suggestions</p>
-              <button
-                onClick={() => setShowSuggestions(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
+              <button onClick={() => setShowSuggestions(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 <X size={18} />
               </button>
             </div>
@@ -376,13 +382,14 @@ Example output format:
         {/* Paste with AI */}
         {pasteMode ? (
           <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-            <p className="font-semibold text-gray-900 dark:text-white mb-3">
-              Paste your list — AI will format it
+            <p className="font-semibold text-gray-900 dark:text-white mb-1">Paste your list</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Grok AI will convert any format to a categorized list
             </p>
             <textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              placeholder="Paste any format — e.g. WhatsApp list, notes, random text..."
+              placeholder="Paste any format — WhatsApp list, notes, random text..."
               rows={6}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
@@ -393,7 +400,7 @@ Example output format:
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
               >
                 <Wand2 size={16} />
-                {aiProcessing ? 'Processing...' : 'Process with AI'}
+                {aiProcessing ? 'Grok is thinking...' : 'Convert with Grok'}
               </button>
               <button
                 onClick={() => { setPasteMode(false); setPasteText(''); }}
@@ -404,7 +411,6 @@ Example output format:
             </div>
           </div>
         ) : editMode ? (
-          /* Edit mode */
           <div className="mb-6">
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 mb-3">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
@@ -435,7 +441,18 @@ Example output format:
                         setEditItems(updated);
                       }}
                       placeholder="Qty"
-                      className="w-20 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-16 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={item.category}
+                      onChange={(e) => {
+                        const updated = [...editItems];
+                        updated[i] = { ...updated[i], category: e.target.value };
+                        setEditItems(updated);
+                      }}
+                      placeholder="Category"
+                      className="w-24 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                       onClick={() => handleRemoveRow(i)}
@@ -472,7 +489,6 @@ Example output format:
             </div>
           </div>
         ) : (
-          /* View mode */
           <div className="mb-6">
             <div className="flex gap-2 mb-3">
               <button
@@ -485,7 +501,7 @@ Example output format:
                 onClick={() => setPasteMode(true)}
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
               >
-                <Wand2 size={15} /> Paste with AI
+                <Wand2 size={15} /> Paste with Grok
               </button>
               <button
                 onClick={handleCopy}
@@ -495,30 +511,7 @@ Example output format:
                 {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-                <p className="font-semibold text-gray-900 dark:text-white capitalize">
-                  {activeTab} List
-                </p>
-              </div>
-              {items.length === 0 ? (
-                <p className="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
-                  No items yet. Edit the list or paste with AI.
-                </p>
-              ) : (
-                <ul className="divide-y divide-gray-100 dark:divide-slate-700">
-                  {items.map((item, i) => (
-                    <li key={i} className="flex items-center justify-between px-4 py-3">
-                      <span className="text-gray-900 dark:text-white">{item.name}</span>
-                      {item.quantity && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{item.quantity}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <GroceryList />
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@ export async function getGroceryItems(householdId: string, listType: 'weekly' | 
     .select('*')
     .eq('household_id', householdId)
     .eq('list_type', listType)
+    .order('category', { ascending: true })
     .order('order_index', { ascending: true });
 
   if (error) { console.error('getGroceryItems error:', error); return []; }
@@ -16,9 +17,8 @@ export async function getGroceryItems(householdId: string, listType: 'weekly' | 
 export async function saveGroceryItems(
   householdId: string,
   listType: 'weekly' | 'monthly',
-  items: { name: string; quantity: string }[]
+  items: { name: string; quantity: string; category: string }[]
 ) {
-  // Delete existing items for this list type
   await supabase
     .from('grocery_items')
     .delete()
@@ -27,7 +27,6 @@ export async function saveGroceryItems(
 
   if (items.length === 0) return true;
 
-  // Insert new items
   const { error } = await supabase
     .from('grocery_items')
     .insert(
@@ -35,6 +34,7 @@ export async function saveGroceryItems(
         household_id: householdId,
         name: item.name,
         quantity: item.quantity,
+        category: item.category || 'General',
         list_type: listType,
         order_index: index,
       }))
