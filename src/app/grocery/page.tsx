@@ -171,31 +171,47 @@ const handleAIPaste = async () => {
         model: 'llama-3.1-8b-instant',
         messages: [{
           role: 'user',
-          content: `Convert this grocery list to a clean JSON array. Each item should have "name" and "quantity" fields. Quantity can be empty string if not specified. Return ONLY the JSON array, no other text, no markdown, no explanation.
+          content: `You are a grocery list parser. Extract all grocery items from the input and return ONLY a valid JSON array with no markdown, no code blocks, no explanation, no extra text whatsoever. Just the raw JSON array starting with [ and ending with ].
+
+Each item must have:
+- "name": the item name in clean English
+- "quantity": the quantity/amount as a string, empty string if not mentioned
+
+Rules:
+- Ignore category headers, emojis, bullet points, dashes
+- Clean up item names (remove extra spaces, special chars)
+- Keep quantities as-is (e.g. "1 bag", "6 nang", "2 judhi", "4 pck")
+- If quantity has local units like "nang", "judhi", "pck", "daba", "judhi", keep them as-is
+- Return ONLY the JSON array, nothing else, no explanation before or after
 
 Input:
-${pasteText}
-
-Example output:
-[{"name":"Milk","quantity":"2L"},{"name":"Bread","quantity":"1 loaf"},{"name":"Eggs","quantity":"12"}]`,
+${pasteText}`,
         }],
         max_tokens: 1000,
-        temperature: 0.1,
+        temperature: 0,
       }),
     });
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content ?? '';
+    console.log('AI response:', text);
 
     try {
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-      if (Array.isArray(parsed)) {
+      // Extract JSON array even if AI adds any extra text
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        setError('AI could not parse the list. Try again.');
+        return;
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed) && parsed.length > 0) {
         setEditItems(parsed);
         setEditMode(true);
         setPasteMode(false);
         setPasteText('');
       } else {
-        setError('AI returned unexpected format. Try again.');
+        setError('AI returned empty list. Try again.');
       }
     } catch {
       setError('Could not parse AI response. Try again.');
