@@ -10,6 +10,7 @@ import {
   markSevaComplete, refreshSevaAssignments,
 } from '@/utils/seva';
 import { getHouseholdMembers } from '@/utils/members';
+import { sendSevaNotification } from '@/utils/pushNotifications';
 
 export default function SevaPage() {
   const [loading, setLoading] = useState(true);
@@ -225,10 +226,13 @@ export default function SevaPage() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Seva</h1>
           <div className="flex gap-1">
             <button
-              onClick={() => alert('Notifications coming soon!')}
-              className="p-2 text-gray-500 hover:text-orange-500 dark:hover:text-orange-400 rounded-lg transition-colors"
-              title="Notifications"
-            >
+              onClick={async () => {
+    const result = await sendSevaNotification(householdId);
+    alert(`Notification sent to ${result.sent} members!`);
+  }}
+  className="p-2 text-gray-500 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+  title="Notify members"
+>
               <Bell size={22} />
             </button>
             <button

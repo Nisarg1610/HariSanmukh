@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { LogOut } from 'lucide-react';
 import { getSevaAssignments } from '@/utils/seva';
 import { getLaundryAssignments } from '@/utils/laundry';
+import { registerPushNotifications } from '@/utils/pushNotifications';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -179,6 +180,7 @@ useEffect(() => {
         if (data) {
           setDbUser(data);
           await fetchDashboardData(data.household_id, session.user.email!);
+          await registerPushNotifications(data.id, data.household_id);
         } else if (!profileSetupDone) {
           profileSetupDone = true; // 🔒 lock
           await setupProfile(session.user);
@@ -212,6 +214,7 @@ useEffect(() => {
         if (data) {
           setDbUser(data);
           await fetchDashboardData(data.household_id, session.user.email!);
+          await registerPushNotifications(data.id, data.household_id);
         } else if (!profileSetupDone) {
           profileSetupDone = true; // 🔒 lock
           await setupProfile(session.user);

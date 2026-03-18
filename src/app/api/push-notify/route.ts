@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server';
+import webpush from 'web-push';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+webpush.setVapidDetails(
+  process.env.VAPID_EMAIL!,
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
+
+export async function POST(request: Request) {
+  const { householdId, title, body } = await request.json();
+
+  const { data: subscriptions } = await supabase
+    .from('push_subscriptions')
+    .select('subscription')
+    .eq('household_id', householdId);
+
+  if (!subscriptions || subscriptions.length === 0) {
+    return NextResponse.json({ message: 'No subscribers' });
+  }
+
+  const payload = JSON.stringify({ title, body });
+
+  const results = await Promise.allSettled(
+    subscriptions.map((row) =>
+      webpush.sendNotification(row.subscription, payload)
+    )
+  );
+
+  const sent = results.filter((r) => r.status === 'fulfilled').length;
+  const failed = results.filter((r) => r.status === 'rejected').length;
+
+  return NextResponse.json({ sent, failed });
+}
