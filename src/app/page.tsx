@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
 import { LogOut } from 'lucide-react';
+import { getSevaAssignments } from '@/utils/seva';
+import { getLaundryAssignments } from '@/utils/laundry';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -11,6 +13,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mySevas, setMySevas] = useState<any[]>([]);
+  const [myLaundryDays, setMyLaundryDays] = useState<string[]>([]);
 
   const setupProfile = async (authUser: any) => {
     try {
@@ -126,6 +130,24 @@ const { error: uErr } = await supabase.from('users').insert({
       setError(err.message ?? 'Setup failed');
     }
   };
+const fetchDashboardData = async (hId: string, firstName: string) => {
+    const [assignments, laundryAssignments] = await Promise.all([
+      getSevaAssignments(hId),
+      getLaundryAssignments(hId),
+    ]);
+
+    // My pending sevas
+    const mine = assignments.filter(
+      (a: any) => a.household_members?.first_name === firstName && !a.is_completed
+    );
+    setMySevas(mine);
+
+    // My laundry days
+    const myDays = laundryAssignments
+      .filter((a: any) => a.household_members?.first_name === firstName)
+      .map((a: any) => a.day_of_week);
+    setMyLaundryDays(myDays);
+  };
 
 useEffect(() => {
   let profileSetupDone = false; // 🔒 lock
@@ -221,7 +243,7 @@ useEffect(() => {
   }
 
   // ─── NOT LOGGED IN ───────────────────────────────────────────
-  if (!user) {
+ if (!user) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
@@ -233,7 +255,6 @@ useEffect(() => {
               Manage household duties together
             </p>
           </div>
-
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
             {error && (
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -278,42 +299,93 @@ useEffect(() => {
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-          Welcome, {dbUser?.first_name} Bhai 👋
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm">
-          {user.email}
-        </p>
 
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">My Sevas</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">—</p>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Completed</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">—</p>
-          </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Members</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">—</p>
-          </div>
-        </div>
-
-        <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <h3 className="font-bold text-gray-900 dark:text-white">Getting Started</h3>
-            {dbUser?.role === 'admin' && (
-              <span className="bg-blue-600 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                Admin
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Use the navigation below to manage sevas, grocery, laundry
-            {dbUser?.role === 'admin' ? ', and members.' : '.'}
+        {/* Greeting */}
+        <div className="mb-8">
+          <p className="text-sm font-semibold text-orange-500 dark:text-orange-400 mb-1">
+            🙏 Jay Swaminarayan
           </p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {dbUser?.first_name} Bhai 👋
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            Here's what you have this week
+          </p>
+          {dbUser?.role === 'admin' && (
+            <span className="inline-block mt-2 bg-blue-600 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
+              Admin
+            </span>
+          )}
         </div>
+
+        {/* My Seva */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-5 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🙏</span>
+            <h3 className="font-bold text-gray-900 dark:text-white">My Seva</h3>
+          </div>
+          {mySevas.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-600 text-sm">No seva assigned</p>
+          ) : (
+            <div className="space-y-2">
+              {mySevas.map((a: any) => (
+                <div key={a.id} className="flex items-center justify-between py-1">
+                  <span className="text-gray-900 dark:text-white font-medium text-sm">
+                    {a.sevas?.name}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    a.is_completed
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                  }`}>
+                    {a.is_completed ? 'Done ✓' : 'Pending'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* My Laundry */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-5 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">👕</span>
+            <h3 className="font-bold text-gray-900 dark:text-white">My Laundry Days</h3>
+          </div>
+          {myLaundryDays.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-600 text-sm">No laundry days assigned</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {myLaundryDays.map((day) => (
+                <span
+                  key={day}
+                  className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium"
+                >
+                  {day}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Garbage Collection Calendar */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🗑️</span>
+              <h3 className="font-bold text-gray-900 dark:text-white">
+                Garbage Collection Schedule
+              </h3>
+            </div>
+          </div>
+          <iframe
+            src="https://api.recollect.net/api/places/6DE97588-6C7B-11E9-B289-92956165592B/services/1063/calendar.html?show_print_setup=1&locale=en&first_view=1&client_id=24521FF8-22D9-11F1-8762-29C0A1C37636"
+            className="w-full"
+            style={{ height: '500px', border: 'none' }}
+            title="Garbage Collection Calendar"
+          />
+        </div>
+
       </div>
 
       <BottomNav isAdmin={dbUser?.role === 'admin'} />
