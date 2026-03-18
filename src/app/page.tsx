@@ -129,25 +129,32 @@ const { error: uErr } = await supabase.from('users').insert({
       console.error('setupProfile error:', err);
       setError(err.message ?? 'Setup failed');
     }
+    
   };
-const fetchDashboardData = async (hId: string, firstName: string) => {
-    const [assignments, laundryAssignments] = await Promise.all([
-      getSevaAssignments(hId),
-      getLaundryAssignments(hId),
-    ]);
+const fetchDashboardData = async (hId: string, userEmail: string) => {
+  const { data: memberCard } = await supabase
+    .from('household_members')
+    .select('id, first_name')
+    .eq('email', userEmail.toLowerCase())
+    .maybeSingle();
 
-    // My pending sevas
-    const mine = assignments.filter(
-      (a: any) => a.household_members?.first_name === firstName && !a.is_completed
-    );
-    setMySevas(mine);
+  if (!memberCard) return;
 
-    // My laundry days
-    const myDays = laundryAssignments
-      .filter((a: any) => a.household_members?.first_name === firstName)
-      .map((a: any) => a.day_of_week);
-    setMyLaundryDays(myDays);
-  };
+  const [assignments, laundryAssignments] = await Promise.all([
+    getSevaAssignments(hId),
+    getLaundryAssignments(hId),
+  ]);
+
+  const mine = assignments.filter(
+    (a: any) => a.member_id === memberCard.id && !a.is_completed
+  );
+  setMySevas(mine);
+
+  const myDays = laundryAssignments
+    .filter((a: any) => a.member_id === memberCard.id)
+    .map((a: any) => a.day_of_week);
+  setMyLaundryDays(myDays);
+};
 
 useEffect(() => {
   let profileSetupDone = false; // 🔒 lock
@@ -167,6 +174,7 @@ useEffect(() => {
 
         if (data) {
           setDbUser(data);
+          await fetchDashboardData(data.household_id, session.user.email!);
         } else if (!profileSetupDone) {
           profileSetupDone = true; // 🔒 lock
           await setupProfile(session.user);
@@ -199,6 +207,7 @@ useEffect(() => {
 
         if (data) {
           setDbUser(data);
+          await fetchDashboardData(data.household_id, session.user.email!);
         } else if (!profileSetupDone) {
           profileSetupDone = true; // 🔒 lock
           await setupProfile(session.user);
