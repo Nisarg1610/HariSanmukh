@@ -1,12 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
 import { LogOut } from 'lucide-react';
 import { getSevaAssignments } from '@/utils/seva';
 import { getLaundryAssignments } from '@/utils/laundry';
 import { registerPushNotifications } from '@/utils/pushNotifications';
+import {
+  browserSupportsWebAuthn,
+  registerPasskey,
+  authenticateWithPasskey,
+  saveLastActive,
+  clearLastActive,
+  saveUserId,
+  getSavedUserId,
+  clearUserId,
+  isSessionExpired,
+} from '@/utils/webauthn';
+
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -17,7 +29,14 @@ export default function Home() {
   const [mySevas, setMySevas] = useState<any[]>([]);
   const [myLaundryDays, setMyLaundryDays] = useState<string[]>([]);
 const [garbageDates, setGarbageDates] = useState<any[]>([]);
+ const [showBiometric, setShowBiometric] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricAttempts, setBiometricAttempts] = useState(0);
+  const [biometricFailed, setBiometricFailed] = useState(false);
+  const MAX_ATTEMPTS = 3;
 
+   const visibilityTimer = useRef<NodeJS.Timeout | null>(null);
+   
   const setupProfile = async (authUser: any) => {
     try {
       console.log('setupProfile called for:', authUser.email);
@@ -127,6 +146,11 @@ const { error: uErr } = await supabase.from('users').insert({
 
       console.log('newDbUser:', newDbUser);
       setDbUser(newDbUser);
+       saveUserId(authUser.id);
+      saveLastActive();
+      if (browserSupportsWebAuthn()) {
+        await registerPasskey(authUser.id, authUser.email);
+      }
     } catch (err: any) {
       console.error('setupProfile error:', err);
       setError(err.message ?? 'Setup failed');
@@ -161,6 +185,29 @@ const calData = await calRes.json();
 setGarbageDates(calData.events);
 };
 
+ useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // App went to background — start 2 min timer
+        visibilityTimer.current = setTimeout(() => {
+          clearLastActive();
+        }, 2 * 60 * 1000);
+      } else {
+        // App came back to foreground
+        if (visibilityTimer.current) {
+          clearTimeout(visibilityTimer.current);
+          visibilityTimer.current = null;
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (visibilityTimer.current) clearTimeout(visibilityTimer.current);
+    };
+  }, []);
+
 useEffect(() => {
   let profileSetupDone = false; // 🔒 lock
 
@@ -169,7 +216,16 @@ useEffect(() => {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
-        setUser(session.user);
+        
+        const savedUserId = getSavedUserId();
+          const sessionExpired = isSessionExpired();
+          if (sessionExpired && savedUserId && browserSupportsWebAuthn()) {
+            setShowBiometric(true);
+            setLoading(false);
+            return;
+          }
+          setUser(session.user);
+
 
         const { data } = await supabase
           .from('users')
@@ -202,6 +258,7 @@ useEffect(() => {
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setDbUser(null);
+        clearUserId();
       } else if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
 
@@ -244,11 +301,141 @@ useEffect(() => {
     console.log('GROQ KEY:', process.env.NEXT_PUBLIC_GROQ_API_KEY);
   };
 
+const handleBiometricLogin = async () => {
+    const savedUserId = getSavedUserId();
+    if (!savedUserId) return;
+
+    try {
+      setBiometricLoading(true);
+      setError(null);
+
+      const verified = await authenticateWithPasskey(savedUserId);
+
+      if (verified) {
+        // Restore session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          const { data } = await supabase
+            .from('users').select('*').eq('id', session.user.id).maybeSingle();
+          if (data) {
+            setDbUser(data);
+            saveLastActive();
+            setShowBiometric(false);
+            await fetchDashboardData(data.household_id, session.user.email!);
+          }
+        }
+      } else {
+        const newAttempts = biometricAttempts + 1;
+        setBiometricAttempts(newAttempts);
+
+        if (newAttempts >= MAX_ATTEMPTS) {
+          setBiometricFailed(true);
+          setShowBiometric(false);
+          setError('Biometric failed 3 times. Please sign in with Google.');
+        } else {
+          setError(`Biometric failed. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
+        }
+      }
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setDbUser(null);
+     clearUserId();
+    setShowBiometric(false);
+    setBiometricAttempts(0);
+    setBiometricFailed(false);
   };
+
+   if (showBiometric) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-10">
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
+              HariSanmukh
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">Welcome back</p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Biometric icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33"/>
+                </svg>
+              </div>
+            </div>
+
+            <p className="text-center text-gray-700 dark:text-gray-300 font-semibold mb-2">
+              Verify your identity
+            </p>
+            <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">
+              Use Face ID or fingerprint to continue
+            </p>
+
+            {/* Attempt indicator */}
+            {biometricAttempts > 0 && (
+              <div className="flex justify-center gap-2 mb-4">
+                {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      i < biometricAttempts
+                        ? 'bg-red-500'
+                        : 'bg-gray-200 dark:bg-slate-600'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={handleBiometricLogin}
+              disabled={biometricLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-3 transition-all mb-4 disabled:opacity-50"
+            >
+              {biometricLoading ? (
+                <span>Verifying...</span>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33"/>
+                  </svg>
+                  Use Face ID / Fingerprint
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
+              <span className="text-xs text-gray-400">or</span>
+              <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
+            </div>
+
+            <button
+              onClick={() => { setShowBiometric(false); setBiometricFailed(true); setError(null); }}
+              className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-2"
+            >
+              Sign in with Google instead
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (loading) {
     return (
