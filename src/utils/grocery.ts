@@ -17,7 +17,7 @@ export async function getGroceryItems(householdId: string, listType: 'weekly' | 
 export async function saveGroceryItems(
   householdId: string,
   listType: 'weekly' | 'monthly',
-  items: { name: string; quantity: string; category: string }[]
+  items: { name: string; quantity: string }[]
 ) {
   await supabase
     .from('grocery_items')
@@ -34,7 +34,6 @@ export async function saveGroceryItems(
         household_id: householdId,
         name: item.name,
         quantity: item.quantity,
-        category: item.category || 'General',
         list_type: listType,
         order_index: index,
       }))

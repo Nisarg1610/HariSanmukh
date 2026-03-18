@@ -16,7 +16,6 @@ interface GroceryItem {
   id?: string;
   name: string;
   quantity: string;
-  category: string;
 }
 
 export default function GroceryPage() {
@@ -76,7 +75,9 @@ export default function GroceryPage() {
         if (member) setMemberId(member.id);
 
         await fetchItems(dbUser.household_id, 'weekly');
-        if (dbUser.role === 'admin') await fetchSuggestions(dbUser.household_id);
+        if (dbUser.role === 'admin') {
+          await fetchSuggestions(dbUser.household_id);
+        }
       } catch (err) {
         console.error(err);
         window.location.href = '/';
@@ -91,20 +92,10 @@ export default function GroceryPage() {
     if (householdId) fetchItems(householdId, activeTab);
   }, [activeTab, householdId]);
 
-  // Group items by category
-  const groupedItems = items.reduce((acc, item) => {
-    const cat = item.category || 'General';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {} as Record<string, GroceryItem[]>);
-
   const handleCopy = () => {
-    const text = Object.entries(groupedItems)
-      .map(([cat, catItems]) =>
-        `${cat}:\n${catItems.map((i) => `  - ${i.name}${i.quantity ? ` (${i.quantity})` : ''}`).join('\n')}`
-      )
-      .join('\n\n');
+    const text = items
+      .map((item) => `${item.name}${item.quantity ? ` - ${item.quantity}` : ''}`)
+      .join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -126,7 +117,7 @@ export default function GroceryPage() {
   };
 
   const handleStartEdit = () => {
-    setEditItems(items.map((i) => ({ name: i.name, quantity: i.quantity || '', category: i.category || 'General' })));
+    setEditItems(items.map((i) => ({ name: i.name, quantity: i.quantity || '' })));
     setEditMode(true);
   };
 
@@ -147,57 +138,29 @@ export default function GroceryPage() {
   };
 
   const handleAddRow = () => {
-    setEditItems([...editItems, { name: '', quantity: '', category: 'General' }]);
+    setEditItems([...editItems, { name: '', quantity: '' }]);
   };
 
   const handleRemoveRow = (index: number) => {
     setEditItems(editItems.filter((_, i) => i !== index));
   };
 
-  // Grok AI paste
-const handleAIPaste = async () => {
-  if (!pasteText.trim()) return;
-  try {
-    setAiProcessing(true);
-    setError(null);
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [{
-          role: 'user',
-          content: `You are a grocery list parser. Extract all grocery items from the input and return ONLY a valid JSON array with no markdown, no code blocks, no explanation, no extra text whatsoever. Just the raw JSON array starting with [ and ending with ].
-
-Each item must have:
-- "name": the item name in clean English
-- "quantity": the quantity/amount as a string, empty string if not mentioned
-
-Rules:
-- Ignore category headers, emojis, bullet points, dashes
-- Clean up item names (remove extra spaces, special chars)
-- Keep quantities as-is (e.g. "1 bag", "6 nang", "2 judhi", "4 pck")
-- If quantity has local units like "nang", "judhi", "pck", "daba", "judhi", keep them as-is
-- Return ONLY the JSON array, nothing else, no explanation before or after
-
-Input:
-${pasteText}`,
-        }],
-        max_tokens: 1000,
-        temperature: 0,
-      }),
-    });
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content ?? '';
-    console.log('AI response:', text);
-
+  const handleAIPaste = async () => {
+    if (!pasteText.trim()) return;
     try {
-      // Extract JSON array even if AI adds any extra text
+      setAiProcessing(true);
+      setError(null);
+
+      const response = await fetch('/api/grocery-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: pasteText }),
+      });
+
+      const data = await response.json();
+      const text = data.content ?? '';
+      console.log('AI response:', text);
+
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         setError('AI could not parse the list. Try again.');
@@ -213,15 +176,12 @@ ${pasteText}`,
       } else {
         setError('AI returned empty list. Try again.');
       }
-    } catch {
-      setError('Could not parse AI response. Try again.');
+    } catch (err) {
+      setError('AI processing failed. Check your connection.');
+    } finally {
+      setAiProcessing(false);
     }
-  } catch (err) {
-    setError('AI processing failed. Check your connection.');
-  } finally {
-    setAiProcessing(false);
-  }
-};
+  };
 
   const handleShowSuggestions = async () => {
     setShowSuggestions(true);
@@ -244,7 +204,11 @@ ${pasteText}`,
       {(['weekly', 'monthly'] as const).map((tab) => (
         <button
           key={tab}
-          onClick={() => { setActiveTab(tab); setEditMode(false); setPasteMode(false); }}
+          onClick={() => {
+            setActiveTab(tab);
+            setEditMode(false);
+            setPasteMode(false);
+          }}
           className={`px-5 py-2 rounded-full text-sm font-semibold transition-all capitalize ${
             activeTab === tab
               ? 'bg-blue-600 text-white'
@@ -257,34 +221,35 @@ ${pasteText}`,
     </div>
   );
 
-  const GroceryList = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-        <p className="font-semibold text-gray-900 dark:text-white capitalize">{activeTab} List</p>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-        >
-          {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-          {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
+  // ── USER VIEW ──────────────────────────────────────────────
+  if (userRole === 'user') {
+    return (
+      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Grocery</h1>
+          <TabBar />
 
-      {items.length === 0 ? (
-        <p className="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
-          No items yet.
-        </p>
-      ) : (
-        <div>
-          {Object.entries(groupedItems).map(([category, catItems]) => (
-            <div key={category}>
-              <div className="px-4 py-2 bg-gray-50 dark:bg-slate-900/50">
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  {category}
-                </p>
-              </div>
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 mb-6">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+              <p className="font-semibold text-gray-900 dark:text-white capitalize">
+                {activeTab} List
+              </p>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+
+            {items.length === 0 ? (
+              <p className="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
+                No items yet.
+              </p>
+            ) : (
               <ul className="divide-y divide-gray-100 dark:divide-slate-700">
-                {catItems.map((item, i) => (
+                {items.map((item, i) => (
                   <li key={i} className="flex items-center justify-between px-4 py-3">
                     <span className="text-gray-900 dark:text-white">{item.name}</span>
                     {item.quantity && (
@@ -293,29 +258,17 @@ ${pasteText}`,
                   </li>
                 ))}
               </ul>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+            )}
+          </div>
 
-  // ── USER VIEW ──────────────────────────────────────────────
-  if (userRole === 'user') {
-    return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Grocery</h1>
-          <TabBar />
-          <div className="mb-6"><GroceryList /></div>
-
-          {/* Suggestion box */}
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-            <p className="font-semibold text-gray-900 dark:text-white mb-3">Suggest something</p>
+            <p className="font-semibold text-gray-900 dark:text-white mb-3">
+              Suggest something
+            </p>
             <textarea
               value={suggestionText}
               onChange={(e) => setSuggestionText(e.target.value)}
-              placeholder={`Suggest items or changes for the ${activeTab} list...`}
+              placeholder={`Suggest items to add to the ${activeTab} list...`}
               rows={3}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
@@ -348,6 +301,7 @@ ${pasteText}`,
           <button
             onClick={handleShowSuggestions}
             className="relative p-2 text-gray-500 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+            title="Member suggestions"
           >
             <Bell size={22} />
             {unreadCount > 0 && (
@@ -366,12 +320,14 @@ ${pasteText}`,
           </div>
         )}
 
-        {/* Suggestions panel */}
         {showSuggestions && (
           <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
               <p className="font-semibold text-gray-900 dark:text-white">Member Suggestions</p>
-              <button onClick={() => setShowSuggestions(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <button
+                onClick={() => setShowSuggestions(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -395,12 +351,10 @@ ${pasteText}`,
           </div>
         )}
 
-        {/* Paste with AI */}
         {pasteMode ? (
           <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-            <p className="font-semibold text-gray-900 dark:text-white mb-1">Paste your list</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Grok AI will convert any format to a categorized list
+            <p className="font-semibold text-gray-900 dark:text-white mb-3">
+              Paste your list — AI will format it
             </p>
             <textarea
               value={pasteText}
@@ -416,7 +370,7 @@ ${pasteText}`,
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
               >
                 <Wand2 size={16} />
-                {aiProcessing ? 'Grok is thinking...' : 'Convert with Grok'}
+                {aiProcessing ? 'Processing...' : 'Process with AI'}
               </button>
               <button
                 onClick={() => { setPasteMode(false); setPasteText(''); }}
@@ -457,18 +411,7 @@ ${pasteText}`,
                         setEditItems(updated);
                       }}
                       placeholder="Qty"
-                      className="w-16 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      value={item.category}
-                      onChange={(e) => {
-                        const updated = [...editItems];
-                        updated[i] = { ...updated[i], category: e.target.value };
-                        setEditItems(updated);
-                      }}
-                      placeholder="Category"
-                      className="w-24 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-20 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                       onClick={() => handleRemoveRow(i)}
@@ -517,7 +460,7 @@ ${pasteText}`,
                 onClick={() => setPasteMode(true)}
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
               >
-                <Wand2 size={15} /> Paste with Grok
+                <Wand2 size={15} /> Paste with AI
               </button>
               <button
                 onClick={handleCopy}
@@ -527,7 +470,30 @@ ${pasteText}`,
                 {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
-            <GroceryList />
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                <p className="font-semibold text-gray-900 dark:text-white capitalize">
+                  {activeTab} List
+                </p>
+              </div>
+              {items.length === 0 ? (
+                <p className="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
+                  No items yet. Edit the list or paste with AI.
+                </p>
+              ) : (
+                <ul className="divide-y divide-gray-100 dark:divide-slate-700">
+                  {items.map((item, i) => (
+                    <li key={i} className="flex items-center justify-between px-4 py-3">
+                      <span className="text-gray-900 dark:text-white">{item.name}</span>
+                      {item.quantity && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{item.quantity}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
       </div>
