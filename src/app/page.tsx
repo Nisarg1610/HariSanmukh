@@ -15,6 +15,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [mySevas, setMySevas] = useState<any[]>([]);
   const [myLaundryDays, setMyLaundryDays] = useState<string[]>([]);
+const [garbageDates, setGarbageDates] = useState<any[]>([]);
 
   const setupProfile = async (authUser: any) => {
     try {
@@ -154,6 +155,9 @@ const fetchDashboardData = async (hId: string, userEmail: string) => {
     .filter((a: any) => a.member_id === memberCard.id)
     .map((a: any) => a.day_of_week);
   setMyLaundryDays(myDays);
+  const calRes = await fetch('/api/garbage-calendar');
+const calData = await calRes.json();
+setGarbageDates(calData.events);
 };
 
 useEffect(() => {
@@ -378,22 +382,52 @@ useEffect(() => {
         </div>
 
         {/* Garbage Collection Calendar */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🗑️</span>
-              <h3 className="font-bold text-gray-900 dark:text-white">
-                Garbage Collection Schedule
-              </h3>
-            </div>
-          </div>
-          <iframe
-            src="https://api.recollect.net/api/places/6DE97588-6C7B-11E9-B289-92956165592B/services/1063/calendar.html?show_print_setup=1&locale=en&first_view=1&client_id=24521FF8-22D9-11F1-8762-29C0A1C37636"
-            className="w-full"
-            style={{ height: '500px', border: 'none' }}
-            title="Garbage Collection Calendar"
-          />
+       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-5">
+  <div className="flex items-center gap-2 mb-4">
+    <span className="text-lg">🗑️</span>
+    <h3 className="font-bold text-gray-900 dark:text-white">Garbage Collection</h3>
+  </div>
+  <div className="flex flex-wrap gap-2">
+    {garbageDates.map((event) => {
+      const date = new Date(event.date + 'T00:00:00');
+      const isPast = date < new Date(new Date().setHours(0,0,0,0));
+      const isToday = date.toDateString() === new Date().toDateString();
+      return (
+        <div
+          key={event.date}
+          className={`flex flex-col items-center px-4 py-3 rounded-xl border-2 ${
+            isToday
+              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+              : isPast
+              ? 'border-gray-200 dark:border-slate-700 opacity-50'
+              : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700'
+          }`}
+        >
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+            {date.toLocaleDateString('en-US', { weekday: 'short' })}
+          </span>
+          <span className={`text-xl font-bold ${
+            isToday ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'
+          }`}>
+            {date.getDate()}
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {date.toLocaleDateString('en-US', { month: 'short' })}
+          </span>
+          <span className="text-xs mt-1 text-gray-500 dark:text-gray-400 text-center">
+            {event.title}
+          </span>
+          {isToday && (
+            <span className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">Today!</span>
+          )}
+          {isPast && !isToday && (
+            <span className="text-xs text-gray-400 mt-1">Done</span>
+          )}
         </div>
+      );
+    })}
+  </div>
+</div>
 
       </div>
 
