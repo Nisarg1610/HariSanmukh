@@ -203,6 +203,7 @@ useEffect(() => {
       setError(err.message ?? 'Sign in failed');
       setSigningIn(false);
     }
+    console.log('GROQ KEY:', process.env.NEXT_PUBLIC_GROQ_API_KEY);
   };
 
   const handleLogout = async () => {
