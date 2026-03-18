@@ -387,46 +387,67 @@ useEffect(() => {
     <span className="text-lg">🗑️</span>
     <h3 className="font-bold text-gray-900 dark:text-white">Garbage Collection</h3>
   </div>
-  <div className="flex flex-wrap gap-2">
-    {garbageDates.map((event) => {
-      const date = new Date(event.date + 'T00:00:00');
-      const isPast = date < new Date(new Date().setHours(0,0,0,0));
-      const isToday = date.toDateString() === new Date().toDateString();
-      return (
-        <div
-          key={event.date}
-          className={`flex flex-col items-center px-4 py-3 rounded-xl border-2 ${
-            isToday
-              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-              : isPast
-              ? 'border-gray-200 dark:border-slate-700 opacity-50'
-              : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700'
-          }`}
-        >
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-            {date.toLocaleDateString('en-US', { weekday: 'short' })}
-          </span>
-          <span className={`text-xl font-bold ${
-            isToday ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'
-          }`}>
-            {date.getDate()}
-          </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {date.toLocaleDateString('en-US', { month: 'short' })}
-          </span>
-          <span className="text-xs mt-1 text-gray-500 dark:text-gray-400 text-center">
-            {event.title}
-          </span>
-          {isToday && (
-            <span className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">Today!</span>
-          )}
-          {isPast && !isToday && (
-            <span className="text-xs text-gray-400 mt-1">Done</span>
-          )}
+ <div className="space-y-2">
+  {garbageDates.map((event) => {
+    const date = new Date(event.date + 'T00:00:00');
+    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+    const isToday = date.toDateString() === new Date().toDateString();
+
+    return (
+      <div
+        key={event.date}
+        className={`flex items-center gap-4 px-4 py-3 rounded-xl border-2 ${
+          isToday
+            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+            : isPast
+            ? 'border-gray-100 dark:border-slate-800 opacity-50'
+            : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50'
+        }`}
+      >
+        {/* Date number */}
+        <div className={`text-2xl font-bold w-10 text-center ${
+          isToday
+            ? 'text-green-600 dark:text-green-400'
+            : isPast
+            ? 'text-gray-400'
+            : 'text-gray-900 dark:text-white'
+        }`}>
+          {date.getDate()}
         </div>
-      );
-    })}
-  </div>
+
+        {/* Divider */}
+        <div className="w-px h-8 bg-gray-200 dark:bg-slate-600" />
+
+        {/* Day and month */}
+        <div className="flex-1">
+          <p className={`font-semibold text-sm ${
+            isToday ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'
+          }`}>
+            {date.toLocaleDateString('en-US', { weekday: 'long' })}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+
+        {/* Event title */}
+        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 text-right max-w-24">
+          {event.title}
+        </span>
+
+        {/* Status badge */}
+        {isToday && (
+          <span className="text-xs bg-green-500 text-white font-semibold px-2 py-0.5 rounded-full">
+            Today
+          </span>
+        )}
+        {isPast && !isToday && (
+          <span className="text-xs text-gray-400">✓</span>
+        )}
+      </div>
+    );
+  })}
+</div>
 </div>
 
 
