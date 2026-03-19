@@ -255,24 +255,26 @@ useEffect(() => {
 
 const init = async () => {
   try {
-    // ✅ Always sign out on fresh page load/refresh
-    // Use sessionStorage (clears on tab close/refresh) to track if user logged in this session
+    // ✅ Check biometric availability FIRST before anything else
+    const savedUserId = getSavedUserId();
+    const passkeyRegistered = savedUserId
+      ? localStorage.getItem(`hs_passkey_${savedUserId}`)
+      : null;
+
+    console.log('savedUserId:', savedUserId);
+    console.log('passkeyRegistered:', passkeyRegistered);
+    console.log('browserSupportsWebAuthn:', browserSupportsWebAuthn());
+
+    if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
+      setBiometricAvailable(true);
+      console.log('Biometric available!');
+    }
+
     const loggedInThisSession = sessionStorage.getItem('hs_logged_in');
-    
+
     if (!loggedInThisSession) {
-      // Fresh load — sign out any existing Supabase session
+      // Fresh load — sign out Supabase session
       await supabase.auth.signOut();
-      
-      // Check if passkey available for biometric button
-      const savedUserId = getSavedUserId();
-      const passkeyRegistered = savedUserId
-        ? localStorage.getItem(`hs_passkey_${savedUserId}`)
-        : null;
-      
-      if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
-        setBiometricAvailable(true);
-      }
-      
       setLoading(false);
       return;
     }
