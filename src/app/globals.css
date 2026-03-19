@@ -7,94 +7,49 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --sat: env(safe-area-inset-top);
-  --sab: env(safe-area-inset-bottom);
-  --sal: env(safe-area-inset-left);
-  --sar: env(safe-area-inset-right);
-
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-
-  /* ── Light theme — using the palette as accents ── */
-  --bg: #f0f2f7;
-  --bg-card: #ffffff;
-  --bg-card-2: #f5f6fa;
-  --bg-elevated: #ffffff;
-  --text-1: #121524;
-  --text-2: #384c65;
-  --text-3: #7a8ba0;
-  --text-4: #b0bec9;
-  --border: oklch(0.922 0 0);
-  --border-strong: rgba(72, 95, 136, 0.25);
-  --accent: oklch(0.97 0 0);
-  --accent-2: #485f88;
-  --accent-bg: #edf0f7;
-  --accent-text: #384c65;
-  --green: #2d9e6b;
-  --green-bg: #e8f7f1;
-  --red: #e05252;
-  --red-bg: #fdf0f0;
-  --yellow: #d4920a;
-  --yellow-bg: #fdf5e6;
-  --separator: rgba(72, 95, 136, 0.1);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: 240 243 247;        /* --bg */
+  --foreground: 18 21 36;           /* --text-1 */
+  --card: 255 255 255;              /* --bg-card */
+  --card-foreground: 18 21 36;
+  --popover: 255 255 255;
+  --popover-foreground: 18 21 36;
+  --primary: 56 76 101;             /* Cello --accent */
+  --primary-foreground: 255 255 255;
+  --secondary: 245 246 250;         /* --bg-card-2 */
+  --secondary-foreground: 56 76 101;
+  --muted: 245 246 250;
+  --muted-foreground: 122 139 160;  /* --text-3 */
+  --accent: 237 240 247;            /* --accent-bg */
+  --accent-foreground: 56 76 101;
+  --destructive: 224 82 82;         /* --red */
+  --destructive-foreground: 255 255 255;
+  --border: 72 95 136 / 0.12;
+  --input: 72 95 136 / 0.12;
+  --ring: 56 76 101;
+  --radius: 0.875rem;               /* --radius-lg */
 }
 
+/* shadcn/ui overrides — dark */
 html.dark {
-  /* ── Dark theme — full palette ── */
-  --bg: #121524;
-  --bg-card: #1a1f30;
-  --bg-card-2: #222840;
-  --bg-elevated: #222840;
-  --text-1: #e8edf5;
-  --text-2: #c0c9db;
-  --text-3: #9daccc;
-  --text-4: #485f88;
-  --border: rgba(153, 172, 204, 0.1);
-  --border-strong: rgba(153, 172, 204, 0.2);
-  --accent: #9daccc;
-  --accent-2: #c0c9db;
-  --accent-bg: #1e2640;
-  --accent-text: #9daccc;
-  --green: #30c97a;
-  --green-bg: #0d2a1c;
-  --red: #ff6b6b;
-  --red-bg: #2a1010;
-  --yellow: #ffd166;
-  --yellow-bg: #2a2010;
-  --separator: rgba(153, 172, 204, 0.08);
-  color-scheme: dark;
+  --background: 18 21 36;           /* Black Russian */
+  --foreground: 232 237 245;
+  --card: 26 31 48;                 /* --bg-card */
+  --card-foreground: 232 237 245;
+  --popover: 34 40 64;
+  --popover-foreground: 232 237 245;
+  --primary: 157 172 204;           /* Echo Blue */
+  --primary-foreground: 18 21 36;
+  --secondary: 34 40 64;
+  --secondary-foreground: 192 201 219;
+  --muted: 34 40 64;
+  --muted-foreground: 157 172 204;
+  --accent: 30 38 64;
+  --accent-foreground: 157 172 204;
+  --destructive: 255 107 107;
+  --destructive-foreground: 18 21 36;
+  --border: 153 172 204 / 0.10;
+  --input: 153 172 204 / 0.10;
+  --ring: 157 172 204;
 }
 
 * {
