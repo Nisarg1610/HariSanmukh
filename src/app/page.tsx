@@ -427,7 +427,7 @@ export default function Home() {
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 rounded-lg overflow-hidden">
   <img
-    src="/icon-192.png"
+    src="/icon-256.png"
     alt="HariSanmukh"
     className="w-full h-full object-cover"
   />
