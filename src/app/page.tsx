@@ -253,58 +253,46 @@ const handleSetupPasskey = async () => {
 useEffect(() => {
   let profileSetupDone = false;
 
-const init = async () => {
-  try {
-    // ✅ Check biometric availability FIRST before anything else
-    const savedUserId = getSavedUserId();
-    const passkeyRegistered = savedUserId
-      ? localStorage.getItem(`hs_passkey_${savedUserId}`)
-      : null;
+  const init = async () => {
+    try {
+      // Check passkey availability for login page
+      const savedUserId = getSavedUserId();
+      const passkeyRegistered = savedUserId
+        ? localStorage.getItem(`hs_passkey_${savedUserId}`)
+        : null;
 
-    console.log('savedUserId:', savedUserId);
-    console.log('passkeyRegistered:', passkeyRegistered);
-    console.log('browserSupportsWebAuthn:', browserSupportsWebAuthn());
-
-    if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
-      setBiometricAvailable(true);
-      console.log('Biometric available!');
-    }
-
-    const loggedInThisSession = sessionStorage.getItem('hs_logged_in');
-
-    if (!loggedInThisSession) {
-      // Fresh load — sign out Supabase session
-      await supabase.auth.signOut();
-      setLoading(false);
-      return;
-    }
-
-    // User logged in this session — restore normally
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setUser(session.user);
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (data) {
-        setDbUser(data);
-        saveUserId(session.user.id);
-        await fetchDashboardData(data.household_id, session.user.email!);
-        await registerPushNotifications(data.id, data.household_id);
-      } else if (!profileSetupDone) {
-        profileSetupDone = true;
-        await setupProfile(session.user);
+      if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
+        setBiometricAvailable(true);
       }
+
+      // Check existing session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        setUser(session.user);
+
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          setDbUser(data);
+          saveUserId(session.user.id);
+          await fetchDashboardData(data.household_id, session.user.email!);
+          await registerPushNotifications(data.id, data.household_id);
+        } else if (!profileSetupDone) {
+          profileSetupDone = true;
+          await setupProfile(session.user);
+        }
+      }
+    } catch (err) {
+      console.error('init error:', err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('init error:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   init();
 
@@ -316,7 +304,7 @@ const init = async () => {
         setUser(null);
         setDbUser(null);
         clearUserId();
-        sessionStorage.removeItem('hs_logged_in');
+        setBiometricAvailable(false);
         setLoading(false);
         return;
       }
@@ -325,6 +313,7 @@ const init = async () => {
 
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
+
         const { data } = await supabase
           .from('users')
           .select('*')
@@ -334,7 +323,6 @@ const init = async () => {
         if (data) {
           setDbUser(data);
           saveUserId(session.user.id);
-          saveLastActive();
           await tryRegisterPasskey(session.user.id, session.user.email!);
           await fetchDashboardData(data.household_id, session.user.email!);
           await registerPushNotifications(data.id, data.household_id);
@@ -378,19 +366,24 @@ const handleBiometricLogin = async () => {
     const verified = await authenticateWithPasskey(savedUserId);
 
     if (verified) {
+      // Session should still exist — just fetch user data
       const { data: { session } } = await supabase.auth.getSession();
+
       if (session?.user) {
         setUser(session.user);
         const { data } = await supabase
-          .from('users').select('*').eq('id', session.user.id).maybeSingle();
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
         if (data) {
           setDbUser(data);
-          saveLastActive();
           await fetchDashboardData(data.household_id, session.user.email!);
         }
       } else {
-        // Supabase session expired — need Google login
-        setError('Session expired. Please sign in with Google.');
+        // Supabase session expired (after weeks) — need Google login
+        setError('Your session has fully expired. Please sign in with Google once.');
         setBiometricAvailable(false);
         clearUserId();
       }
@@ -409,14 +402,14 @@ const handleBiometricLogin = async () => {
   }
 };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setDbUser(null);
-    clearUserId();
-    setShowBiometric(false);
-    setBiometricAttempts(0);
-  };
+const handleLogout = async () => {
+  await supabase.auth.signOut();
+  setUser(null);
+  setDbUser(null);
+  clearUserId();
+  setBiometricAvailable(false);
+  setBiometricAttempts(0);
+};
 
   // ── Biometric screen ──────────────────────────────────────
   if (showBiometric) {
