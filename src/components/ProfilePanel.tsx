@@ -53,7 +53,6 @@ useEffect(() => {
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
-
 const handleToggleDarkMode = () => {
   const isDark = document.documentElement.classList.contains('dark');
   if (isDark) {
