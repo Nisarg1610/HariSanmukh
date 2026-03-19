@@ -252,10 +252,10 @@ const handleSetupPasskey = async () => {
   // ── Main auth useEffect ───────────────────────────────────
 useEffect(() => {
   let profileSetupDone = false;
-  let initHandled = false; // ← this is the key
 
   const init = async () => {
     try {
+      // Check biometric availability
       const savedUserId = getSavedUserId();
       const passkeyRegistered = savedUserId
         ? localStorage.getItem(`hs_passkey_${savedUserId}`)
@@ -265,6 +265,7 @@ useEffect(() => {
         setBiometricAvailable(true);
       }
 
+      // Check existing session
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
@@ -288,8 +289,7 @@ useEffect(() => {
     } catch (err) {
       console.error('init error:', err);
     } finally {
-      initHandled = true; // ← mark done
-      setLoading(false);  // ← always runs
+      setLoading(false); // ✅ ONLY place setLoading(false) is called
     }
   };
 
@@ -299,6 +299,7 @@ useEffect(() => {
     async (event, session) => {
       console.log('onAuthStateChange event:', event, session?.user?.email);
 
+      // ✅ ONLY handle SIGNED_OUT — everything else handled by init()
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setDbUser(null);
@@ -308,10 +309,14 @@ useEffect(() => {
         return;
       }
 
-      // ← Skip everything if init() already handled the session
-      if (initHandled) return;
-
+      // ✅ Handle new Google OAuth sign in ONLY
+      // This fires when user completes Google login redirect
       if (event === 'SIGNED_IN' && session?.user) {
+        // Check if this is a NEW sign in (not a refresh)
+        // On refresh, getSession() in init() already handled it
+        // On new login, user/dbUser will be null
+        if (user !== null) return; // ✅ already handled by init()
+
         setUser(session.user);
         const { data } = await supabase
           .from('users')
