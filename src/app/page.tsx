@@ -253,45 +253,56 @@ const handleSetupPasskey = async () => {
 useEffect(() => {
   let profileSetupDone = false;
 
-  const init = async () => {
-    try {
-      // Always check if passkey exists for quick biometric login
+const init = async () => {
+  try {
+    // ✅ Always sign out on fresh page load/refresh
+    // Use sessionStorage (clears on tab close/refresh) to track if user logged in this session
+    const loggedInThisSession = sessionStorage.getItem('hs_logged_in');
+    
+    if (!loggedInThisSession) {
+      // Fresh load — sign out any existing Supabase session
+      await supabase.auth.signOut();
+      
+      // Check if passkey available for biometric button
       const savedUserId = getSavedUserId();
       const passkeyRegistered = savedUserId
         ? localStorage.getItem(`hs_passkey_${savedUserId}`)
         : null;
-
+      
       if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
         setBiometricAvailable(true);
       }
-
-      // Check if session exists (for normal refresh without sign out)
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        setUser(session.user);
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (data) {
-          setDbUser(data);
-          saveUserId(session.user.id);
-          await fetchDashboardData(data.household_id, session.user.email!);
-          await registerPushNotifications(data.id, data.household_id);
-        } else if (!profileSetupDone) {
-          profileSetupDone = true;
-          await setupProfile(session.user);
-        }
-      }
-    } catch (err) {
-      console.error('init error:', err);
-    } finally {
+      
       setLoading(false);
+      return;
     }
-  };
+
+    // User logged in this session — restore normally
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      setUser(session.user);
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (data) {
+        setDbUser(data);
+        saveUserId(session.user.id);
+        await fetchDashboardData(data.household_id, session.user.email!);
+        await registerPushNotifications(data.id, data.household_id);
+      } else if (!profileSetupDone) {
+        profileSetupDone = true;
+        await setupProfile(session.user);
+      }
+    }
+  } catch (err) {
+    console.error('init error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   init();
 
@@ -303,6 +314,7 @@ useEffect(() => {
         setUser(null);
         setDbUser(null);
         clearUserId();
+        sessionStorage.removeItem('hs_logged_in');
         setLoading(false);
         return;
       }
