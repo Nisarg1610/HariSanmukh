@@ -255,7 +255,6 @@ useEffect(() => {
 
   const init = async () => {
     try {
-      // Check biometric availability
       const savedUserId = getSavedUserId();
       const passkeyRegistered = savedUserId
         ? localStorage.getItem(`hs_passkey_${savedUserId}`)
@@ -265,7 +264,6 @@ useEffect(() => {
         setBiometricAvailable(true);
       }
 
-      // Check existing session
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
@@ -289,7 +287,7 @@ useEffect(() => {
     } catch (err) {
       console.error('init error:', err);
     } finally {
-      setLoading(false); // ✅ ONLY place setLoading(false) is called
+      setLoading(false);
     }
   };
 
@@ -299,7 +297,6 @@ useEffect(() => {
     async (event, session) => {
       console.log('onAuthStateChange event:', event, session?.user?.email);
 
-      // ✅ ONLY handle SIGNED_OUT — everything else handled by init()
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setDbUser(null);
@@ -309,14 +306,7 @@ useEffect(() => {
         return;
       }
 
-      // ✅ Handle new Google OAuth sign in ONLY
-      // This fires when user completes Google login redirect
       if (event === 'SIGNED_IN' && session?.user) {
-        // Check if this is a NEW sign in (not a refresh)
-        // On refresh, getSession() in init() already handled it
-        // On new login, user/dbUser will be null
-        if (user !== null) return; // ✅ already handled by init()
-
         setUser(session.user);
         const { data } = await supabase
           .from('users')
