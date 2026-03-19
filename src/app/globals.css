@@ -6,7 +6,11 @@
   --sal: env(safe-area-inset-left);
   --sar: env(safe-area-inset-right);
 }
-
+@media (prefers-color-scheme: dark) {
+  .glass-header {
+    background: rgba(15, 23, 42, 0.7) !important;
+  }
+}
 * {
   box-sizing: border-box;
 }
