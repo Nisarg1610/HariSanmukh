@@ -249,117 +249,98 @@ const handleSetupPasskey = async () => {
   }, []);
 
   // ── Main auth useEffect ───────────────────────────────────
-  useEffect(() => {
-    let profileSetupDone = false;
-    let initDone = false;
+ useEffect(() => {
+  let profileSetupDone = false;
 
-    const init = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
+  const init = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-        if (session?.user) {
-          const savedUserId = getSavedUserId();
-          const sessionExpired = isSessionExpired();
-          const passkeyRegistered = savedUserId
-            ? localStorage.getItem(`hs_passkey_${savedUserId}`)
-            : null;
+      if (session?.user) {
+        const savedUserId = getSavedUserId();
+        const sessionExpired = isSessionExpired();
+        const passkeyRegistered = savedUserId
+          ? localStorage.getItem(`hs_passkey_${savedUserId}`)
+          : null;
 
-          console.log('savedUserId:', savedUserId);
-          console.log('sessionExpired:', sessionExpired);
-          console.log('passkeyRegistered:', passkeyRegistered);
-
-          // ✅ Only show biometric if session expired AND passkey exists
-          if (sessionExpired && savedUserId && browserSupportsWebAuthn() && passkeyRegistered) {
-            setShowBiometric(true);
-            initDone = true;
-            setLoading(false);
-            return;
-          }
-
-          setUser(session.user);
-
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (data) {
-            setDbUser(data);
-
-            // ✅ Save userId + lastActive for EXISTING users
-            saveUserId(session.user.id);
-            saveLastActive();
-
-            // ✅ Register passkey for existing users who haven't done it yet
-            await tryRegisterPasskey(session.user.id, session.user.email!);
-
-            await fetchDashboardData(data.household_id, session.user.email!);
-
-            // ✅ Push notifications only once here (not in onAuthStateChange)
-            await registerPushNotifications(data.id, data.household_id);
-
-          } else if (!profileSetupDone) {
-            profileSetupDone = true;
-            await setupProfile(session.user);
-          }
-        }
-      } catch (err) {
-        console.error('init error:', err);
-      } finally {
-        setLoading(false);
-         initDone = true;
-      }
-    };
-
-    init();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('onAuthStateChange event:', event, session?.user?.email);
-
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setDbUser(null);
-          clearUserId();
-          setLoading(false);
+        if (sessionExpired && savedUserId && browserSupportsWebAuthn() && passkeyRegistered) {
+          setShowBiometric(true);
           return;
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
+        }
 
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
+        setUser(session.user);
 
-          if (data) {
-            setDbUser(data);
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-            // ✅ Save userId + lastActive
-            saveUserId(session.user.id);
-            saveLastActive();
-
-            // ✅ Register passkey if not done yet
-            await tryRegisterPasskey(session.user.id, session.user.email!);
-
-            await fetchDashboardData(data.household_id, session.user.email!);
-
-            // ✅ Push notifications only here in SIGNED_IN (not in init to avoid double)
-            await registerPushNotifications(data.id, data.household_id);
-
-          } else if (!profileSetupDone) {
-            profileSetupDone = true;
-            await setupProfile(session.user);
-          }
-
-          setLoading(false);
+        if (data) {
+          setDbUser(data);
+          saveUserId(session.user.id);
+          saveLastActive();
+          await tryRegisterPasskey(session.user.id, session.user.email!);
+          await fetchDashboardData(data.household_id, session.user.email!);
+          await registerPushNotifications(data.id, data.household_id);
+        } else if (!profileSetupDone) {
+          profileSetupDone = true;
+          await setupProfile(session.user);
         }
       }
-    );
+    } catch (err) {
+      console.error('init error:', err);
+    } finally {
+      setLoading(false); // ✅ always runs
+    }
+  };
 
-    return () => subscription.unsubscribe();
-  }, []);
+  init();
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      console.log('onAuthStateChange event:', event, session?.user?.email);
+
+      // ✅ Only handle these specific events
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setDbUser(null);
+        clearUserId();
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Skip INITIAL_SESSION and TOKEN_REFRESHED — init() handles these
+      if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') return;
+
+      // ✅ Only handle actual new sign-ins (after Google OAuth redirect)
+      if (event === 'SIGNED_IN' && session?.user) {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          setUser(session.user);
+          setDbUser(data);
+          saveUserId(session.user.id);
+          saveLastActive();
+          await tryRegisterPasskey(session.user.id, session.user.email!);
+          await fetchDashboardData(data.household_id, session.user.email!);
+          await registerPushNotifications(data.id, data.household_id);
+        } else if (!profileSetupDone) {
+          profileSetupDone = true;
+          await setupProfile(session.user);
+        }
+
+        setLoading(false);
+      }
+    }
+  );
+
+  return () => subscription.unsubscribe();
+}, []);
 
   // ── Handlers ──────────────────────────────────────────────
   const handleGoogleLogin = async () => {
