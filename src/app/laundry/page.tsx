@@ -160,113 +160,163 @@ export default function LaundryPage() {
   );
 
   return (
-    <main
-      className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28"
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
-    >
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+  <main
+    className="min-h-screen pb-28"
+    style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+  >
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Laundry</h1>
+      <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry</h1>
 
-        {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+      {error && (
+        <div
+          className="p-4 rounded-xl"
+          style={{ backgroundColor: 'var(--red-bg)', border: '0.5px solid var(--red)' }}
+        >
+          <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>
+        </div>
+      )}
+
+      {/* Member pool */}
+      <div className="list-group p-4">
+        <p className="section-header mb-3">
+          {selectedMemberId
+            ? `${selectedMember?.first_name} Bhai selected — tap a day`
+            : unassignedMembers.length === 0
+            ? '✓ All members assigned'
+            : 'Tap a member then tap a day'}
+        </p>
+        {unassignedMembers.length === 0 ? (
+          <p className="text-sm font-medium" style={{ color: 'var(--green)' }}>
+            Everyone has been assigned a laundry day!
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {unassignedMembers.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => handleMemberTap(member.id)}
+                className="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all select-none"
+                style={{
+                  backgroundColor: selectedMemberId === member.id
+                    ? 'var(--accent)'
+                    : 'var(--accent-bg)',
+                  color: selectedMemberId === member.id
+                    ? 'white'
+                    : 'var(--accent-text)',
+                  transform: selectedMemberId === member.id ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: selectedMemberId === member.id
+                    ? '0 4px 12px rgba(56, 76, 101, 0.25)'
+                    : 'none',
+                }}
+              >
+                {member.first_name} Bhai
+              </button>
+            ))}
           </div>
         )}
-
-        {/* Member pool */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-            {selectedMemberId
-              ? `${selectedMember?.first_name} Bhai selected — tap a day`
-              : unassignedMembers.length === 0
-              ? '✓ All members assigned'
-              : 'Tap a member then tap a day'}
-          </p>
-          {unassignedMembers.length === 0 ? (
-            <p className="text-green-600 dark:text-green-400 text-sm font-medium">
-              Everyone has been assigned a laundry day!
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {unassignedMembers.map((member) => (
-                <button
-                  key={member.id}
-                  onClick={() => handleMemberTap(member.id)}
-                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all select-none ${
-                    selectedMemberId === member.id
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 scale-105'
-                      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                  }`}
-                >
-                  {member.first_name} Bhai
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Days */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
-          {DAYS.map((day, idx) => {
-            const dayAssignments = assignments.filter((a) => a.day_of_week === day);
-            const canAssign = selectedMemberId !== null;
-            const alreadyAssignedToDay = assignments.some(
-              (a) => a.member_id === selectedMemberId && a.day_of_week === day
-            );
-
-            return (
-              <div
-                key={day}
-                onClick={() => handleDayTap(day)}
-                className={`flex items-center gap-3 px-4 py-4 transition-all
-                  ${idx !== DAYS.length - 1 ? 'border-b border-gray-100 dark:border-slate-800' : ''}
-                  ${canAssign && !alreadyAssignedToDay ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10' : ''}
-                  ${canAssign && alreadyAssignedToDay ? 'opacity-40 cursor-not-allowed' : ''}
-                  ${canAssign && !alreadyAssignedToDay && dayAssignments.length === 0 ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''}
-                `}
-              >
-                {/* Day name */}
-                <span className="font-semibold text-gray-900 dark:text-white text-sm w-24 shrink-0">
-                  {day}
-                </span>
-
-                {/* Assignments */}
-                <div className="flex flex-wrap gap-1.5 flex-1">
-                  {dayAssignments.length === 0 ? (
-                    <span className={`text-xs ${canAssign && !alreadyAssignedToDay ? 'text-blue-400' : 'text-gray-300 dark:text-gray-700'}`}>
-                      {canAssign && !alreadyAssignedToDay ? '+ tap to assign' : '—'}
-                    </span>
-                  ) : (
-                    <>
-                      {dayAssignments.map((a) => (
-                        <div
-                          key={a.id}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-xs font-semibold"
-                        >
-                          {a.household_members?.first_name} Bhai
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemove(a.id); }}
-                            className="ml-0.5 text-blue-500 hover:text-red-500 transition-colors"
-                          >
-                            <X size={11} />
-                          </button>
-                        </div>
-                      ))}
-                      {canAssign && !alreadyAssignedToDay && (
-                        <span className="text-blue-400 text-xs self-center">+ add</span>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
       </div>
-      <BottomNav isAdmin={true} />
-    </main>
-  );
+
+      {/* Days */}
+      <div className="list-group">
+        {DAYS.map((day, idx) => {
+          const dayAssignments = assignments.filter((a) => a.day_of_week === day);
+          const canAssign = selectedMemberId !== null;
+          const alreadyAssignedToDay = assignments.some(
+            (a) => a.member_id === selectedMemberId && a.day_of_week === day
+          );
+
+          return (
+            <div
+              key={day}
+              onClick={() => handleDayTap(day)}
+              className="flex items-center gap-3 px-4 py-4 transition-all"
+              style={{
+                borderBottom: idx !== DAYS.length - 1
+                  ? '0.5px solid var(--separator)'
+                  : 'none',
+                cursor: canAssign && !alreadyAssignedToDay
+                  ? 'pointer'
+                  : canAssign && alreadyAssignedToDay
+                  ? 'not-allowed'
+                  : 'default',
+                opacity: canAssign && alreadyAssignedToDay ? 0.4 : 1,
+                backgroundColor: canAssign && !alreadyAssignedToDay && dayAssignments.length === 0
+                  ? 'var(--accent-bg)'
+                  : 'transparent',
+              }}
+              onMouseEnter={e => {
+                if (canAssign && !alreadyAssignedToDay)
+                  e.currentTarget.style.backgroundColor = 'var(--accent-bg)';
+              }}
+              onMouseLeave={e => {
+                if (canAssign && !alreadyAssignedToDay && dayAssignments.length > 0)
+                  e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              {/* Day name */}
+              <span
+                className="font-semibold text-sm w-24 shrink-0"
+                style={{ color: 'var(--text-1)' }}
+              >
+                {day}
+              </span>
+
+              {/* Assignments */}
+              <div className="flex flex-wrap gap-1.5 flex-1">
+                {dayAssignments.length === 0 ? (
+                  <span
+                    className="text-xs"
+                    style={{
+                      color: canAssign && !alreadyAssignedToDay
+                        ? 'var(--accent)'
+                        : 'var(--text-4)',
+                    }}
+                  >
+                    {canAssign && !alreadyAssignedToDay ? '+ tap to assign' : '—'}
+                  </span>
+                ) : (
+                  <>
+                    {dayAssignments.map((a) => (
+                      <div
+                        key={a.id}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                        style={{
+                          backgroundColor: 'var(--accent-bg)',
+                          color: 'var(--accent-text)',
+                        }}
+                      >
+                        {a.household_members?.first_name} Bhai
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemove(a.id); }}
+                          className="ml-0.5 transition-colors"
+                          style={{ color: 'var(--accent)' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = 'var(--red)')}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--accent)')}
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                    {canAssign && !alreadyAssignedToDay && (
+                      <span
+                        className="text-xs self-center"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        + add
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+    </div>
+    <BottomNav isAdmin={true} />
+  </main>
+);
 }

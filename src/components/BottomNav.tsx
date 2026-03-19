@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Home,
-  CheckCircle,
-  ShoppingCart,
-  Shirt,
-  Users,
-} from 'lucide-react';
+import { Home, CheckCircle, ShoppingCart, Shirt, Users } from 'lucide-react';
 
 interface BottomNavProps {
   isAdmin: boolean;
@@ -26,15 +20,18 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-4 px-4">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+    >
       <nav
         className="flex items-center gap-1 px-3 py-2 rounded-full"
         style={{
-          background: 'rgba(255, 255, 255, 0.15)',
+          background: 'var(--bg-card)',
           backdropFilter: 'blur(30px)',
           WebkitBackdropFilter: 'blur(30px)',
-          border: '1px solid rgba(255, 255, 255, 0.25)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+          border: '0.5px solid var(--border-strong)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
         }}
       >
         {navItems.map((item) => {
@@ -50,30 +47,22 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
                 padding: '8px 14px',
                 borderRadius: '999px',
                 minWidth: '60px',
-                background: isActive
-                  ? 'rgba(255, 255, 255, 0.3)'
-                  : 'transparent',
+                backgroundColor: isActive ? 'var(--accent-bg)' : 'transparent',
                 border: isActive
-                  ? '1px solid rgba(255, 255, 255, 0.4)'
-                  : '1px solid transparent',
+                  ? '0.5px solid var(--border-color)'
+                  : '0.5px solid transparent',
               }}
             >
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.5 : 1.8}
-                style={{
-                  color: isActive
-                    ? '#2563eb'
-                    : 'rgba(100, 100, 120, 0.9)',
-                }}
+                style={{ color: isActive ? 'var(--accent)' : 'var(--text-3)' }}
               />
               <span
                 style={{
                   fontSize: '10px',
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive
-                    ? '#2563eb'
-                    : 'rgba(100, 100, 120, 0.9)',
+                  color: isActive ? 'var(--accent)' : 'var(--text-3)',
                   letterSpacing: '0.01em',
                 }}
               >
