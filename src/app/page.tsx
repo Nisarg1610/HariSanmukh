@@ -15,6 +15,7 @@ import {
   getSavedUserId,
   clearUserId,
 } from '@/utils/webauthn';
+import { ProfilePanel } from '@/components/ProfilePanel';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -32,6 +33,7 @@ export default function Home() {
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
   const passkeyRegistrationRef = useRef(false);
   const MAX_ATTEMPTS = 3;
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // ── Passkey helpers ───────────────────────────────────────
   const tryRegisterPasskey = async (userId: string) => {
@@ -414,11 +416,10 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28">
 
       {/* Header */}
-     <header
-  className="sticky top-0 z-30"
+ <header
+  className="sticky top-0 z-30 dark:bg-slate-950/70 bg-gray-50/70"
   style={{
     paddingTop: 'env(safe-area-inset-top)',
-    background: 'rgba(249, 250, 251, 0.7)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
   }}
@@ -426,20 +427,29 @@ export default function Home() {
   <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 rounded-lg overflow-hidden">
-  <img
-    src="/icon-256.png"
-    alt="HariSanmukh"
-    className="w-full h-full object-cover"
-  />
-</div>
+        <img src="/icon-192.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+      </div>
       <h1 className="text-lg font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
     </div>
+
+    {/* Profile avatar button */}
     <button
-      onClick={handleLogout}
-      className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-      title="Logout"
+      onClick={() => setProfileOpen(true)}
+      className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-slate-700 hover:ring-blue-400 transition-all"
     >
-      <LogOut size={20} />
+      {user?.user_metadata?.avatar_url ? (
+        <img
+          src={user.user_metadata.avatar_url}
+          alt={dbUser?.first_name}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+          <span className="text-white text-sm font-bold">
+            {dbUser?.first_name?.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      )}
     </button>
   </div>
 </header>
@@ -601,6 +611,14 @@ export default function Home() {
       </div>
 
       <BottomNav isAdmin={dbUser?.role === 'admin'} />
+      <ProfilePanel
+  user={user}
+  dbUser={dbUser}
+  isOpen={profileOpen}
+  onClose={() => setProfileOpen(false)}
+  onLogout={() => { setProfileOpen(false); handleLogout(); }}
+  onSwitchAccount={() => { setProfileOpen(false); handleLogout(); }}
+/>
     </main>
   );
 }
