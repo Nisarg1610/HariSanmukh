@@ -36,6 +36,7 @@ export default function Home() {
   const [showPasskeyPrompt, setShowPasskeyPrompt] = useState(false);
 const [registeringPasskey, setRegisteringPasskey] = useState(false);
 const passkeyRegistrationRef = useRef(false); // prevent double call
+const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   // ── Helper: register passkey + mark done ──────────────────
  const tryRegisterPasskey = async (userId: string, email: string) => {
@@ -249,27 +250,26 @@ const handleSetupPasskey = async () => {
   }, []);
 
   // ── Main auth useEffect ───────────────────────────────────
- useEffect(() => {
+useEffect(() => {
   let profileSetupDone = false;
 
   const init = async () => {
     try {
+      // Always check if passkey exists for quick biometric login
+      const savedUserId = getSavedUserId();
+      const passkeyRegistered = savedUserId
+        ? localStorage.getItem(`hs_passkey_${savedUserId}`)
+        : null;
+
+      if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
+        setBiometricAvailable(true);
+      }
+
+      // Check if session exists (for normal refresh without sign out)
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
-        const savedUserId = getSavedUserId();
-        const sessionExpired = isSessionExpired();
-        const passkeyRegistered = savedUserId
-          ? localStorage.getItem(`hs_passkey_${savedUserId}`)
-          : null;
-
-        if (sessionExpired && savedUserId && browserSupportsWebAuthn() && passkeyRegistered) {
-          setShowBiometric(true);
-          return;
-        }
-
         setUser(session.user);
-
         const { data } = await supabase
           .from('users')
           .select('*')
@@ -279,8 +279,6 @@ const handleSetupPasskey = async () => {
         if (data) {
           setDbUser(data);
           saveUserId(session.user.id);
-          saveLastActive();
-          await tryRegisterPasskey(session.user.id, session.user.email!);
           await fetchDashboardData(data.household_id, session.user.email!);
           await registerPushNotifications(data.id, data.household_id);
         } else if (!profileSetupDone) {
@@ -291,7 +289,7 @@ const handleSetupPasskey = async () => {
     } catch (err) {
       console.error('init error:', err);
     } finally {
-      setLoading(false); // ✅ always runs
+      setLoading(false);
     }
   };
 
@@ -301,7 +299,6 @@ const handleSetupPasskey = async () => {
     async (event, session) => {
       console.log('onAuthStateChange event:', event, session?.user?.email);
 
-      // ✅ Only handle these specific events
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setDbUser(null);
@@ -310,11 +307,10 @@ const handleSetupPasskey = async () => {
         return;
       }
 
-      // ✅ Skip INITIAL_SESSION and TOKEN_REFRESHED — init() handles these
       if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') return;
 
-      // ✅ Only handle actual new sign-ins (after Google OAuth redirect)
       if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
         const { data } = await supabase
           .from('users')
           .select('*')
@@ -322,7 +318,6 @@ const handleSetupPasskey = async () => {
           .maybeSingle();
 
         if (data) {
-          setUser(session.user);
           setDbUser(data);
           saveUserId(session.user.id);
           saveLastActive();
@@ -358,43 +353,47 @@ const handleSetupPasskey = async () => {
     }
   };
 
-  const handleBiometricLogin = async () => {
-    const savedUserId = getSavedUserId();
-    if (!savedUserId) return;
+const handleBiometricLogin = async () => {
+  const savedUserId = getSavedUserId();
+  if (!savedUserId) return;
 
-    try {
-      setBiometricLoading(true);
-      setError(null);
+  try {
+    setBiometricLoading(true);
+    setError(null);
 
-      const verified = await authenticateWithPasskey(savedUserId);
+    const verified = await authenticateWithPasskey(savedUserId);
 
-      if (verified) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
-          const { data } = await supabase
-            .from('users').select('*').eq('id', session.user.id).maybeSingle();
-          if (data) {
-            setDbUser(data);
-            saveLastActive();
-            setShowBiometric(false);
-            await fetchDashboardData(data.household_id, session.user.email!);
-          }
+    if (verified) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        const { data } = await supabase
+          .from('users').select('*').eq('id', session.user.id).maybeSingle();
+        if (data) {
+          setDbUser(data);
+          saveLastActive();
+          await fetchDashboardData(data.household_id, session.user.email!);
         }
       } else {
-        const newAttempts = biometricAttempts + 1;
-        setBiometricAttempts(newAttempts);
-        if (newAttempts >= MAX_ATTEMPTS) {
-          setShowBiometric(false);
-          setError('Biometric failed 3 times. Please sign in with Google.');
-        } else {
-          setError(`Biometric failed. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
-        }
+        // Supabase session expired — need Google login
+        setError('Session expired. Please sign in with Google.');
+        setBiometricAvailable(false);
+        clearUserId();
       }
-    } finally {
-      setBiometricLoading(false);
+    } else {
+      const newAttempts = biometricAttempts + 1;
+      setBiometricAttempts(newAttempts);
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setBiometricAvailable(false);
+        setError('Too many failed attempts. Please sign in with Google.');
+      } else {
+        setError(`Verification failed. ${MAX_ATTEMPTS - newAttempts} attempts remaining.`);
+      }
     }
-  };
+  } finally {
+    setBiometricLoading(false);
+  }
+};
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -476,39 +475,87 @@ const handleSetupPasskey = async () => {
   }
 
   // ── Not logged in ─────────────────────────────────────────
-  if (!user) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-10">
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">HariSanmukh</h1>
-            <p className="text-gray-600 dark:text-gray-300">Manage household duties together</p>
-          </div>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={signingIn}
-              className="w-full bg-white dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl px-6 py-4 font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              {signingIn ? 'Redirecting...' : 'Sign in with Google'}
-            </button>
-          </div>
+ if (!user) {
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
+            HariSanmukh
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Manage household duties together
+          </p>
         </div>
-      </main>
-    );
-  }
 
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Biometric button — only if passkey registered on this device */}
+          {biometricAvailable && (
+            <>
+              <button
+                onClick={handleBiometricLogin}
+                disabled={biometricLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-3 transition-all mb-4 disabled:opacity-50"
+              >
+                {biometricLoading ? (
+                  <span>Verifying...</span>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33"/>
+                    </svg>
+                    Login with Face ID / Fingerprint
+                  </>
+                )}
+              </button>
+
+              {/* Attempt dots */}
+              {biometricAttempts > 0 && (
+                <div className="flex justify-center gap-2 mb-4">
+                  {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        i < biometricAttempts ? 'bg-red-500' : 'bg-gray-200 dark:bg-slate-600'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
+                <span className="text-xs text-gray-400">or</span>
+                <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
+              </div>
+            </>
+          )}
+
+          {/* Google Sign In */}
+          <button
+            onClick={handleGoogleLogin}
+            disabled={signingIn}
+            className="w-full bg-white dark:bg-slate-700 border-2 border-gray-200 dark:border-slate-600 rounded-xl px-6 py-4 font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            {signingIn ? 'Redirecting...' : 'Sign in with Google'}
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
   // ── Dashboard ─────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
