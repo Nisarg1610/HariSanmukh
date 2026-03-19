@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   title: APP_NAME,
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '64x64' },
+      { url: '/icon-192.png', sizes: '256x256', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icon-256.png',
+    shortcut: '/favicon.ico',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -43,6 +52,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content={APP_NAME} />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
+        <link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
         <OAuthCallback />

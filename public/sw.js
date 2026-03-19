@@ -3,8 +3,8 @@ self.addEventListener('push', function(event) {
   const title = data.title || 'HariSanmukh';
   const options = {
     body: data.body || 'You have a new notification',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
+    icon: '/icon-256.png',
+    badge: '/icon-256',
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
