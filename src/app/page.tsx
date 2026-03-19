@@ -414,26 +414,31 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28">
 
       {/* Header */}
-      <header
-        className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 sticky top-0 z-30"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-              <span className="text-sm">🙏</span>
-            </div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-            title="Logout"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
-      </header>
+     <header
+  className="sticky top-0 z-30"
+  style={{
+    paddingTop: 'env(safe-area-inset-top)',
+    background: 'rgba(249, 250, 251, 0.7)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+  }}
+>
+  <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+        <span className="text-sm">🙏</span>
+      </div>
+      <h1 className="text-lg font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
+    </div>
+    <button
+      onClick={handleLogout}
+      className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+      title="Logout"
+    >
+      <LogOut size={20} />
+    </button>
+  </div>
+</header>
 
       {/* Passkey setup prompt */}
       {showPasskeyPrompt && (
