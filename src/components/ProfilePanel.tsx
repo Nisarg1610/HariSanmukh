@@ -27,9 +27,14 @@ export function ProfilePanel({
   }, []);
 
   // Check dark mode on mount
-  useEffect(() => {
+useEffect(() => {
+  const savedTheme = localStorage.getItem('hs_theme');
+  if (savedTheme) {
+    setDarkMode(savedTheme === 'dark');
+  } else {
     setDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
+  }
+}, []);
 
   // Close on outside click
   useEffect(() => {
@@ -49,11 +54,18 @@ export function ProfilePanel({
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  const handleToggleDarkMode = () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    setDarkMode(isDark);
-    localStorage.setItem('hs_theme', isDark ? 'dark' : 'light');
-  };
+const handleToggleDarkMode = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  if (isDark) {
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('hs_theme', 'light');
+    setDarkMode(false);
+  } else {
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('hs_theme', 'dark');
+    setDarkMode(true);
+  }
+};
 
   const handleToggleNotifications = async () => {
     if (notificationsEnabled) {
