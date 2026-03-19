@@ -16,7 +16,7 @@ export default function LaundryPage() {
   const [loading, setLoading] = useState(true);
   const [householdId, setHouseholdId] = useState('');
   const [userRole, setUserRole] = useState('user');
-  const [userFirstName, setUserFirstName] = useState('');
+  const [memberId, setMemberId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -43,7 +43,13 @@ export default function LaundryPage() {
 
         setHouseholdId(dbUser.household_id);
         setUserRole(dbUser.role);
-        setUserFirstName(dbUser.first_name);
+
+        // Get member id by email
+        const { data: memberCard } = await supabase
+          .from('household_members').select('id')
+          .eq('email', session.user.email!).maybeSingle();
+        if (memberCard) setMemberId(memberCard.id);
+
         await fetchAll(dbUser.household_id);
       } catch (err) {
         console.error(err);
@@ -61,19 +67,12 @@ export default function LaundryPage() {
 
   const handleDayTap = async (day: string) => {
     if (!selectedMemberId) return;
-
     const alreadyAssigned = assignments.some(
       (a) => a.member_id === selectedMemberId && a.day_of_week === day
     );
-    if (alreadyAssigned) {
-      setSelectedMemberId(null);
-      return;
-    }
-
+    if (alreadyAssigned) { setSelectedMemberId(null); return; }
     const result = await assignLaundry(householdId, selectedMemberId, day);
-    if (result) {
-      await fetchAll(householdId);
-    }
+    if (result) await fetchAll(householdId);
     setSelectedMemberId(null);
   };
 
@@ -84,8 +83,11 @@ export default function LaundryPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center animate-pulse">
+          <span className="text-white text-xl">👕</span>
+        </div>
+        <p className="text-gray-400 dark:text-gray-500 text-sm">Loading...</p>
       </main>
     );
   }
@@ -93,64 +95,57 @@ export default function LaundryPage() {
   // ── USER VIEW ──────────────────────────────────────────────
   if (userRole === 'user') {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
-            Laundry
-          </h1>
-          <div className="rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                    Day
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-sm">
-                    Member
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {DAYS.map((day) => {
-                  const dayAssignments = assignments.filter((a) => a.day_of_week === day);
-                  const isMyDay = dayAssignments.some(
-                    (a) => a.household_members?.first_name === userFirstName
-                  );
-                  return (
-                    <tr
-                      key={day}
-                      className={`border-b border-gray-100 dark:border-slate-800 last:border-0 ${
-                        isMyDay ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
-                      }`}
-                    >
-                      <td className="py-3 px-4 font-medium text-gray-900 dark:text-white w-32">
-                        {day}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          {dayAssignments.length === 0 ? (
-                            <span className="text-gray-400 text-sm">—</span>
-                          ) : (
-                            dayAssignments.map((a) => (
-                              <span
-                                key={a.id}
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  a.household_members?.first_name === userFirstName
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
-                                }`}
-                              >
-                                {a.household_members?.first_name} Bhai
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      <main
+        className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Laundry</h1>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
+              <div className="grid grid-cols-2 gap-4">
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Day</span>
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Member</span>
+              </div>
+            </div>
+
+            {DAYS.map((day, idx) => {
+              const dayAssignments = assignments.filter((a) => a.day_of_week === day);
+              const isMyDay = dayAssignments.some((a) => a.member_id === memberId);
+
+              return (
+                <div
+                  key={day}
+                  className={`px-4 py-3.5 ${idx !== DAYS.length - 1 ? 'border-b border-gray-100 dark:border-slate-800' : ''} ${isMyDay ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                >
+                  <div className="grid grid-cols-2 gap-4 items-center">
+                    <span className={`font-semibold text-sm ${isMyDay ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
+                      {day}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {dayAssignments.length === 0 ? (
+                        <span className="text-gray-300 dark:text-gray-700 text-sm">—</span>
+                      ) : (
+                        dayAssignments.map((a) => (
+                          <span
+                            key={a.id}
+                            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                              a.member_id === memberId
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
+                            }`}
+                          >
+                            {a.household_members?.first_name} Bhai
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
         <BottomNav isAdmin={false} />
@@ -165,47 +160,55 @@ export default function LaundryPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-          Laundry
-        </h1>
+    <main
+      className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Laundry</h1>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
             <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Member tiles — only unassigned */}
-        <div className="mb-6">
-          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+        {/* Member pool */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4">
+          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
             {selectedMemberId
-              ? `${selectedMember?.first_name} Bhai selected — tap a day to assign`
+              ? `${selectedMember?.first_name} Bhai selected — tap a day`
               : unassignedMembers.length === 0
-              ? 'All members assigned ✓'
-              : 'Tap a member then tap a day to assign'}
+              ? '✓ All members assigned'
+              : 'Tap a member then tap a day'}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {unassignedMembers.map((member) => (
-              <button
-                key={member.id}
-                onClick={() => handleMemberTap(member.id)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all select-none ${
-                  selectedMemberId === member.id
-                    ? 'bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-2 scale-105'
-                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                }`}
-              >
-                {member.first_name} Bhai
-              </button>
-            ))}
-          </div>
+          {unassignedMembers.length === 0 ? (
+            <p className="text-green-600 dark:text-green-400 text-sm font-medium">
+              Everyone has been assigned a laundry day!
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {unassignedMembers.map((member) => (
+                <button
+                  key={member.id}
+                  onClick={() => handleMemberTap(member.id)}
+                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all select-none ${
+                    selectedMemberId === member.id
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 scale-105'
+                      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                  }`}
+                >
+                  {member.first_name} Bhai
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Days */}
-        <div className="space-y-2">
-          {DAYS.map((day) => {
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+          {DAYS.map((day, idx) => {
             const dayAssignments = assignments.filter((a) => a.day_of_week === day);
             const canAssign = selectedMemberId !== null;
             const alreadyAssignedToDay = assignments.some(
@@ -216,58 +219,52 @@ export default function LaundryPage() {
               <div
                 key={day}
                 onClick={() => handleDayTap(day)}
-                className={`rounded-xl border-2 transition-all p-4 ${
-                  canAssign && !alreadyAssignedToDay
-                    ? 'cursor-pointer border-blue-300 dark:border-blue-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                    : canAssign && alreadyAssignedToDay
-                    ? 'border-gray-200 dark:border-slate-700 opacity-50 cursor-not-allowed bg-white dark:bg-slate-800'
-                    : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800'
-                }`}
+                className={`flex items-center gap-3 px-4 py-4 transition-all
+                  ${idx !== DAYS.length - 1 ? 'border-b border-gray-100 dark:border-slate-800' : ''}
+                  ${canAssign && !alreadyAssignedToDay ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10' : ''}
+                  ${canAssign && alreadyAssignedToDay ? 'opacity-40 cursor-not-allowed' : ''}
+                  ${canAssign && !alreadyAssignedToDay && dayAssignments.length === 0 ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''}
+                `}
               >
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-semibold text-gray-900 dark:text-white w-24 shrink-0">
-                    {day}
-                  </span>
-                  <div className="flex flex-wrap gap-2 flex-1">
-                    {dayAssignments.length === 0 ? (
-                      <span className="text-gray-400 dark:text-gray-600 text-sm">
-                        {canAssign && !alreadyAssignedToDay
-                          ? 'Tap to assign'
-                          : 'No one assigned'}
-                      </span>
-                    ) : (
-                      <>
-                        {dayAssignments.map((a) => (
-                          <div
-                            key={a.id}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-lg text-sm font-medium"
+                {/* Day name */}
+                <span className="font-semibold text-gray-900 dark:text-white text-sm w-24 shrink-0">
+                  {day}
+                </span>
+
+                {/* Assignments */}
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {dayAssignments.length === 0 ? (
+                    <span className={`text-xs ${canAssign && !alreadyAssignedToDay ? 'text-blue-400' : 'text-gray-300 dark:text-gray-700'}`}>
+                      {canAssign && !alreadyAssignedToDay ? '+ tap to assign' : '—'}
+                    </span>
+                  ) : (
+                    <>
+                      {dayAssignments.map((a) => (
+                        <div
+                          key={a.id}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-xs font-semibold"
+                        >
+                          {a.household_members?.first_name} Bhai
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemove(a.id); }}
+                            className="ml-0.5 text-blue-500 hover:text-red-500 transition-colors"
                           >
-                            {a.household_members?.first_name} Bhai
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemove(a.id);
-                              }}
-                              className="ml-1 text-blue-600 dark:text-blue-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                            >
-                              <X size={13} />
-                            </button>
-                          </div>
-                        ))}
-                        {canAssign && !alreadyAssignedToDay && (
-                          <span className="text-blue-400 text-xs self-center">
-                            + tap to add
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                      {canAssign && !alreadyAssignedToDay && (
+                        <span className="text-blue-400 text-xs self-center">+ add</span>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
       </div>
       <BottomNav isAdmin={true} />
     </main>
