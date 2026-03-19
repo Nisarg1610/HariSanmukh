@@ -425,11 +425,11 @@ export default function Home() {
 >
   <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
     <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center overflow-hidden">
+      <div className="w-8 h-8 rounded-lg overflow-hidden">
   <img
-    src="/icon-256.png"
+    src="/icon-192.png"
     alt="HariSanmukh"
-    className="w-6 h-6 object-contain"
+    className="w-full h-full object-cover"
   />
 </div>
       <h1 className="text-lg font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
