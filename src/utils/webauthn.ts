@@ -53,6 +53,7 @@ export async function registerPasskey(userId: string, email: string) {
       console.log('No challenge in options — aborting');
       return false;
     }
+    
 
     const registration = await startRegistration({ optionsJSON: options });
     console.log('startRegistration completed');
