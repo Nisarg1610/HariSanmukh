@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { createClient } from '@supabase/supabase-js';
 
+const origin = process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, ''); 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge: challenge,
-      expectedOrigin: process.env.NEXT_PUBLIC_APP_URL!,
+      expectedOrigin: origin,
       expectedRPID: process.env.NEXT_PUBLIC_APP_DOMAIN!,
     });
 
