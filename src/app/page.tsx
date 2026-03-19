@@ -33,21 +33,34 @@ export default function Home() {
   const [biometricAttempts, setBiometricAttempts] = useState(0);
   const MAX_ATTEMPTS = 3;
   const visibilityTimer = useRef<NodeJS.Timeout | null>(null);
+  const [showPasskeyPrompt, setShowPasskeyPrompt] = useState(false);
+const [registeringPasskey, setRegisteringPasskey] = useState(false);
+const passkeyRegistrationRef = useRef(false); // prevent double call
 
   // ── Helper: register passkey + mark done ──────────────────
-  const tryRegisterPasskey = async (userId: string, email: string) => {
-    if (!browserSupportsWebAuthn()) return;
-    const alreadyRegistered = localStorage.getItem(`hs_passkey_${userId}`);
-    if (alreadyRegistered) return;
-    console.log('Registering passkey for:', email);
-    const registered = await registerPasskey(userId, email);
-    if (registered) {
-      localStorage.setItem(`hs_passkey_${userId}`, 'true');
-      console.log('Passkey registered successfully!');
-    } else {
-      console.log('Passkey registration failed or was cancelled');
-    }
-  };
+ const tryRegisterPasskey = async (userId: string, email: string) => {
+  if (!browserSupportsWebAuthn()) return;
+  if (passkeyRegistrationRef.current) return; // prevent double call
+
+  // Check localStorage
+  const localCheck = localStorage.getItem(`hs_passkey_${userId}`);
+  if (localCheck) return;
+
+  // Check Supabase
+  const { data: existingPasskey } = await supabase
+    .from('passkeys')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingPasskey) {
+    localStorage.setItem(`hs_passkey_${userId}`, 'true');
+    return;
+  }
+
+  // ✅ Don't register automatically — show prompt instead
+  setShowPasskeyPrompt(true);
+};
 
   // ── setupProfile — untouched login/insert logic ───────────
   const setupProfile = async (authUser: any) => {
@@ -159,7 +172,27 @@ export default function Home() {
       setError(err.message ?? 'Setup failed');
     }
   };
+const handleSetupPasskey = async () => {
+  if (!dbUser || !user) return;
+  if (passkeyRegistrationRef.current) return;
 
+  try {
+    passkeyRegistrationRef.current = true; // lock
+    setRegisteringPasskey(true);
+
+    const registered = await registerPasskey(dbUser.id, user.email!);
+    if (registered) {
+      localStorage.setItem(`hs_passkey_${dbUser.id}`, 'true');
+      setShowPasskeyPrompt(false);
+      console.log('Passkey registered!');
+    } else {
+      console.log('Passkey registration failed');
+    }
+  } finally {
+    setRegisteringPasskey(false);
+    passkeyRegistrationRef.current = false;
+  }
+};
   // ── fetchDashboardData ────────────────────────────────────
   const fetchDashboardData = async (hId: string, userEmail: string) => {
     const { data: memberCard } = await supabase
@@ -500,6 +533,7 @@ export default function Home() {
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
       <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-30"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
           <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors" title="Logout">
@@ -507,6 +541,39 @@ export default function Home() {
           </button>
         </div>
       </header>
+      {/* Passkey setup prompt */}
+{showPasskeyPrompt && (
+  <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-4 py-3">
+    <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+      <div>
+        <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+          Enable Face ID / Fingerprint login
+        </p>
+        <p className="text-xs text-blue-700 dark:text-blue-400">
+          Skip Google next time — use biometrics instead
+        </p>
+      </div>
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          onClick={() => {
+            localStorage.setItem(`hs_passkey_skip_${dbUser?.id}`, 'true');
+            setShowPasskeyPrompt(false);
+          }}
+          className="text-xs text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30"
+        >
+          Not now
+        </button>
+        <button
+          onClick={handleSetupPasskey}
+          disabled={registeringPasskey}
+          className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all"
+        >
+          {registeringPasskey ? 'Setting up...' : 'Enable'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Greeting */}
