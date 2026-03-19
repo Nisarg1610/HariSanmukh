@@ -252,10 +252,10 @@ const handleSetupPasskey = async () => {
   // ── Main auth useEffect ───────────────────────────────────
 useEffect(() => {
   let profileSetupDone = false;
+  let initHandled = false; // ← this is the key
 
   const init = async () => {
     try {
-      // Check passkey availability for login page
       const savedUserId = getSavedUserId();
       const passkeyRegistered = savedUserId
         ? localStorage.getItem(`hs_passkey_${savedUserId}`)
@@ -265,12 +265,10 @@ useEffect(() => {
         setBiometricAvailable(true);
       }
 
-      // Check existing session
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
         setUser(session.user);
-
         const { data } = await supabase
           .from('users')
           .select('*')
@@ -290,7 +288,8 @@ useEffect(() => {
     } catch (err) {
       console.error('init error:', err);
     } finally {
-      setLoading(false);
+      initHandled = true; // ← mark done
+      setLoading(false);  // ← always runs
     }
   };
 
@@ -309,11 +308,11 @@ useEffect(() => {
         return;
       }
 
-      if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') return;
+      // ← Skip everything if init() already handled the session
+      if (initHandled) return;
 
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
-
         const { data } = await supabase
           .from('users')
           .select('*')
