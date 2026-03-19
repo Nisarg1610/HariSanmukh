@@ -224,7 +224,8 @@ export default function GroceryPage() {
   // ── USER VIEW ──────────────────────────────────────────────
   if (userRole === 'user') {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-2xl mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Grocery</h1>
           <TabBar />
@@ -293,7 +294,7 @@ export default function GroceryPage() {
 
   // ── ADMIN VIEW ─────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="max-w-2xl mx-auto px-4 py-8">
 
         <div className="flex items-center justify-between mb-6">

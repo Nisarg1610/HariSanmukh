@@ -130,7 +130,7 @@ export default function SevaPage() {
   // ─── USER VIEW ───────────────────────────────────────────────
   if (userRole === 'user') {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Seva</h1>
 
@@ -218,7 +218,7 @@ export default function SevaPage() {
 
   // ─── ADMIN VIEW ──────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Header */}

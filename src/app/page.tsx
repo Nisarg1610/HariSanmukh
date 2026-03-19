@@ -19,7 +19,6 @@ import {
   isSessionExpired,
 } from '@/utils/webauthn';
 
-
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [dbUser, setDbUser] = useState<any>(null);
@@ -28,15 +27,29 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [mySevas, setMySevas] = useState<any[]>([]);
   const [myLaundryDays, setMyLaundryDays] = useState<string[]>([]);
-const [garbageDates, setGarbageDates] = useState<any[]>([]);
- const [showBiometric, setShowBiometric] = useState(false);
+  const [garbageDates, setGarbageDates] = useState<any[]>([]);
+  const [showBiometric, setShowBiometric] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [biometricAttempts, setBiometricAttempts] = useState(0);
-  const [biometricFailed, setBiometricFailed] = useState(false);
   const MAX_ATTEMPTS = 3;
+  const visibilityTimer = useRef<NodeJS.Timeout | null>(null);
 
-   const visibilityTimer = useRef<NodeJS.Timeout | null>(null);
-   
+  // ── Helper: register passkey + mark done ──────────────────
+  const tryRegisterPasskey = async (userId: string, email: string) => {
+    if (!browserSupportsWebAuthn()) return;
+    const alreadyRegistered = localStorage.getItem(`hs_passkey_${userId}`);
+    if (alreadyRegistered) return;
+    console.log('Registering passkey for:', email);
+    const registered = await registerPasskey(userId, email);
+    if (registered) {
+      localStorage.setItem(`hs_passkey_${userId}`, 'true');
+      console.log('Passkey registered successfully!');
+    } else {
+      console.log('Passkey registration failed or was cancelled');
+    }
+  };
+
+  // ── setupProfile — untouched login/insert logic ───────────
   const setupProfile = async (authUser: any) => {
     try {
       console.log('setupProfile called for:', authUser.email);
@@ -62,7 +75,6 @@ const [garbageDates, setGarbageDates] = useState<any[]>([]);
       if (!anyHousehold) {
         console.log('no household — creating first admin');
         firstName = authUser.email.split('@')[0];
-
         const { data: household, error: hErr } = await supabase
           .from('households')
           .insert({ name: 'Main Household', created_by: authUser.id })
@@ -71,7 +83,6 @@ const [garbageDates, setGarbageDates] = useState<any[]>([]);
         if (hErr || !household) throw hErr ?? new Error('Household creation failed');
         householdId = household.id;
         role = 'admin';
-
         await supabase.from('household_members').insert({
           household_id: householdId,
           first_name: firstName,
@@ -80,59 +91,50 @@ const [garbageDates, setGarbageDates] = useState<any[]>([]);
           status: 'active',
           linked_user_id: authUser.id,
         });
-
       } else if (existingMember) {
         console.log('existing member found:', existingMember);
         householdId = existingMember.household_id;
         firstName = existingMember.first_name?.trim() || authUser.email.split('@')[0];
-
         await supabase
           .from('household_members')
           .update({ linked_user_id: authUser.id })
           .eq('email', authUser.email.toLowerCase());
+      } else {
+        const { data: household } = await supabase
+          .from('households')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+        if (!household) throw new Error('No household found');
+        householdId = household.id;
+        firstName = authUser.email.split('@')[0];
+        const { error: memberErr } = await supabase
+          .from('household_members')
+          .insert({
+            household_id: householdId,
+            first_name: firstName,
+            last_name: 'Bhai',
+            email: authUser.email.toLowerCase(),
+            status: 'active',
+            linked_user_id: authUser.id,
+          });
+        if (memberErr) {
+          console.log('household_members insert error:', memberErr);
+          throw memberErr;
+        }
+        console.log('member card created successfully');
+      }
 
-      }   else {
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .limit(1)
-    .maybeSingle();
-
-  if (!household) throw new Error('No household found');
-  householdId = household.id;
-  firstName = authUser.email.split('@')[0];
-
-  // First insert into household_members
-  const { error: memberErr } = await supabase
-    .from('household_members')
-    .insert({
-      household_id: householdId,
-      first_name: firstName,
-      last_name: 'Bhai',
-      email: authUser.email.toLowerCase(),
-      status: 'active',
-      linked_user_id: authUser.id,
-    });
-
-  if (memberErr) {
-    console.log('household_members insert error:', memberErr);
-    throw memberErr;
-  }
-
-  console.log('member card created successfully');
-}
-
-// Then insert into users
-console.log('inserting into users:', { firstName, householdId, role });
-const { error: uErr } = await supabase.from('users').insert({
-  id: authUser.id,
-  email: authUser.email,
-  first_name: firstName,
-  last_name: 'Bhai',
-  household_id: householdId!,
-  role,
-  status: 'active',
-});
+      console.log('inserting into users:', { firstName, householdId, role });
+      const { error: uErr } = await supabase.from('users').insert({
+        id: authUser.id,
+        email: authUser.email,
+        first_name: firstName,
+        last_name: 'Bhai',
+        household_id: householdId!,
+        role,
+        status: 'active',
+      });
       if (uErr) {
         console.log('users insert error:', uErr);
         throw uErr;
@@ -146,61 +148,66 @@ const { error: uErr } = await supabase.from('users').insert({
 
       console.log('newDbUser:', newDbUser);
       setDbUser(newDbUser);
-       saveUserId(authUser.id);
+
+      // ✅ Save userId + lastActive + register passkey for NEW users
+      saveUserId(authUser.id);
       saveLastActive();
-      if (browserSupportsWebAuthn()) {
-        await registerPasskey(authUser.id, authUser.email);
-      }
+      await tryRegisterPasskey(authUser.id, authUser.email);
+
     } catch (err: any) {
       console.error('setupProfile error:', err);
       setError(err.message ?? 'Setup failed');
     }
-    
   };
-const fetchDashboardData = async (hId: string, userEmail: string) => {
-  const { data: memberCard } = await supabase
-    .from('household_members')
-    .select('id, first_name')
-    .eq('email', userEmail.toLowerCase())
-    .maybeSingle();
 
-  if (!memberCard) return;
+  // ── fetchDashboardData ────────────────────────────────────
+  const fetchDashboardData = async (hId: string, userEmail: string) => {
+    const { data: memberCard } = await supabase
+      .from('household_members')
+      .select('id, first_name')
+      .eq('email', userEmail.toLowerCase())
+      .maybeSingle();
 
-  const [assignments, laundryAssignments] = await Promise.all([
-    getSevaAssignments(hId),
-    getLaundryAssignments(hId),
-  ]);
+    if (!memberCard) return;
 
-  const mine = assignments.filter(
-    (a: any) => a.member_id === memberCard.id && !a.is_completed
-  );
-  setMySevas(mine);
+    const [assignments, laundryAssignments] = await Promise.all([
+      getSevaAssignments(hId),
+      getLaundryAssignments(hId),
+    ]);
 
-  const myDays = laundryAssignments
-    .filter((a: any) => a.member_id === memberCard.id)
-    .map((a: any) => a.day_of_week);
-  setMyLaundryDays(myDays);
-  const calRes = await fetch('/api/garbage-calendar');
-const calData = await calRes.json();
-setGarbageDates(calData.events);
-};
+    const mine = assignments.filter(
+      (a: any) => a.member_id === memberCard.id && !a.is_completed
+    );
+    setMySevas(mine);
 
- useEffect(() => {
+    const myDays = laundryAssignments
+      .filter((a: any) => a.member_id === memberCard.id)
+      .map((a: any) => a.day_of_week);
+    setMyLaundryDays(myDays);
+
+    try {
+      const calRes = await fetch('/api/garbage-calendar');
+      const calData = await calRes.json();
+      setGarbageDates(calData.events ?? []);
+    } catch {
+      setGarbageDates([]);
+    }
+  };
+
+  // ── Visibility change — expire session after 2 min background ──
+  useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        // App went to background — start 2 min timer
         visibilityTimer.current = setTimeout(() => {
           clearLastActive();
         }, 2 * 60 * 1000);
       } else {
-        // App came back to foreground
         if (visibilityTimer.current) {
           clearTimeout(visibilityTimer.current);
           visibilityTimer.current = null;
         }
       }
     };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -208,83 +215,120 @@ setGarbageDates(calData.events);
     };
   }, []);
 
-useEffect(() => {
-  let profileSetupDone = false; // 🔒 lock
+  // ── Main auth useEffect ───────────────────────────────────
+  useEffect(() => {
+    let profileSetupDone = false;
+    let initDone = false;
 
-  const init = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        
-        const savedUserId = getSavedUserId();
+        if (session?.user) {
+          const savedUserId = getSavedUserId();
           const sessionExpired = isSessionExpired();
-          if (sessionExpired && savedUserId && browserSupportsWebAuthn()) {
+          const passkeyRegistered = savedUserId
+            ? localStorage.getItem(`hs_passkey_${savedUserId}`)
+            : null;
+
+          console.log('savedUserId:', savedUserId);
+          console.log('sessionExpired:', sessionExpired);
+          console.log('passkeyRegistered:', passkeyRegistered);
+
+          // ✅ Only show biometric if session expired AND passkey exists
+          if (sessionExpired && savedUserId && browserSupportsWebAuthn() && passkeyRegistered) {
             setShowBiometric(true);
+            initDone = true;
             setLoading(false);
             return;
           }
+
           setUser(session.user);
 
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
+          if (data) {
+            setDbUser(data);
 
-        if (data) {
-          setDbUser(data);
-          await fetchDashboardData(data.household_id, session.user.email!);
-          await registerPushNotifications(data.id, data.household_id);
-        } else if (!profileSetupDone) {
-          profileSetupDone = true; // 🔒 lock
-          await setupProfile(session.user);
+            // ✅ Save userId + lastActive for EXISTING users
+            saveUserId(session.user.id);
+            saveLastActive();
+
+            // ✅ Register passkey for existing users who haven't done it yet
+            await tryRegisterPasskey(session.user.id, session.user.email!);
+
+            await fetchDashboardData(data.household_id, session.user.email!);
+
+            // ✅ Push notifications only once here (not in onAuthStateChange)
+            await registerPushNotifications(data.id, data.household_id);
+
+          } else if (!profileSetupDone) {
+            profileSetupDone = true;
+            await setupProfile(session.user);
+          }
         }
-      }
-    } catch (err) {
-      console.error('init error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  init();
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      console.log('onAuthStateChange event:', event, session?.user?.email);
-
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setDbUser(null);
-        clearUserId();
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (data) {
-          setDbUser(data);
-          await fetchDashboardData(data.household_id, session.user.email!);
-          await registerPushNotifications(data.id, data.household_id);
-        } else if (!profileSetupDone) {
-          profileSetupDone = true; // 🔒 lock
-          await setupProfile(session.user);
-        }
-
+      } catch (err) {
+        console.error('init error:', err);
+      } finally {
         setLoading(false);
+         initDone = true;
       }
-    }
-  );
+    };
 
-  return () => subscription.unsubscribe();
-}, []);
+    init();
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('onAuthStateChange event:', event, session?.user?.email);
+
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setDbUser(null);
+          clearUserId();
+          setLoading(false);
+          return;
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (data) {
+            setDbUser(data);
+
+            // ✅ Save userId + lastActive
+            saveUserId(session.user.id);
+            saveLastActive();
+
+            // ✅ Register passkey if not done yet
+            await tryRegisterPasskey(session.user.id, session.user.email!);
+
+            await fetchDashboardData(data.household_id, session.user.email!);
+
+            // ✅ Push notifications only here in SIGNED_IN (not in init to avoid double)
+            await registerPushNotifications(data.id, data.household_id);
+
+          } else if (!profileSetupDone) {
+            profileSetupDone = true;
+            await setupProfile(session.user);
+          }
+
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Handlers ──────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     try {
       setSigningIn(true);
@@ -298,10 +342,9 @@ useEffect(() => {
       setError(err.message ?? 'Sign in failed');
       setSigningIn(false);
     }
-    console.log('GROQ KEY:', process.env.NEXT_PUBLIC_GROQ_API_KEY);
   };
 
-const handleBiometricLogin = async () => {
+  const handleBiometricLogin = async () => {
     const savedUserId = getSavedUserId();
     if (!savedUserId) return;
 
@@ -312,7 +355,6 @@ const handleBiometricLogin = async () => {
       const verified = await authenticateWithPasskey(savedUserId);
 
       if (verified) {
-        // Restore session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
@@ -328,9 +370,7 @@ const handleBiometricLogin = async () => {
       } else {
         const newAttempts = biometricAttempts + 1;
         setBiometricAttempts(newAttempts);
-
         if (newAttempts >= MAX_ATTEMPTS) {
-          setBiometricFailed(true);
           setShowBiometric(false);
           setError('Biometric failed 3 times. Please sign in with Google.');
         } else {
@@ -346,31 +386,26 @@ const handleBiometricLogin = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setDbUser(null);
-     clearUserId();
+    clearUserId();
     setShowBiometric(false);
     setBiometricAttempts(0);
-    setBiometricFailed(false);
   };
 
-   if (showBiometric) {
+  // ── Biometric screen ──────────────────────────────────────
+  if (showBiometric) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
-              HariSanmukh
-            </h1>
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">HariSanmukh</h1>
             <p className="text-gray-600 dark:text-gray-300">Welcome back</p>
           </div>
-
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
             {error && (
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
               </div>
             )}
-
-            {/* Biometric icon */}
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                 <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -378,38 +413,21 @@ const handleBiometricLogin = async () => {
                 </svg>
               </div>
             </div>
-
-            <p className="text-center text-gray-700 dark:text-gray-300 font-semibold mb-2">
-              Verify your identity
-            </p>
-            <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">
-              Use Face ID or fingerprint to continue
-            </p>
-
-            {/* Attempt indicator */}
+            <p className="text-center text-gray-700 dark:text-gray-300 font-semibold mb-2">Verify your identity</p>
+            <p className="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">Use Face ID or fingerprint to continue</p>
             {biometricAttempts > 0 && (
               <div className="flex justify-center gap-2 mb-4">
                 {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      i < biometricAttempts
-                        ? 'bg-red-500'
-                        : 'bg-gray-200 dark:bg-slate-600'
-                    }`}
-                  />
+                  <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < biometricAttempts ? 'bg-red-500' : 'bg-gray-200 dark:bg-slate-600'}`} />
                 ))}
               </div>
             )}
-
             <button
               onClick={handleBiometricLogin}
               disabled={biometricLoading}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-3 transition-all mb-4 disabled:opacity-50"
             >
-              {biometricLoading ? (
-                <span>Verifying...</span>
-              ) : (
+              {biometricLoading ? <span>Verifying...</span> : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33"/>
@@ -418,15 +436,13 @@ const handleBiometricLogin = async () => {
                 </>
               )}
             </button>
-
             <div className="flex items-center gap-3 mb-4">
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
               <span className="text-xs text-gray-400">or</span>
               <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
             </div>
-
             <button
-              onClick={() => { setShowBiometric(false); setBiometricFailed(true); setError(null); }}
+              onClick={() => { setShowBiometric(false); setError(null); }}
               className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-2"
             >
               Sign in with Google instead
@@ -445,18 +461,14 @@ const handleBiometricLogin = async () => {
     );
   }
 
-  // ─── NOT LOGGED IN ───────────────────────────────────────────
- if (!user) {
+  // ── Not logged in ─────────────────────────────────────────
+  if (!user) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
-              HariSanmukh
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Manage household duties together
-            </p>
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-2">HariSanmukh</h1>
+            <p className="text-gray-600 dark:text-gray-300">Manage household duties together</p>
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
             {error && (
@@ -483,41 +495,27 @@ const handleBiometricLogin = async () => {
     );
   }
 
-  // ─── DASHBOARD ───────────────────────────────────────────────
+  // ── Dashboard ─────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
-      <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-30">
+      <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-30"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            HariSanmukh
-          </h1>
-          <button
-            onClick={handleLogout}
-            className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-            title="Logout"
-          >
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
+          <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors" title="Logout">
             <LogOut size={22} />
           </button>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-
         {/* Greeting */}
         <div className="mb-8">
-          <p className="text-sm font-semibold text-orange-500 dark:text-orange-400 mb-1">
-            🙏 Jay Swaminarayan
-          </p>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {dbUser?.first_name} Bhai 👋
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Here's what you have this week
-          </p>
+          <p className="text-sm font-semibold text-orange-500 dark:text-orange-400 mb-1">🙏 Jay Swaminarayan</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{dbUser?.first_name} Bhai 👋</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Here's what you have this week</p>
           {dbUser?.role === 'admin' && (
-            <span className="inline-block mt-2 bg-blue-600 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
-              Admin
-            </span>
+            <span className="inline-block mt-2 bg-blue-600 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">Admin</span>
           )}
         </div>
 
@@ -533,9 +531,7 @@ const handleBiometricLogin = async () => {
             <div className="space-y-2">
               {mySevas.map((a: any) => (
                 <div key={a.id} className="flex items-center justify-between py-1">
-                  <span className="text-gray-900 dark:text-white font-medium text-sm">
-                    {a.sevas?.name}
-                  </span>
+                  <span className="text-gray-900 dark:text-white font-medium text-sm">{a.sevas?.name}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     a.is_completed
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
@@ -560,10 +556,7 @@ const handleBiometricLogin = async () => {
           ) : (
             <div className="flex flex-wrap gap-2">
               {myLaundryDays.map((day) => (
-                <span
-                  key={day}
-                  className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium"
-                >
+                <span key={day} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
                   {day}
                 </span>
               ))}
@@ -571,76 +564,54 @@ const handleBiometricLogin = async () => {
           )}
         </div>
 
-        {/* Garbage Collection Calendar */}
-       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-5">
-  <div className="flex items-center gap-2 mb-4">
-    <span className="text-lg">🗑️</span>
-    <h3 className="font-bold text-gray-900 dark:text-white">Garbage Collection</h3>
-  </div>
- <div className="space-y-2">
-  {garbageDates.map((event) => {
-    const date = new Date(event.date + 'T00:00:00');
-    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-    const isToday = date.toDateString() === new Date().toDateString();
-
-    return (
-      <div
-        key={event.date}
-        className={`flex items-center gap-4 px-4 py-3 rounded-xl border-2 ${
-          isToday
-            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-            : isPast
-            ? 'border-gray-100 dark:border-slate-800 opacity-50'
-            : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50'
-        }`}
-      >
-        {/* Date number */}
-        <div className={`text-2xl font-bold w-10 text-center ${
-          isToday
-            ? 'text-green-600 dark:text-green-400'
-            : isPast
-            ? 'text-gray-400'
-            : 'text-gray-900 dark:text-white'
-        }`}>
-          {date.getDate()}
+        {/* Garbage Collection */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-lg">🗑️</span>
+            <h3 className="font-bold text-gray-900 dark:text-white">Garbage Collection</h3>
+          </div>
+          {garbageDates.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-600 text-sm">No upcoming dates</p>
+          ) : (
+            <div className="space-y-2">
+              {garbageDates.map((event) => {
+                const date = new Date(event.date + 'T00:00:00');
+                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                const isToday = date.toDateString() === new Date().toDateString();
+                return (
+                  <div
+                    key={event.date}
+                    className={`flex items-center gap-4 px-4 py-3 rounded-xl border-2 ${
+                      isToday ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                      : isPast ? 'border-gray-100 dark:border-slate-800 opacity-50'
+                      : 'border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50'
+                    }`}
+                  >
+                    <div className={`text-2xl font-bold w-10 text-center ${
+                      isToday ? 'text-green-600 dark:text-green-400'
+                      : isPast ? 'text-gray-400'
+                      : 'text-gray-900 dark:text-white'
+                    }`}>
+                      {date.getDate()}
+                    </div>
+                    <div className="w-px h-8 bg-gray-200 dark:bg-slate-600" />
+                    <div className="flex-1">
+                      <p className={`font-semibold text-sm ${isToday ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'}`}>
+                        {date.toLocaleDateString('en-US', { weekday: 'long' })}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 text-right max-w-24">{event.title}</span>
+                    {isToday && <span className="text-xs bg-green-500 text-white font-semibold px-2 py-0.5 rounded-full">Today</span>}
+                    {isPast && !isToday && <span className="text-xs text-gray-400">✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-
-        {/* Divider */}
-        <div className="w-px h-8 bg-gray-200 dark:bg-slate-600" />
-
-        {/* Day and month */}
-        <div className="flex-1">
-          <p className={`font-semibold text-sm ${
-            isToday ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'
-          }`}>
-            {date.toLocaleDateString('en-US', { weekday: 'long' })}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </p>
-        </div>
-
-        {/* Event title */}
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 text-right max-w-24">
-          {event.title}
-        </span>
-
-        {/* Status badge */}
-        {isToday && (
-          <span className="text-xs bg-green-500 text-white font-semibold px-2 py-0.5 rounded-full">
-            Today
-          </span>
-        )}
-        {isPast && !isToday && (
-          <span className="text-xs text-gray-400">✓</span>
-        )}
-      </div>
-    );
-  })}
-</div>
-</div>
-
-
       </div>
 
       <BottomNav isAdmin={dbUser?.role === 'admin'} />

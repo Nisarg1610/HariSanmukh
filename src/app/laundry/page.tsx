@@ -93,7 +93,7 @@ export default function LaundryPage() {
   // ── USER VIEW ──────────────────────────────────────────────
   if (userRole === 'user') {
     return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+      <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-2xl mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
             Laundry
@@ -165,7 +165,7 @@ export default function LaundryPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28">
+    <main className="min-h-screen bg-white dark:bg-slate-950 pb-28" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
           Laundry
