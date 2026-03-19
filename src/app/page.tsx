@@ -294,37 +294,12 @@ useEffect(() => {
   init();
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      console.log('onAuthStateChange event:', event, session?.user?.email);
-
+    (event) => {
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setDbUser(null);
         clearUserId();
         setBiometricAvailable(false);
-        setLoading(false);
-        return;
-      }
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (data) {
-          setDbUser(data);
-          saveUserId(session.user.id);
-          await tryRegisterPasskey(session.user.id, session.user.email!);
-          await fetchDashboardData(data.household_id, session.user.email!);
-          await registerPushNotifications(data.id, data.household_id);
-        } else if (!profileSetupDone) {
-          profileSetupDone = true;
-          await setupProfile(session.user);
-        }
-
         setLoading(false);
       }
     }
