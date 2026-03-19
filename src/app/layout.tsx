@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { OAuthCallback } from '@/components/OAuthCallback';
 import './globals.css';
+import { Figtree } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
 const APP_NAME = 'HariSanmukh';
 const APP_DESCRIPTION = 'Manage household duties with your family';
@@ -44,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", figtree.variable)}>
       <head>
           {/* ✅ Must be first — prevents dark mode flash */}
         <script dangerouslySetInnerHTML={{
