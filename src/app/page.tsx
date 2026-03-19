@@ -412,213 +412,261 @@ export default function Home() {
   }
 
   // ── Dashboard ─────────────────────────────────────────────
-  return (
-    <main className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28">
+return (
+  <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
 
-      {/* Header */}
- <header
-  className="sticky top-0 z-30 dark:bg-slate-950/70 bg-gray-50/70"
-  style={{
-    paddingTop: 'env(safe-area-inset-top)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-  }}
->
-  <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-lg overflow-hidden">
-        <img src="/icon-192.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+    {/* Header */}
+    <header
+      className="glass-nav sticky top-0 z-30"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg overflow-hidden">
+            <img src="/icon-192.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+          </div>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
+        </div>
+
+        {/* Profile avatar button */}
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="w-9 h-9 rounded-full overflow-hidden transition-all"
+          style={{ border: '2px solid var(--border-strong)' }}
+        >
+          {user?.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt={dbUser?.first_name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--accent)' }}
+            >
+              <span className="text-white text-sm font-bold">
+                {dbUser?.first_name?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+        </button>
       </div>
-      <h1 className="text-lg font-bold text-gray-900 dark:text-white">HariSanmukh</h1>
+    </header>
+
+    {/* Passkey setup prompt */}
+    {showPasskeyPrompt && (
+      <div className="px-4 py-3" style={{ backgroundColor: 'var(--accent)' }}>
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-white">Enable Face ID login</p>
+            <p className="text-xs" style={{ color: 'var(--accent-2)' }}>Skip Google next time</p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={() => {
+                localStorage.setItem(`hs_passkey_skip_${dbUser?.id}`, 'true');
+                setShowPasskeyPrompt(false);
+              }}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+              style={{ color: 'var(--accent-bg)', opacity: 0.8 }}
+            >
+              Not now
+            </button>
+            <button
+              onClick={handleSetupPasskey}
+              disabled={registeringPasskey}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--accent)' }}
+            >
+              {registeringPasskey ? 'Setting up...' : 'Enable'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+
+      {/* Greeting */}
+      <div
+        className="rounded-3xl p-6 text-white"
+        style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
+      >
+        <p className="text-xs font-semibold mb-1 tracking-wide" style={{ color: 'var(--accent-bg)' }}>
+          🙏 JAY SWAMINARAYAN
+        </p>
+        <h2 className="text-2xl font-bold mb-0.5">{dbUser?.first_name} Bhai 👋</h2>
+        <p className="text-sm" style={{ color: 'var(--accent-bg)' }}>
+          Here's what you have this week
+        </p>
+        {dbUser?.role === 'admin' && (
+          <span
+            className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+            style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
+          >
+            Admin
+          </span>
+        )}
+      </div>
+
+      {/* My Seva */}
+      <div className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'var(--yellow-bg)' }}
+          >
+            <span className="text-base">🙏</span>
+          </div>
+          <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>My Seva</h3>
+        </div>
+        {mySevas.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-4)' }}>No seva assigned this week</p>
+        ) : (
+          <div className="space-y-2">
+            {mySevas.map((a: any) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between py-2 px-3 rounded-xl"
+                style={{ backgroundColor: 'var(--bg-card-2)' }}
+              >
+                <span className="font-medium text-sm" style={{ color: 'var(--text-1)' }}>
+                  {a.sevas?.name}
+                </span>
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                  style={{
+                    backgroundColor: a.is_completed ? 'var(--green-bg)' : 'var(--yellow-bg)',
+                    color: a.is_completed ? 'var(--green)' : 'var(--yellow)',
+                  }}
+                >
+                  {a.is_completed ? '✓ Done' : 'Pending'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* My Laundry */}
+      <div className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'var(--accent-bg)' }}
+          >
+            <span className="text-base">👕</span>
+          </div>
+          <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>My Laundry Days</h3>
+        </div>
+        {myLaundryDays.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-4)' }}>No laundry days assigned</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {myLaundryDays.map((day) => (
+              <span
+                key={day}
+                className="px-3 py-1.5 rounded-xl text-sm font-semibold"
+                style={{
+                  backgroundColor: 'var(--accent-bg)',
+                  color: 'var(--accent-text)',
+                  border: '0.5px solid var(--border-color)',
+                }}
+              >
+                {day}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Garbage Collection */}
+      <div className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'var(--green-bg)' }}
+          >
+            <span className="text-base">🗑️</span>
+          </div>
+          <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Garbage Collection</h3>
+        </div>
+        {garbageDates.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
+        ) : (
+          <div className="space-y-2">
+            {garbageDates.map((event) => {
+              const date = new Date(event.date + 'T00:00:00');
+              const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+              const isToday = date.toDateString() === new Date().toDateString();
+              return (
+                <div
+                  key={event.date}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl"
+                  style={{
+                    backgroundColor: isToday
+                      ? 'var(--green-bg)'
+                      : isPast
+                      ? 'transparent'
+                      : 'var(--bg-card-2)',
+                    border: isToday ? '0.5px solid var(--green)' : 'none',
+                    opacity: isPast ? 0.4 : 1,
+                  }}
+                >
+                  <div
+                    className="text-xl font-bold w-8 text-center"
+                    style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
+                  >
+                    {date.getDate()}
+                  </div>
+                  <div
+                    className="w-px h-8"
+                    style={{ backgroundColor: 'var(--border-color)' }}
+                  />
+                  <div className="flex-1">
+                    <p
+                      className="font-semibold text-sm"
+                      style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
+                    >
+                      {date.toLocaleDateString('en-US', { weekday: 'long' })}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+                      {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className="text-xs" style={{ color: 'var(--text-3)' }}>
+                    {event.title}
+                  </span>
+                  {isToday && (
+                    <span
+                      className="text-xs text-white font-semibold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: 'var(--green)' }}
+                    >
+                      Today
+                    </span>
+                  )}
+                  {isPast && !isToday && (
+                    <span className="text-xs" style={{ color: 'var(--text-4)' }}>✓</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
     </div>
 
-    {/* Profile avatar button */}
-    <button
-      onClick={() => setProfileOpen(true)}
-      className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-slate-700 hover:ring-blue-400 transition-all"
-    >
-      {user?.user_metadata?.avatar_url ? (
-        <img
-          src={user.user_metadata.avatar_url}
-          alt={dbUser?.first_name}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full bg-blue-600 flex items-center justify-center">
-          <span className="text-white text-sm font-bold">
-            {dbUser?.first_name?.charAt(0).toUpperCase()}
-          </span>
-        </div>
-      )}
-    </button>
-  </div>
-</header>
-
-      {/* Passkey setup prompt */}
-      {showPasskeyPrompt && (
-        <div className="bg-blue-600 px-4 py-3">
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Enable Face ID login
-              </p>
-              <p className="text-xs text-blue-200">
-                Skip Google next time
-              </p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={() => {
-                  localStorage.setItem(`hs_passkey_skip_${dbUser?.id}`, 'true');
-                  setShowPasskeyPrompt(false);
-                }}
-                className="text-xs text-blue-200 hover:text-white px-3 py-1.5 rounded-lg transition-colors"
-              >
-                Not now
-              </button>
-              <button
-                onClick={handleSetupPasskey}
-                disabled={registeringPasskey}
-                className="text-xs bg-white text-blue-600 font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all hover:bg-blue-50"
-              >
-                {registeringPasskey ? 'Setting up...' : 'Enable'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-
-        {/* Greeting */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-600/20">
-          <p className="text-blue-200 text-xs font-semibold mb-1 tracking-wide">🙏 JAY SWAMINARAYAN</p>
-          <h2 className="text-2xl font-bold mb-0.5">{dbUser?.first_name} Bhai 👋</h2>
-          <p className="text-blue-200 text-sm">Here's what you have this week</p>
-          {dbUser?.role === 'admin' && (
-            <span className="inline-block mt-3 bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
-              Admin
-            </span>
-          )}
-        </div>
-
-        {/* My Seva */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-              <span className="text-base">🙏</span>
-            </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">My Seva</h3>
-          </div>
-          {mySevas.length === 0 ? (
-            <p className="text-gray-400 dark:text-gray-600 text-sm">No seva assigned this week</p>
-          ) : (
-            <div className="space-y-2">
-              {mySevas.map((a: any) => (
-                <div key={a.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-slate-800 rounded-xl">
-                  <span className="text-gray-900 dark:text-white font-medium text-sm">{a.sevas?.name}</span>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                    a.is_completed
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
-                  }`}>
-                    {a.is_completed ? '✓ Done' : 'Pending'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* My Laundry */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <span className="text-base">👕</span>
-            </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">My Laundry Days</h3>
-          </div>
-          {myLaundryDays.length === 0 ? (
-            <p className="text-gray-400 dark:text-gray-600 text-sm">No laundry days assigned</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {myLaundryDays.map((day) => (
-                <span key={day} className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-xl text-sm font-semibold border border-blue-100 dark:border-blue-800">
-                  {day}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Garbage Collection */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <span className="text-base">🗑️</span>
-            </div>
-            <h3 className="font-bold text-gray-900 dark:text-white">Garbage Collection</h3>
-          </div>
-          {garbageDates.length === 0 ? (
-            <p className="text-gray-400 dark:text-gray-600 text-sm">No upcoming dates</p>
-          ) : (
-            <div className="space-y-2">
-              {garbageDates.map((event) => {
-                const date = new Date(event.date + 'T00:00:00');
-                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-                const isToday = date.toDateString() === new Date().toDateString();
-                return (
-                  <div
-                    key={event.date}
-                    className={`flex items-center gap-4 px-4 py-3 rounded-xl ${
-                      isToday
-                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                        : isPast
-                        ? 'opacity-40'
-                        : 'bg-gray-50 dark:bg-slate-800'
-                    }`}
-                  >
-                    <div className={`text-xl font-bold w-8 text-center ${
-                      isToday ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'
-                    }`}>
-                      {date.getDate()}
-                    </div>
-                    <div className="w-px h-8 bg-gray-200 dark:bg-slate-600" />
-                    <div className="flex-1">
-                      <p className={`font-semibold text-sm ${
-                        isToday ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-white'
-                      }`}>
-                        {date.toLocaleDateString('en-US', { weekday: 'long' })}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <span className="text-xs text-gray-400 text-right">{event.title}</span>
-                    {isToday && (
-                      <span className="text-xs bg-green-500 text-white font-semibold px-2 py-0.5 rounded-full">
-                        Today
-                      </span>
-                    )}
-                    {isPast && !isToday && <span className="text-xs text-gray-400">✓</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      <BottomNav isAdmin={dbUser?.role === 'admin'} />
-      <ProfilePanel
-  user={user}
-  dbUser={dbUser}
-  isOpen={profileOpen}
-  onClose={() => setProfileOpen(false)}
-  onLogout={() => { setProfileOpen(false); handleLogout(); }}
-  onSwitchAccount={() => { setProfileOpen(false); handleLogout(); }}
-/>
-    </main>
-  );
+    <BottomNav isAdmin={dbUser?.role === 'admin'} />
+    <ProfilePanel
+      user={user}
+      dbUser={dbUser}
+      isOpen={profileOpen}
+      onClose={() => setProfileOpen(false)}
+      onLogout={() => { setProfileOpen(false); handleLogout(); }}
+      onSwitchAccount={() => { setProfileOpen(false); handleLogout(); }}
+    />
+  </main>
+);
 }
