@@ -1,12 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/laundry-whatsapp",
-      "schedule": "0 23 * * *"
-    },
-    {
-      "path": "/api/laundry-whatsapp",
-      "schedule": "0 2 * * *"
+      "path": "/api/cron/garbage-reminder",
+      "schedule": "0 23 * * 2"
     }
   ]
 }
