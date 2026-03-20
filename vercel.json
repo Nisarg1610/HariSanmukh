@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/garbage-reminder",
       "schedule": "0 23 * * 2"
+    },
+    {
+      "path": "/api/cron/garbage-reminder",
+      "schedule": "0 23 * * 2"
+    },
+    {
+      "path": "/api/cron/laundry-reminder",
+      "schedule": "0 12 * * *"
     }
   ]
 }
