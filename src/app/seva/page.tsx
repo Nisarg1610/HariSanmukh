@@ -156,7 +156,7 @@ export default function SevaPage() {
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <AppHeader />
+   
       <div className="max-w-2xl mx-auto px-4 py-6">
 
         <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-1)' }}>Seva</h1>
@@ -281,7 +281,6 @@ export default function SevaPage() {
     className="min-h-screen pb-28"
     style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
   >
-    <AppHeader />
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
       {/* Header */}

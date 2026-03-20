@@ -539,7 +539,7 @@ export default function GroceryPage() {
         className="min-h-screen pb-28"
         style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <AppHeader />
+       
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Grocery</h1>
           <TabBar />

@@ -124,13 +124,24 @@ main {
 
 /* Glass header */
 .glass-nav {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: linear-gradient(
+    to top,
+    rgba(240, 242, 247, 0.95) 0%,
+    rgba(240, 242, 247, 0.6) 50%,
+    rgba(240, 242, 247, 0.0) 100%
+  );
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: none;
 }
+
 html.dark .glass-nav {
-  background: transparent;
+  background: linear-gradient(
+    to top,
+    rgba(10, 12, 16, 0.95) 0%,
+    rgba(10, 12, 16, 0.6) 50%,
+    rgba(10, 12, 16, 0.0) 100%
+  );
 }
 
 /* Glass bottom nav */
