@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  // Secure the cron endpoint so only Vercel can call it
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -11,11 +10,19 @@ export async function GET(request: Request) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      householdId: 'all', // or however you target all households
+      householdId: 'all',
       title: '🗑️ Garbage Day Tomorrow!',
       body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
     }),
   });
+
+  // Check if response is actually JSON before parsing
+  const contentType = res.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    const text = await res.text();
+    console.error('Non-JSON response:', res.status, text);
+    return NextResponse.json({ error: 'Unexpected response', status: res.status, body: text }, { status: 500 });
+  }
 
   const data = await res.json();
   return NextResponse.json(data);
