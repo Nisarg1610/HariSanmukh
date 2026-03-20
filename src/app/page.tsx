@@ -509,9 +509,7 @@ return (
   >
     {dbUser?.first_name} Bhai 👋
   </h2>
-  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
-    Here's what you have this week
-  </p>
+
   {dbUser?.role === 'admin' && (
     <span
       className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
@@ -522,6 +520,12 @@ return (
   )}
 </div>
 
+<p
+  className="text-xs font-semibold uppercase tracking-widest px-1"
+  style={{ color: 'var(--text-3)' }}
+>
+  Here's what you have this week
+</p>
       {/* My Seva */}
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
