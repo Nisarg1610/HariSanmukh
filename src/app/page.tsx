@@ -318,16 +318,19 @@ export default function Home() {
   };
 
   // ── Loading ───────────────────────────────────────────────
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center animate-pulse">
-          <span className="text-white text-xl">🙏</span>
-        </div>
-        <p className="text-gray-400 dark:text-gray-500 text-sm">Loading...</p>
-      </main>
-    );
-  }
+if (loading) {
+  return (
+    <main
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ backgroundColor: 'var(--bg)' }}
+    >
+      <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
+        <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+      </div>
+      <p className="text-sm" style={{ color: 'var(--text-3)' }}>Loading...</p>
+    </main>
+  );
+}
 
   // ── Not logged in ─────────────────────────────────────────
   if (!user) {
@@ -489,26 +492,35 @@ return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
       {/* Greeting */}
-      <div
-        className="rounded-3xl p-6 text-white"
-        style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
-      >
-        <p className="text-xs font-semibold mb-1 tracking-wide" style={{ color: 'var(--accent-bg)' }}>
-          🙏 JAY SWAMINARAYAN
-        </p>
-        <h2 className="text-2xl font-bold mb-0.5">{dbUser?.first_name} Bhai 👋</h2>
-        <p className="text-sm" style={{ color: 'var(--accent-bg)' }}>
-          Here's what you have this week
-        </p>
-        {dbUser?.role === 'admin' && (
-          <span
-            className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
-          >
-            Admin
-          </span>
-        )}
-      </div>
+      {/* Greeting */}
+<div
+  className="rounded-3xl p-6 text-white"
+  style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
+>
+  <p
+    className="text-2xl font-bold mb-1 tracking-wide"
+    style={{ color: 'white' }}
+  >
+    🙏 Jay Swaminarayan 🙏 
+  </p>
+  <h2
+    className="text-base font-semibold mb-1"
+    style={{ color: 'rgba(255,255,255,0.8)' }}
+  >
+    {dbUser?.first_name} Bhai 👋
+  </h2>
+  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
+    Here's what you have this week
+  </p>
+  {dbUser?.role === 'admin' && (
+    <span
+      className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+      style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
+    >
+      Admin
+    </span>
+  )}
+</div>
 
       {/* My Seva */}
       <div className="card p-5">

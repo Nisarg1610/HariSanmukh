@@ -83,16 +83,18 @@ export default function LaundryPage() {
   };
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center animate-pulse">
-          <span className="text-white text-xl">👕</span>
-        </div>
-        <p className="text-gray-400 dark:text-gray-500 text-sm">Loading...</p>
-      </main>
-    );
-  }
-
+  return (
+    <main
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ backgroundColor: 'var(--bg)' }}
+    >
+      <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
+        <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+      </div>
+      <p className="text-sm" style={{ color: 'var(--text-3)' }}>Loading...</p>
+    </main>
+  );
+}
  if (userRole === 'user') {
   return (
     <main

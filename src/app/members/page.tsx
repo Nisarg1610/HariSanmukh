@@ -153,13 +153,19 @@ export default function MembersPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
-      </main>
-    );
-  }
+ if (loading) {
+  return (
+    <main
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ backgroundColor: 'var(--bg)' }}
+    >
+      <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
+        <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+      </div>
+      <p className="text-sm" style={{ color: 'var(--text-3)' }}>Loading...</p>
+    </main>
+  );
+}
 
   const activeCount = members.filter((m) => m.status === 'active').length;
 
