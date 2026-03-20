@@ -126,9 +126,9 @@ main {
 .glass-nav {
   background: linear-gradient(
     to top,
-    rgba(240, 242, 247, 0.95) 0%,
+    rgba(240, 242, 247, 0.95) 100%,
     rgba(240, 242, 247, 0.6) 50%,
-    rgba(240, 242, 247, 0.0) 100%
+    rgba(240, 242, 247, 0.0) 0%
   );
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -138,9 +138,9 @@ main {
 html.dark .glass-nav {
   background: linear-gradient(
     to top,
-    rgba(10, 12, 16, 0.95) 0%,
+    rgba(10, 12, 16, 0.95) 100%,
     rgba(10, 12, 16, 0.6) 50%,
-    rgba(10, 12, 16, 0.0) 100%
+    rgba(10, 12, 16, 0.0) 0%
   );
 }
 
