@@ -582,7 +582,7 @@ return (
       </div>
 
       {/* Garbage Collection */}
-      {/* Garbage Collection */}
+{/* Garbage Collection */}
 <div className="card p-5">
   <div className="flex items-center gap-2 mb-4">
     <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--green-bg)' }}>
@@ -593,15 +593,16 @@ return (
   {garbageDates.length === 0 ? (
     <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
   ) : (
-    <div className="space-y-2">
-      {/* ✅ Group events by date first */}
+    <div className="list-group">
       {Object.entries(
         garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
           if (!acc[event.date]) acc[event.date] = [];
           acc[event.date].push(event);
           return acc;
         }, {})
-      ).map(([date, events]) => {
+      )
+      .slice(0, 4)
+      .map(([date, events], idx, arr) => {
         const dateObj = new Date(date + 'T00:00:00');
         const isPast = dateObj < new Date(new Date().setHours(0, 0, 0, 0));
         const isToday = dateObj.toDateString() === new Date().toDateString();
@@ -609,14 +610,14 @@ return (
         return (
           <div
             key={date}
-            className="flex items-center gap-4 px-4 py-3 rounded-xl"
+            className="flex items-center gap-4 px-4 py-3"
             style={{
-              backgroundColor: isToday ? 'var(--green-bg)' : isPast ? 'transparent' : 'var(--bg-card-2)',
-              border: isToday ? '0.5px solid var(--green)' : 'none',
+              borderBottom: idx !== arr.length - 1 ? '0.5px solid var(--separator)' : 'none',
               opacity: isPast ? 0.4 : 1,
+              backgroundColor: isToday ? 'var(--green-bg)' : 'transparent',
             }}
           >
-            {/* Date number */}
+            {/* Date */}
             <div
               className="text-xl font-bold w-8 text-center flex-shrink-0"
               style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
@@ -624,7 +625,7 @@ return (
               {dateObj.getDate()}
             </div>
 
-            <div className="w-px h-8 flex-shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+            <div className="w-px h-8 flex-shrink-0" style={{ backgroundColor: 'var(--separator)' }} />
 
             {/* Day + Month */}
             <div className="flex-1">
@@ -632,33 +633,26 @@ return (
                 {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
               </p>
               <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-                {dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                {dateObj.toLocaleDateString('en-US', { month: 'long' })}
               </p>
             </div>
 
-            {/* ✅ All event titles as badges */}
-            <div className="flex flex-wrap gap-1 justify-end">
+            {/* Event titles */}
+            <div className="flex flex-col items-end gap-0.5">
               {events.map((event: any, i: number) => (
-                <span
-                  key={i}
-                  className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{
-                    backgroundColor: event.type === 'recycle' ? 'var(--accent-bg)' : 'var(--green-bg)',
-                    color: event.type === 'recycle' ? 'var(--accent-text)' : 'var(--green)',
-                  }}
-                >
-                  {event.type === 'recycle' ? '♻️' : '🗑️'} {event.title}
+                <span key={i} className="text-xs" style={{ color: 'var(--text-3)' }}>
+                  {event.title}
                 </span>
               ))}
-              {isToday && (
-                <span className="text-xs text-white font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--green)' }}>
-                  Today
-                </span>
-              )}
             </div>
 
-            {isPast && !isToday && (
-              <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-4)' }}>✓</span>
+            {isToday && (
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+                style={{ backgroundColor: 'var(--green)' }}
+              >
+                Today
+              </span>
             )}
           </div>
         );
@@ -666,12 +660,7 @@ return (
     </div>
   )}
 </div>
-```
 
-Now on the 22nd it will show one tile with all badges like:
-```
-22  Wednesday          🗑️ Garbage  🗑️ Yard Waste  ♻️ Recycle
-    March 2026
 
     </div>
 

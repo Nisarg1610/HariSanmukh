@@ -6,14 +6,13 @@ const GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.go
 async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycle', apiKey: string) {
   const now = new Date();
   const timeMin = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString(); // 2 months ahead
+  const timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
 
   const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=20`
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
   );
 
   const data = await res.json();
-
   return (data.items ?? []).map((event: any) => ({
     title: event.summary,
     date: event.start?.date ?? event.start?.dateTime?.split('T')[0],
@@ -30,7 +29,6 @@ export async function GET() {
       fetchCalendarEvents(RECYCLE_CALENDAR_ID, 'recycle', apiKey),
     ]);
 
-    // Merge and sort by date
     const events = [...garbageEvents, ...recycleEvents].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
