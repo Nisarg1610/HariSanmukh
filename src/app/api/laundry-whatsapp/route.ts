@@ -52,11 +52,14 @@ const name = (testMember.household_members as any)?.first_name;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: phone,
-          type: 'text',
-          text: { body: message },
-        }),
+  messaging_product: 'whatsapp',
+  to: phone,
+  type: 'template',
+  template: {
+    name: 'hello_world',
+    language: { code: 'en_US' }
+  }
+}),
       }
     );
 
