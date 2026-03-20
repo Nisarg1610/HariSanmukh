@@ -11,6 +11,7 @@ import {
   removeLaundryAssignment,
 } from '@/utils/laundry';
 import { getHouseholdMembers } from '@/utils/members';
+import { AppHeader } from '@/components/AppHeader';
 
 export default function LaundryPage() {
   const [loading, setLoading] = useState(true);
@@ -98,6 +99,7 @@ export default function LaundryPage() {
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
+      <AppHeader />
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry</h1>
 
@@ -182,6 +184,7 @@ export default function LaundryPage() {
     className="min-h-screen pb-28"
     style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
   >
+    <AppHeader />
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
       <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry</h1>
