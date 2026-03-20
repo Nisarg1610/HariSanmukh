@@ -582,79 +582,78 @@ return (
       </div>
 
       {/* Garbage Collection */}
-      <div className="card p-5">
-        <div className="flex items-center gap-2 mb-4">
+      {/* Garbage Collection */}
+<div className="card p-5">
+  <div className="flex items-center gap-2 mb-4">
+    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--green-bg)' }}>
+      <span className="text-base">🗑️</span>
+    </div>
+    <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Garbage Collection</h3>
+  </div>
+  {garbageDates.length === 0 ? (
+    <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
+  ) : (
+    <div className="space-y-2">
+      {garbageDates.map((event, idx) => {
+        const date = new Date(event.date + 'T00:00:00');
+        const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+        const isToday = date.toDateString() === new Date().toDateString();
+        const isRecycle = event.type === 'recycle';
+
+        return (
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: 'var(--green-bg)' }}
+            key={`${event.date}-${idx}`}
+            className="flex items-center gap-4 px-4 py-3 rounded-xl"
+            style={{
+              backgroundColor: isToday
+                ? 'var(--green-bg)'
+                : isPast ? 'transparent' : 'var(--bg-card-2)',
+              border: isToday ? '0.5px solid var(--green)' : 'none',
+              opacity: isPast ? 0.4 : 1,
+            }}
           >
-            <span className="text-base">🗑️</span>
+            <div
+              className="text-xl font-bold w-8 text-center"
+              style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
+            >
+              {date.getDate()}
+            </div>
+
+            <div className="w-px h-8" style={{ backgroundColor: 'var(--border-color)' }} />
+
+            <div className="flex-1">
+              <p className="font-semibold text-sm" style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
+                {date.toLocaleDateString('en-US', { weekday: 'long' })}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+                {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+
+            {/* ✅ Only difference — show recycle badge if it's a recycle day */}
+            {isRecycle && (
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent-text)' }}
+              >
+                ♻️ Recycle
+              </span>
+            )}
+
+            {isToday && (
+              <span className="text-xs text-white font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--green)' }}>
+                Today
+              </span>
+            )}
+            {isPast && !isToday && (
+              <span className="text-xs" style={{ color: 'var(--text-4)' }}>✓</span>
+            )}
           </div>
-          <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Garbage Collection</h3>
-        </div>
-        {garbageDates.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
-        ) : (
-          <div className="space-y-2">
-            {garbageDates.map((event) => {
-              const date = new Date(event.date + 'T00:00:00');
-              const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-              const isToday = date.toDateString() === new Date().toDateString();
-              return (
-                <div
-                  key={event.date}
-                  className="flex items-center gap-4 px-4 py-3 rounded-xl"
-                  style={{
-                    backgroundColor: isToday
-                      ? 'var(--green-bg)'
-                      : isPast
-                      ? 'transparent'
-                      : 'var(--bg-card-2)',
-                    border: isToday ? '0.5px solid var(--green)' : 'none',
-                    opacity: isPast ? 0.4 : 1,
-                  }}
-                >
-                  <div
-                    className="text-xl font-bold w-8 text-center"
-                    style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
-                  >
-                    {date.getDate()}
-                  </div>
-                  <div
-                    className="w-px h-8"
-                    style={{ backgroundColor: 'var(--border-color)' }}
-                  />
-                  <div className="flex-1">
-                    <p
-                      className="font-semibold text-sm"
-                      style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
-                    >
-                      {date.toLocaleDateString('en-US', { weekday: 'long' })}
-                    </p>
-                    <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-                      {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <span className="text-xs" style={{ color: 'var(--text-3)' }}>
-                    {event.title}
-                  </span>
-                  {isToday && (
-                    <span
-                      className="text-xs text-white font-semibold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: 'var(--green)' }}
-                    >
-                      Today
-                    </span>
-                  )}
-                  {isPast && !isToday && (
-                    <span className="text-xs" style={{ color: 'var(--text-4)' }}>✓</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        );
+      })}
+    </div>
+  )}
+</div>
 
     </div>
 

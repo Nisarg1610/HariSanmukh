@@ -1,22 +1,43 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const calendarId = '5sfp0o5al962uod59qlfp7sssmtrgehm@import.calendar.google.com';
-  const apiKey = process.env.GOOGLE_CALENDAR_API_KEY;
+const RECYCLE_CALENDAR_ID = '5sfp0o5al962uod59qlfp7sssmtrgehm@import.calendar.google.com';
+const GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.google.com';
 
+async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycle', apiKey: string) {
   const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+  const timeMin = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const timeMax = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString(); // 2 months ahead
 
-  const response = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${firstDay}&timeMax=${lastDay}&singleEvents=true&orderBy=startTime`
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=20`
   );
 
-  const data = await response.json();
-  const events = data.items?.map((event: any) => ({
-    title: event.summary,
-    date: event.start?.date ?? event.start?.dateTime,
-  })) ?? [];
+  const data = await res.json();
 
-  return NextResponse.json({ events });
+  return (data.items ?? []).map((event: any) => ({
+    title: event.summary,
+    date: event.start?.date ?? event.start?.dateTime?.split('T')[0],
+    type,
+  }));
+}
+
+export async function GET() {
+  try {
+    const apiKey = process.env.GOOGLE_CALENDAR_API_KEY!;
+
+    const [garbageEvents, recycleEvents] = await Promise.all([
+      fetchCalendarEvents(GARBAGE_CALENDAR_ID, 'garbage', apiKey),
+      fetchCalendarEvents(RECYCLE_CALENDAR_ID, 'recycle', apiKey),
+    ]);
+
+    // Merge and sort by date
+    const events = [...garbageEvents, ...recycleEvents].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    return NextResponse.json({ events });
+  } catch (err) {
+    console.error('Calendar error:', err);
+    return NextResponse.json({ events: [] });
+  }
 }
