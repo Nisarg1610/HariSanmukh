@@ -46,27 +46,27 @@
    DARK MODE — Full Navy Depth
 ══════════════════════════════════════ */
 html.dark {
-  --bg:            #111318;
-  --bg-card:       #181c24;
-  --bg-card-2:     #1f2430;
-  --bg-elevated:   #262d3a;
-  --text-1:        #eef0f4;
-  --text-2:        #c8cdd8;
-  --text-3:        #7a8499;
-  --text-4:        #3d4558;
-  --border-color:  rgba(120, 180, 160, 0.12);
-  --border-strong: rgba(120, 180, 160, 0.25);
+  --bg:            #0a0c10;
+  --bg-card:       #0f1218;
+  --bg-card-2:     #161b24;
+  --bg-elevated:   #1c2230;
+  --text-1:        #e8dfc8;
+  --text-2:        #c9bfa8;
+  --text-3:        #7a7568;
+  --text-4:        #3d3a34;
+  --border-color:  rgba(120, 180, 160, 0.10);
+  --border-strong: rgba(120, 180, 160, 0.22);
   --accent:        #4db896;
   --accent-2:      #3da882;
-  --accent-bg:     #0e2420;
+  --accent-bg:     #0a1e1a;
   --accent-text:   #7dd4b8;
   --green:         #4db896;
-  --green-bg:      #0e2420;
-  --red:           #f87171;
-  --red-bg:        #2a0f0f;
-  --yellow:        #fbbf24;
-  --yellow-bg:     #261e08;
-  --separator:     rgba(120, 180, 160, 0.08);
+  --green-bg:      #0a1e1a;
+  --red:           #e87070;
+  --red-bg:        #220d0d;
+  --yellow:        #e8b84b;
+  --yellow-bg:     #201808;
+  --separator:     rgba(120, 180, 160, 0.07);
   color-scheme:    dark;
 }
 
@@ -130,7 +130,7 @@ main {
   border-bottom: 0.5px solid var(--separator);
 }
 html.dark .glass-nav {
-  background: rgba(34, 40, 49, 0.88);
+  background: rgba(10, 12, 16, 0.92);
 }
 
 /* Glass bottom nav */
@@ -141,7 +141,7 @@ html.dark .glass-nav {
   border-top: 0.5px solid var(--separator);
 }
 html.dark .glass-bottom {
-  background: rgba(34, 40, 49, 0.92);
+  background: rgba(10, 12, 16, 0.94);
 }
 
 /* iOS grouped list */
