@@ -46,27 +46,27 @@
    DARK MODE — Full Navy Depth
 ══════════════════════════════════════ */
 html.dark {
-  --bg:            #0f172a;
-  --bg-card:       #1e293b;
-  --bg-card-2:     #293548;
-  --bg-elevated:   #334155;
-  --text-1:        #f1f5f9;
-  --text-2:        #e2e8f0;
-  --text-3:        #94a3b8;
-  --text-4:        #475569;
-  --border-color:  rgba(99, 102, 241, 0.15);
-  --border-strong: rgba(99, 102, 241, 0.30);
-  --accent:        #6366f1;
-  --accent-2:      #818cf8;
-  --accent-bg:     #1e1f3a;
-  --accent-text:   #a5b4fc;
-  --green:         #34d399;
-  --green-bg:      #0a2a1c;
-  --red:           #f87171;
+  --bg:            #211832;
+  --bg-card:       #2d2048;
+  --bg-card-2:     #412B6B;
+  --bg-elevated:   #5C3E94;
+  --text-1:        #f5f0ff;
+  --text-2:        #d4c8f0;
+  --text-3:        #9b87c4;
+  --text-4:        #5C3E94;
+  --border-color:  rgba(242, 89, 18, 0.15);
+  --border-strong: rgba(242, 89, 18, 0.30);
+  --accent:        #F25912;
+  --accent-2:      #ff7a3d;
+  --accent-bg:     #3a1f10;
+  --accent-text:   #ff9966;
+  --green:         #4ade80;
+  --green-bg:      #0a2a18;
+  --red:           #ff6b6b;
   --red-bg:        #2a0f0f;
   --yellow:        #fbbf24;
   --yellow-bg:     #2a1f08;
-  --separator:     rgba(99, 102, 241, 0.10);
+  --separator:     rgba(242, 89, 18, 0.10);
   color-scheme:    dark;
 }
 
@@ -130,7 +130,7 @@ main {
   border-bottom: 0.5px solid var(--separator);
 }
 html.dark .glass-nav {
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(33, 24, 50, 0.88);
 }
 
 /* Glass bottom nav */
@@ -141,7 +141,7 @@ html.dark .glass-nav {
   border-top: 0.5px solid var(--separator);
 }
 html.dark .glass-bottom {
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(33, 24, 50, 0.92);
 }
 
 /* iOS grouped list */
