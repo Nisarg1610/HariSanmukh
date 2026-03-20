@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const { data: subscriptions } = await supabase
     .from('push_subscriptions')
     .select('subscription')
-    .in('user_id', memberIds);
+    //.in('user_id', memberIds);
 
   if (!subscriptions || subscriptions.length === 0) {
     return NextResponse.json({ message: 'No subscribers found for today\'s members' });
