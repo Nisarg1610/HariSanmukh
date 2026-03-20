@@ -594,59 +594,71 @@ return (
     <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
   ) : (
     <div className="space-y-2">
-      {garbageDates.map((event, idx) => {
-        const date = new Date(event.date + 'T00:00:00');
-        const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-        const isToday = date.toDateString() === new Date().toDateString();
-        const isRecycle = event.type === 'recycle';
+      {/* ✅ Group events by date first */}
+      {Object.entries(
+        garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
+          if (!acc[event.date]) acc[event.date] = [];
+          acc[event.date].push(event);
+          return acc;
+        }, {})
+      ).map(([date, events]) => {
+        const dateObj = new Date(date + 'T00:00:00');
+        const isPast = dateObj < new Date(new Date().setHours(0, 0, 0, 0));
+        const isToday = dateObj.toDateString() === new Date().toDateString();
 
         return (
           <div
-            key={`${event.date}-${idx}`}
+            key={date}
             className="flex items-center gap-4 px-4 py-3 rounded-xl"
             style={{
-              backgroundColor: isToday
-                ? 'var(--green-bg)'
-                : isPast ? 'transparent' : 'var(--bg-card-2)',
+              backgroundColor: isToday ? 'var(--green-bg)' : isPast ? 'transparent' : 'var(--bg-card-2)',
               border: isToday ? '0.5px solid var(--green)' : 'none',
               opacity: isPast ? 0.4 : 1,
             }}
           >
+            {/* Date number */}
             <div
-              className="text-xl font-bold w-8 text-center"
+              className="text-xl font-bold w-8 text-center flex-shrink-0"
               style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
             >
-              {date.getDate()}
+              {dateObj.getDate()}
             </div>
 
-            <div className="w-px h-8" style={{ backgroundColor: 'var(--border-color)' }} />
+            <div className="w-px h-8 flex-shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 
+            {/* Day + Month */}
             <div className="flex-1">
               <p className="font-semibold text-sm" style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
-                {date.toLocaleDateString('en-US', { weekday: 'long' })}
+                {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
               </p>
               <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-                {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                {dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
             </div>
 
-            {/* ✅ Only difference — show recycle badge if it's a recycle day */}
-            {isRecycle && (
-              <span
-                className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent-text)' }}
-              >
-                ♻️ Recycle
-              </span>
-            )}
+            {/* ✅ All event titles as badges */}
+            <div className="flex flex-wrap gap-1 justify-end">
+              {events.map((event: any, i: number) => (
+                <span
+                  key={i}
+                  className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: event.type === 'recycle' ? 'var(--accent-bg)' : 'var(--green-bg)',
+                    color: event.type === 'recycle' ? 'var(--accent-text)' : 'var(--green)',
+                  }}
+                >
+                  {event.type === 'recycle' ? '♻️' : '🗑️'} {event.title}
+                </span>
+              ))}
+              {isToday && (
+                <span className="text-xs text-white font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--green)' }}>
+                  Today
+                </span>
+              )}
+            </div>
 
-            {isToday && (
-              <span className="text-xs text-white font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--green)' }}>
-                Today
-              </span>
-            )}
             {isPast && !isToday && (
-              <span className="text-xs" style={{ color: 'var(--text-4)' }}>✓</span>
+              <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-4)' }}>✓</span>
             )}
           </div>
         );
@@ -654,6 +666,12 @@ return (
     </div>
   )}
 </div>
+```
+
+Now on the 22nd it will show one tile with all badges like:
+```
+22  Wednesday          🗑️ Garbage  🗑️ Yard Waste  ♻️ Recycle
+    March 2026
 
     </div>
 
