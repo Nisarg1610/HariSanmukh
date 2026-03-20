@@ -6,15 +6,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/notifications/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      householdId: 'all',
-      title: '🗑️ Garbage Day Tomorrow!',
-      body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
-    }),
-  });
+const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/push-notify`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    householdId: 'all',
+    title: '🗑️ Garbage Day Tomorrow!',
+    body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
+  }),
+});
 
   // Check if response is actually JSON before parsing
   const contentType = res.headers.get('content-type');

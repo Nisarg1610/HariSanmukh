@@ -16,10 +16,13 @@ webpush.setVapidDetails(
 export async function POST(request: Request) {
   const { householdId, title, body } = await request.json();
 
-  const { data: subscriptions } = await supabase
-    .from('push_subscriptions')
-    .select('subscription')
-    .eq('household_id', householdId);
+  // If householdId is 'all', fetch all subscriptions, otherwise filter by household
+  let query = supabase.from('push_subscriptions').select('subscription');
+  if (householdId !== 'all') {
+    query = query.eq('household_id', householdId);
+  }
+
+  const { data: subscriptions } = await query;
 
   if (!subscriptions || subscriptions.length === 0) {
     return NextResponse.json({ message: 'No subscribers' });
