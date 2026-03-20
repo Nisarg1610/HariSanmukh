@@ -12,6 +12,8 @@ import {
   deleteMember,
 } from '@/utils/members';
 
+import { AppHeader } from '@/components/AppHeader';
+
 interface Member {
   id: string;
   first_name: string;
