@@ -149,97 +149,129 @@ export default function SevaPage() {
   }
 
   // ─── USER VIEW ──────────────────────────────────────────────
-  if (userRole === 'user') {
-    return (
-      <main
-        className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="max-w-2xl mx-auto px-4 py-6">
+ if (userRole === 'user') {
+  return (
+    <main
+      className="min-h-screen pb-28"
+      style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="max-w-2xl mx-auto px-4 py-6">
 
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Seva</h1>
+        <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-1)' }}>Seva</h1>
 
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-            </div>
-          )}
+        {error && (
+          <div
+            className="mb-4 p-4 rounded-xl"
+            style={{ backgroundColor: 'var(--red-bg)', border: '0.5px solid var(--red)' }}
+          >
+            <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>
+          </div>
+        )}
 
-          {sevas.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-12 text-center">
-              <p className="text-gray-400 dark:text-gray-600 text-sm">No sevas assigned yet</p>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
-                <div className="grid grid-cols-3 gap-4">
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Seva</span>
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Assigned To</span>
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide text-center">Status</span>
-                </div>
+        {sevas.length === 0 ? (
+          <div className="list-group p-12 text-center">
+            <p className="text-sm" style={{ color: 'var(--text-4)' }}>No sevas assigned yet</p>
+          </div>
+        ) : (
+          <div className="list-group">
+            {/* Header row */}
+            <div
+              className="px-4 py-3"
+              style={{
+                borderBottom: '0.5px solid var(--separator)',
+                backgroundColor: 'var(--bg-card-2)',
+              }}
+            >
+              <div className="grid grid-cols-3 gap-4">
+                <span className="section-header" style={{ marginBottom: 0 }}>Seva</span>
+                <span className="section-header" style={{ marginBottom: 0 }}>Assigned To</span>
+                <span className="section-header text-center" style={{ marginBottom: 0 }}>Status</span>
               </div>
-              {sevas.map((seva, idx) => {
-                const sevaAssignments = assignments.filter((a) => a.seva_id === seva.id);
-                const myAssignment = sevaAssignments.find(
-                  (a) => a.member_id === memberId
-                );
-                return (
-                  <div
-                    key={seva.id}
-                    className={`px-4 py-4 ${idx !== sevas.length - 1 ? 'border-b border-gray-100 dark:border-slate-800' : ''} ${myAssignment ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                  >
-                    <div className="grid grid-cols-3 gap-4 items-center">
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white text-sm">{seva.name}</p>
-                        {seva.description && (
-                          <p className="text-xs text-gray-400 mt-0.5">{seva.description}</p>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {sevaAssignments.length === 0 ? (
-                          <span className="text-gray-400 text-xs">—</span>
-                        ) : (
-                          sevaAssignments.map((a) => (
-                            <span
-                              key={a.id}
-                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                a.member_id === memberId
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
-                              }`}
-                            >
-                              {a.household_members?.first_name} Bhai
-                              {a.is_completed && ' ✓'}
-                            </span>
-                          ))
-                        )}
-                      </div>
-                      <div className="text-center">
-                        {myAssignment && !myAssignment.is_completed ? (
-                          <button
-                            onClick={() => handleMarkDone(myAssignment.id)}
-                            disabled={completingId === myAssignment.id}
-                            className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all"
+            </div>
+
+            {sevas.map((seva, idx) => {
+              const sevaAssignments = assignments.filter((a) => a.seva_id === seva.id);
+              const myAssignment = sevaAssignments.find((a) => a.member_id === memberId);
+
+              return (
+                <div
+                  key={seva.id}
+                  className="px-4 py-4"
+                  style={{
+                    borderBottom: idx !== sevas.length - 1
+                      ? '0.5px solid var(--separator)'
+                      : 'none',
+                    backgroundColor: myAssignment
+                      ? 'var(--accent-bg)'
+                      : 'transparent',
+                  }}
+                >
+                  <div className="grid grid-cols-3 gap-4 items-center">
+                    {/* Seva name */}
+                    <div>
+                      <p className="font-semibold text-sm" style={{ color: 'var(--text-1)' }}>
+                        {seva.name}
+                      </p>
+                      {seva.description && (
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                          {seva.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Assigned members */}
+                    <div className="flex flex-wrap gap-1">
+                      {sevaAssignments.length === 0 ? (
+                        <span className="text-xs" style={{ color: 'var(--text-4)' }}>—</span>
+                      ) : (
+                        sevaAssignments.map((a) => (
+                          <span
+                            key={a.id}
+                            className="px-2 py-0.5 rounded-full text-xs font-medium"
+                            style={{
+                              backgroundColor: a.member_id === memberId
+                                ? 'var(--accent)'
+                                : 'var(--bg-card-2)',
+                              color: a.member_id === memberId
+                                ? 'white'
+                                : 'var(--text-2)',
+                            }}
                           >
-                            {completingId === myAssignment.id ? '...' : 'Mark Done'}
-                          </button>
-                        ) : myAssignment?.is_completed ? (
-                          <span className="text-green-500 font-bold text-lg">✓</span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-700">—</span>
-                        )}
-                      </div>
+                            {a.household_members?.first_name} Bhai
+                            {a.is_completed && ' ✓'}
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Status / action */}
+                    <div className="text-center">
+                      {myAssignment && !myAssignment.is_completed ? (
+                        <button
+                          onClick={() => handleMarkDone(myAssignment.id)}
+                          disabled={completingId === myAssignment.id}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all text-white"
+                          style={{ backgroundColor: 'var(--accent)' }}
+                        >
+                          {completingId === myAssignment.id ? '...' : 'Mark Done'}
+                        </button>
+                      ) : myAssignment?.is_completed ? (
+                        <span className="font-bold text-lg" style={{ color: 'var(--green)' }}>✓</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-4)' }}>—</span>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <BottomNav isAdmin={false} />
-      </main>
-    );
-  }
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      <BottomNav isAdmin={false} />
+    </main>
+  );
+}
 
   // ─── ADMIN VIEW ──────────────────────────────────────────────
  return (

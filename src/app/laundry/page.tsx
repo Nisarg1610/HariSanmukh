@@ -92,66 +92,84 @@ export default function LaundryPage() {
     );
   }
 
-  // ── USER VIEW ──────────────────────────────────────────────
-  if (userRole === 'user') {
-    return (
-      <main
-        className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Laundry</h1>
+ if (userRole === 'user') {
+  return (
+    <main
+      className="min-h-screen pb-28"
+      style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry</h1>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
-              <div className="grid grid-cols-2 gap-4">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Day</span>
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Member</span>
-              </div>
+        <div className="list-group">
+          {/* Header */}
+          <div
+            className="px-4 py-3"
+            style={{
+              borderBottom: '0.5px solid var(--separator)',
+              backgroundColor: 'var(--bg-card-2)',
+            }}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <span className="section-header" style={{ marginBottom: 0 }}>Day</span>
+              <span className="section-header" style={{ marginBottom: 0 }}>Member</span>
             </div>
+          </div>
 
-            {DAYS.map((day, idx) => {
-              const dayAssignments = assignments.filter((a) => a.day_of_week === day);
-              const isMyDay = dayAssignments.some((a) => a.member_id === memberId);
+          {DAYS.map((day, idx) => {
+            const dayAssignments = assignments.filter((a) => a.day_of_week === day);
+            const isMyDay = dayAssignments.some((a) => a.member_id === memberId);
 
-              return (
-                <div
-                  key={day}
-                  className={`px-4 py-3.5 ${idx !== DAYS.length - 1 ? 'border-b border-gray-100 dark:border-slate-800' : ''} ${isMyDay ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                >
-                  <div className="grid grid-cols-2 gap-4 items-center">
-                    <span className={`font-semibold text-sm ${isMyDay ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
-                      {day}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {dayAssignments.length === 0 ? (
-                        <span className="text-gray-300 dark:text-gray-700 text-sm">—</span>
-                      ) : (
-                        dayAssignments.map((a) => (
-                          <span
-                            key={a.id}
-                            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              a.member_id === memberId
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300'
-                            }`}
-                          >
-                            {a.household_members?.first_name} Bhai
-                          </span>
-                        ))
-                      )}
-                    </div>
+            return (
+              <div
+                key={day}
+                className="px-4 py-3.5"
+                style={{
+                  borderBottom: idx !== DAYS.length - 1
+                    ? '0.5px solid var(--separator)'
+                    : 'none',
+                  backgroundColor: isMyDay ? 'var(--accent-bg)' : 'transparent',
+                }}
+              >
+                <div className="grid grid-cols-2 gap-4 items-center">
+                  <span
+                    className="font-semibold text-sm"
+                    style={{ color: isMyDay ? 'var(--accent-text)' : 'var(--text-1)' }}
+                  >
+                    {day}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {dayAssignments.length === 0 ? (
+                      <span className="text-sm" style={{ color: 'var(--text-4)' }}>—</span>
+                    ) : (
+                      dayAssignments.map((a) => (
+                        <span
+                          key={a.id}
+                          className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            backgroundColor: a.member_id === memberId
+                              ? 'var(--accent)'
+                              : 'var(--bg-card-2)',
+                            color: a.member_id === memberId
+                              ? 'white'
+                              : 'var(--text-2)',
+                          }}
+                        >
+                          {a.household_members?.first_name} Bhai
+                        </span>
+                      ))
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
-        <BottomNav isAdmin={false} />
-      </main>
-    );
-  }
+      </div>
+      <BottomNav isAdmin={false} />
+    </main>
+  );
+}
 
   // ── ADMIN VIEW ─────────────────────────────────────────────
   const selectedMember = members.find((m) => m.id === selectedMemberId);

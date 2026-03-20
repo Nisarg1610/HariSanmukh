@@ -22,7 +22,6 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1px)' }}
     >
       <nav
         className="flex items-center gap-1 px-3 py-2 rounded-full"
