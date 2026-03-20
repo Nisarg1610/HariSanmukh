@@ -1,78 +1,58 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-export async function GET() {
+export async function POST(request: Request) {
   try {
-    // Get ALL laundry assignments with phone — no day filter for testing
-    const { data: assignments, error } = await supabase
-      .from('laundry_assignments')
-      .select(`
-        member_id,
-        day_of_week,
-        household_members (
-          first_name,
-          phone
-        )
-      `);
+    const body = await request.json();
+    const { phone, message } = body;
 
-    if (error) return NextResponse.json({ error: error.message });
+    const phoneId = process.env.WHATSAPP_PHONE_ID;
+    const token = process.env.WHATSAPP_TOKEN;
 
-    // Find your test member
- const testMember = assignments?.find(
-  (a: any) => (a.household_members as any)?.phone !== null
-);
+    if (!phoneId || !token) {
+      return NextResponse.json({
+        error: 'Missing environment variables',
+        phoneId: phoneId ? 'Set' : 'Missing',
+        token: token ? 'Set' : 'Missing',
+      });
+    }
 
-if (!testMember) {
-  return NextResponse.json({ 
-    error: 'No member with phone found',
-    assignments: assignments?.map((a: any) => ({
-      name: (a.household_members as any)?.first_name,
-      phone: (a.household_members as any)?.phone,
-      day: a.day_of_week
-    }))
-  });
-}
+    console.log('Sending WhatsApp message...');
+    console.log('Phone:', phone);
+    console.log('Phone ID:', phoneId);
 
-  const phone = (testMember.household_members as any)?.phone;
-const name = (testMember.household_members as any)?.first_name;
-    const message = `🙏 Jay Swaminarayan\n\n${name} Bhai, this is a test message from HariSanmukh!\n\nYour laundry is assigned on ${testMember.day_of_week}. This is how your reminder will look 👕`;
-
-    // Send WhatsApp
-    const res = await fetch(
-      `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_ID}/messages`,
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${phoneId}/messages`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-  messaging_product: 'whatsapp',
-  to: phone,
-  type: 'template',
-  template: {
-    name: 'hello_world',
-    language: { code: 'en_US' }
-  }
-}),
+          messaging_product: 'whatsapp',
+          to: phone,
+          type: 'template',
+          template: {
+            name: 'hello_world',
+            language: { code: 'en_US' },
+          },
+        }),
       }
     );
 
-    const result = await res.json();
+    const result = await response.json();
+
+    console.log('WhatsApp Response:', result);
 
     return NextResponse.json({
-      success: true,
-      sentTo: name,
-      phone: phone,
-      whatsappResponse: result,
+      success: !result.error,
+      phone,
+      response: result,
     });
-
   } catch (err: any) {
-    return NextResponse.json({ error: err.message });
+    console.error('Error:', err);
+    return NextResponse.json({
+      error: err.message,
+    });
   }
 }
