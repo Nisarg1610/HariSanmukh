@@ -64,7 +64,7 @@ export default function SevaPage() {
 
   lines.push('');
   lines.push('Bhaio please ensure these are completed in a timely manner.');
-  lines.push('Update it on HariSanmukh app after you do your seva 🙏');
+  lines.push('Update it on HariSanmukh app after you do your seva 🙏 https://hari-sanmukh.vercel.app/');
 
   navigator.clipboard.writeText(lines.join('\n'));
 };
