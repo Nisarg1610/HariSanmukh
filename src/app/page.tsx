@@ -533,10 +533,39 @@ setGarbageDates(thisMonth);
     }
   };
 
-  const handleLogout = async () => {
-    setProfileOpen(false);
-    await supabase.auth.signOut();
-  };
+const handleLogout = async () => {
+  setProfileOpen(false);
+
+  // 1. Sign out from Supabase — clears the sb-* session cookies
+  await supabase.auth.signOut();
+
+  // 2. Clear all app-specific localStorage keys
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (
+      key.startsWith('hs_passkey_') ||
+      key.startsWith('hs_theme') ||
+      key.startsWith('sb-')          // Supabase auth tokens stored by the JS client
+    )) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+
+  // 3. Clear sessionStorage entirely
+  sessionStorage.clear();
+
+  // 4. Clear all cookies for this domain
+  document.cookie.split(';').forEach(cookie => {
+    const name = cookie.split('=')[0].trim();
+    // Expire on root path and any sub-paths Supabase might have set
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${location.hostname}`;
+  });
+
+  // State reset is handled by the SIGNED_OUT listener in the auth useEffect
+};
 
   const handleRetryInit = () => {
     abortedRef.current = false;
