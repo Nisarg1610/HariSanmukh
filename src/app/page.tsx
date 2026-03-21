@@ -345,16 +345,13 @@ if (loading) {
       >
         <div className="w-full max-w-sm">
           {/* Logo */}
-          <div className="text-center mb-10">
-            <div 
-              className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'var(--accent)' }}
-            >
-              <span className="text-4xl">🙏</span>
-            </div>
-            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
-            <p className="text-sm" style={{ color: 'var(--text-3)' }}>Manage household duties together</p>
-          </div>
+         <div className="text-center mb-10">
+  <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-4">
+    <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+  </div>
+  <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
+  <p className="text-sm" style={{ color: 'var(--text-3)' }}>Manage ghar-mandir nicely and effectviely</p>
+</div>
 
           <div className="space-y-3">
             {error && (
