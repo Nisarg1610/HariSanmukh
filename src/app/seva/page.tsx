@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { Plus, Copy, Trash2, RotateCcw, Bell, Edit2 } from 'lucide-react';
+import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2 } from 'lucide-react';
 import {
   getSevas, getSevaAssignments, getPendingSevas,
   createSeva, updateSeva, deleteSeva,
@@ -33,7 +33,7 @@ export default function SevaPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [notifying, setNotifying] = useState(false);
-
+const [copied, setCopied] = useState(false);
   const fetchAll = async (hId: string) => {
     const [s, a, m, p] = await Promise.all([
       getSevas(hId),
@@ -67,6 +67,9 @@ export default function SevaPage() {
   lines.push('Update it on HariSanmukh app after you do your seva 🙏 https://hari-sanmukh.vercel.app/');
 
   navigator.clipboard.writeText(lines.join('\n'));
+  navigator.clipboard.writeText(lines.join('\n'));
+setCopied(true);
+setTimeout(() => setCopied(false), 2000);
 };
   useEffect(() => {
     const init = async () => {
@@ -314,12 +317,19 @@ export default function SevaPage() {
           <button
   onClick={handleCopySevaList}
   className="p-2.5 rounded-xl transition-all"
-  style={{ color: 'var(--text-3)' }}
-  title="Copy seva list"
-  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--green-bg)')}
-  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+  style={{
+    color: copied ? 'var(--green)' : 'var(--text-3)',
+    backgroundColor: copied ? 'var(--green-bg)' : 'transparent',
+  }}
+  title={copied ? 'Copied!' : 'Copy seva list'}
+  onMouseEnter={e => {
+    if (!copied) e.currentTarget.style.backgroundColor = 'var(--green-bg)';
+  }}
+  onMouseLeave={e => {
+    if (!copied) e.currentTarget.style.backgroundColor = 'transparent';
+  }}
 >
-  <Copy size={20} />
+  {copied ? <Check size={20} /> : <Copy size={20} />}
 </button>
           <button
             onClick={handleNotify}
