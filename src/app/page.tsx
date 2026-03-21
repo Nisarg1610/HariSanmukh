@@ -136,6 +136,15 @@ export default function Home() {
       setDbUser(newDbUser);
       saveUserId(authUser.id);
       await tryRegisterPasskey(authUser.id);
+      await fetch('/api/push-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId: newDbUser?.household_id,
+          title: '🙏 Welcome to HariSanmukh!',
+          body: `Jay Swaminarayan ${newDbUser?.first_name} Bhai! You're all set. Check your seva and laundry schedule 😊`,
+        }),
+      });
 
     } catch (err: any) {
       console.error('setupProfile error:', err);
