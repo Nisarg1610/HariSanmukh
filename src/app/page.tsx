@@ -460,9 +460,14 @@ setGarbageDates(thisMonth);
         navigatingRef.current = false;
       }, SIGNIN_TIMEOUT_MS);
       const { error: e } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/` },
-      });
+  provider: 'google',
+  options: {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+    queryParams: {
+      prompt: 'select_account',   // always show the Google account picker
+    },
+  },
+});
       if (e) throw e;
     } catch (err: any) {
       if (signinTimerRef.current) clearTimeout(signinTimerRef.current);
