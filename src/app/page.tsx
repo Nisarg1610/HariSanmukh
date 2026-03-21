@@ -940,7 +940,7 @@ setGarbageDates(thisMonth);
   {events.map((event: any, i: number) => (
     <span key={i} className="text-xs font-medium"
       style={{ color: isPast ? 'var(--text-4)' : 'var(--text-3)' }}>
-      {event.title}{i < events.length - 1 ? ' ·' : ''}
+      {event.title}{i < events.length - 1 ? ' ,' : ''}
     </span>
   ))}
 </div>
