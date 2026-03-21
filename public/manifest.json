@@ -1,7 +1,7 @@
 {
-  "name": "HariSanmukh - Household Manager",
+  "name": "HariSanmukh",
   "short_name": "HariSanmukh",
-  "description": "Manage household duties with your family",
+  "description": "Manage ghar-mandir nicely and effectively",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
