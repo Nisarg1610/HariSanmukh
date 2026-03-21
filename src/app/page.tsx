@@ -224,13 +224,14 @@ export default function Home() {
       if (!calRes.ok) throw new Error(`Calendar API ${calRes.status}`);
       const calData = await calRes.json();
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      // Keep all upcoming dates — no slice here (slice happens in the memoised groups)
-      const upcoming = (calData.events ?? []).filter((event: any) => {
-        return new Date(event.date + 'T00:00:00') >= today;
-      });
-      setGarbageDates(upcoming);
+      const now = new Date();
+const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+const thisMonth = (calData.events ?? []).filter((event: any) => {
+  const d = new Date(event.date + 'T00:00:00');
+  return d >= monthStart && d <= monthEnd;
+});
+setGarbageDates(thisMonth);
     } catch (err) {
       console.error('fetchDashboardData: garbage calendar failed', err);
       setGarbageDates([]);
@@ -548,15 +549,26 @@ export default function Home() {
   // NEW: no .slice() — show the FULL upcoming month worth of dates.
   // Dates are grouped by day (multiple event types on same day merge into one row).
   // garbageDates is already filtered to today-onwards in fetchDashboardData.
-  const garbageDateGroups = useMemo(() => {
-    const grouped = garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
-      if (!acc[event.date]) acc[event.date] = [];
-      acc[event.date].push(event);
-      return acc;
-    }, {});
-    // Return all entries — no slice, full month visible
-    return Object.entries(grouped);
-  }, [garbageDates]);
+ const garbageDateGroups = useMemo(() => {
+  const grouped = garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
+    if (!acc[event.date]) acc[event.date] = [];
+    acc[event.date].push(event);
+    return acc;
+  }, {});
+  const todayStr = new Date().toDateString();
+  const todayTs  = new Date().setHours(0, 0, 0, 0);
+  return Object.entries(grouped)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, events]) => {
+      const d  = new Date(date + 'T00:00:00');
+      const ts = d.setHours(0, 0, 0, 0);
+      const status: 'past' | 'today' | 'upcoming' =
+        d.toDateString() === todayStr ? 'today'
+        : ts < todayTs               ? 'past'
+        :                              'upcoming';
+      return { date, events: events as any[], status };
+    });
+}, [garbageDates]);
 
   // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
@@ -879,59 +891,81 @@ export default function Home() {
           {garbageDateGroups.length === 0 ? (
             <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
           ) : (
-            <div className="list-group">
-              {garbageDateGroups.map(([date, events], idx, arr) => {
-                const dateObj  = new Date(date + 'T00:00:00');
-                const isToday  = dateObj.toDateString() === new Date().toDateString();
-                const showYear = dateObj.getFullYear() !== new Date().getFullYear();
+           <div className="list-group">
+  {garbageDateGroups.map(({ date, events, status }, idx, arr) => {
+    const dateObj  = new Date(date + 'T00:00:00');
+    const showYear = dateObj.getFullYear() !== new Date().getFullYear();
+    const isPast   = status === 'past';
+    const isToday  = status === 'today';
+    const isNextUp = status === 'upcoming' &&
+      !arr.slice(0, idx).some(g => g.status === 'upcoming');
 
-                return (
-                  <div key={date}
-                    className="flex items-center gap-4 px-4 py-3"
-                    style={{
-                      borderBottom: idx !== arr.length - 1 ? '0.5px solid var(--separator)' : 'none',
-                      backgroundColor: isToday ? 'var(--green-bg)' : 'transparent',
-                    }}>
-                    {/* Day number */}
-                    <div className="text-xl font-bold w-8 text-center flex-shrink-0"
-                      style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
-                      {dateObj.getDate()}
-                    </div>
+    return (
+      <div key={date}
+        className="flex items-center gap-4 px-4 py-3"
+        style={{
+          borderBottom: idx !== arr.length - 1 ? '0.5px solid var(--separator)' : 'none',
+          backgroundColor: isToday  ? 'var(--green-bg)'
+                         : isNextUp ? 'var(--bg-card-2)'
+                         :             'transparent',
+          opacity: isPast ? 0.35 : 1,
+          borderLeft: isNextUp ? '3px solid var(--green)' : '3px solid transparent',
+        }}>
 
-                    <div className="w-px h-8 flex-shrink-0"
-                      style={{ backgroundColor: 'var(--separator)' }} />
+        <div className="text-xl font-bold w-8 text-center flex-shrink-0"
+          style={{
+            color: isToday || isNextUp ? 'var(--green)'
+                 : isPast             ? 'var(--text-4)'
+                 :                      'var(--text-1)',
+          }}>
+          {dateObj.getDate()}
+        </div>
 
-                    {/* Weekday + Month (+ year if next year) */}
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm"
-                        style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
-                        {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
-                      </p>
-                      <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-                        {dateObj.toLocaleDateString('en-US', { month: 'long' })}
-                        {showYear && ` ${dateObj.getFullYear()}`}
-                      </p>
-                    </div>
+        <div className="w-px h-8 flex-shrink-0"
+          style={{ backgroundColor: 'var(--separator)' }} />
 
-                    {/* Event type labels (e.g. "Recycling", "Garbage") */}
-                    <div className="flex flex-col items-end gap-0.5">
-                      {(events as any[]).map((event, i) => (
-                        <span key={i} className="text-xs" style={{ color: 'var(--text-3)' }}>
-                          {event.title}
-                        </span>
-                      ))}
-                    </div>
+        <div className="flex-1">
+          <p className="font-semibold text-sm"
+            style={{ color: isToday || isNextUp ? 'var(--green)' : 'var(--text-1)' }}>
+            {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+            {dateObj.toLocaleDateString('en-US', { month: 'long' })}
+            {showYear && ` ${dateObj.getFullYear()}`}
+          </p>
+        </div>
 
-                    {isToday && (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
-                        style={{ backgroundColor: 'var(--green)' }}>
-                        Today
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        <div className="flex flex-col items-end gap-0.5">
+          {events.map((event: any, i: number) => (
+            <span key={i} className="text-xs font-medium"
+              style={{ color: isPast ? 'var(--text-4)' : 'var(--text-3)' }}>
+              {event.title}
+            </span>
+          ))}
+        </div>
+
+        {isToday && (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+            style={{ backgroundColor: 'var(--green)' }}>
+            Today
+          </span>
+        )}
+        {isNextUp && !isToday && (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'var(--green-bg)', color: 'var(--green)' }}>
+            Next
+          </span>
+        )}
+        {isPast && (
+          <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-4)' }}>
+            Done
+          </span>
+        )}
+      </div>
+    );
+  })}
+</div>
           )}
         </div>
 
