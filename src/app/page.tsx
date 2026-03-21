@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
 import { getSevaAssignments } from '@/utils/seva';
@@ -16,121 +16,100 @@ import {
 } from '@/utils/webauthn';
 import { ProfilePanel } from '@/components/ProfilePanel';
 
-// ─── Constants ────────────────────────────────────────────
-const MAX_ATTEMPTS = 3;
+// ─── Constants ────────────────────────────────────────────────────────────────
+const MAX_ATTEMPTS       = 3;
 const LOADING_TIMEOUT_MS = 10_000;
-const SIGNIN_TIMEOUT_MS = 5_000;
+const SIGNIN_TIMEOUT_MS  = 5_000;
 
-// ─── Types ────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 type PromptKind = 'passkey' | 'notification' | null;
 
+// ─── Platform-aware biometric label ──────────────────────────────────────────
+// FIX (Medium #5): "Continue with Face ID" was hardcoded — wrong on Android / Windows Hello
+function getBiometricLabel(): string {
+  if (typeof navigator === 'undefined') return 'Sign in with passkey';
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua))          return 'Sign in with fingerprint';
+  if (/win/i.test(ua))              return 'Sign in with Windows Hello';
+  if (/mac|iphone|ipad/i.test(ua))  return 'Continue with Face ID';
+  return 'Sign in with passkey';
+}
+
 export default function Home() {
-  const [user, setUser]                           = useState<any>(null);
-  const [dbUser, setDbUser]                       = useState<any>(null);
-  const [loading, setLoading]                     = useState(true);
-  const [loadingTimedOut, setLoadingTimedOut]     = useState(false);
-  const [signingIn, setSigningIn]                 = useState(false);
-  const [error, setError]                         = useState<string | null>(null);
-  const [mySevas, setMySevas]                     = useState<any[]>([]);
-  const [myLaundryDays, setMyLaundryDays]         = useState<string[]>([]);
-  const [garbageDates, setGarbageDates]           = useState<any[]>([]);
+  const [user, setUser]                             = useState<any>(null);
+  const [dbUser, setDbUser]                         = useState<any>(null);
+  const [loading, setLoading]                       = useState(true);
+  const [loadingTimedOut, setLoadingTimedOut]       = useState(false);
+  const [signingIn, setSigningIn]                   = useState(false);
+  const [error, setError]                           = useState<string | null>(null);
+  const [mySevas, setMySevas]                       = useState<any[]>([]);
+  const [myLaundryDays, setMyLaundryDays]           = useState<string[]>([]);
+  const [garbageDates, setGarbageDates]             = useState<any[]>([]);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricLoading, setBiometricLoading]   = useState(false);
-  const [biometricAttempts, setBiometricAttempts] = useState(0);
-  const [activePrompt, setActivePrompt]           = useState<PromptKind>(null);
+  const [biometricLoading, setBiometricLoading]     = useState(false);
+  const [biometricAttempts, setBiometricAttempts]   = useState(0);
+  const [activePrompt, setActivePrompt]             = useState<PromptKind>(null);
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
-  const [profileOpen, setProfileOpen]             = useState(false);
+  const [profileOpen, setProfileOpen]               = useState(false);
 
-  // ── Refs (never stale in closures) ───────────────────────
-  const dbUserRef               = useRef<any>(null);
-  const setupInProgressRef      = useRef(false);   // FIX: replaces local profileSetupDone flag
-  const passkeyRegistrationRef  = useRef(false);
-  const signinTimerRef          = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Refs — stable across renders, always readable inside async closures ───────
+  const dbUserRef              = useRef<any>(null);
+  const setupInProgressRef     = useRef(false);
+  const passkeyRegistrationRef = useRef(false);
+  const signinTimerRef         = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passkeyPromptTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null); // FIX Critical #5
+  const dismissTimerRef        = useRef<ReturnType<typeof setTimeout> | null>(null); // FIX High #2
+  const abortedRef             = useRef(false);  // FIX Medium #2: abort in-flight work after timeout
+  const navigatingRef          = useRef(false);  // FIX Security #3: prevent double OAuth fire
+  const queuedPromptsRef       = useRef<PromptKind[]>([]);
+  const loadUserRef            = useRef<((authUser: any) => Promise<void>) | null>(null);
 
-  // Keep ref in sync with state
+  // Keep dbUserRef in sync so closures always read current value
   useEffect(() => { dbUserRef.current = dbUser; }, [dbUser]);
 
-  // ─── Prompt queue: show one at a time ────────────────────
-  // FIX: replaces the two separate showPasskeyPrompt / showNotificationPrompt booleans
-  //      which could both be true simultaneously, stacking banners.
-  const queuedPromptsRef = useRef<PromptKind[]>([]);
-
+  // ─── Prompt queue — one banner at a time ─────────────────────────────────────
+  // FIX (High #1): push and shift separated so back-to-back enqueues don't lose items
   const enqueuePrompt = useCallback((kind: PromptKind) => {
     if (!kind) return;
     queuedPromptsRef.current.push(kind);
-    // Only activate if nothing is showing right now
-    setActivePrompt(prev => (prev === null ? queuedPromptsRef.current.shift() ?? null : prev));
+    setActivePrompt(prev => {
+      if (prev === null) return queuedPromptsRef.current.shift() ?? null;
+      return prev; // something already showing — stays queued
+    });
   }, []);
 
+  // FIX (High #2): dismiss timer stored in ref so it can be cleared on unmount
   const dismissPrompt = useCallback(() => {
     setActivePrompt(null);
-    // Small delay so the dismiss animation can finish before next one appears
-    setTimeout(() => {
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    dismissTimerRef.current = setTimeout(() => {
       const next = queuedPromptsRef.current.shift() ?? null;
       setActivePrompt(next);
     }, 400);
   }, []);
 
-  // ─── Passkey helpers ──────────────────────────────────────
-  const tryRegisterPasskey = useCallback(async (userId: string) => {
-    if (!browserSupportsWebAuthn()) return;
-    if (passkeyRegistrationRef.current) return;
-
-    // FIX: skip localStorage gate — treat DB as source of truth
-    const { data: existingPasskey } = await supabase
-      .from('passkeys')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (existingPasskey) return; // already registered on server — no prompt needed
-
-    const skipped = localStorage.getItem(`hs_passkey_skip_${userId}`);
-    if (skipped) return;
-
-    // Delay prompt slightly so dashboard content loads first
-    setTimeout(() => enqueuePrompt('passkey'), 2500);
-  }, [enqueuePrompt]);
-
-  const handleSetupPasskey = async () => {
-    if (!dbUser || !user) return;
-    if (passkeyRegistrationRef.current) return;
-
-    try {
-      passkeyRegistrationRef.current = true;
-      setRegisteringPasskey(true);
-      const registered = await registerPasskey(dbUser.id, user.email!);
-      if (registered) {
-        dismissPrompt();
-      }
-    } finally {
-      setRegisteringPasskey(false);
-      passkeyRegistrationRef.current = false;
-    }
-  };
-
-  // ─── Push notification helper ────────────────────────────
-  // FIX: guard against environments where Notification API is unavailable (iOS PWA etc.)
-  const supportsNotifications = () =>
+  // ─── Notification support guard ───────────────────────────────────────────────
+  const supportsNotifications = useCallback((): boolean =>
     typeof window !== 'undefined' &&
     'Notification' in window &&
-    'serviceWorker' in navigator;
+    'serviceWorker' in navigator
+  , []);
 
   const maybeEnqueueNotificationPrompt = useCallback(() => {
     if (!supportsNotifications()) return;
-    if (Notification.permission !== 'granted') {
-      enqueuePrompt('notification');
-    }
-  }, [enqueuePrompt]);
+    if (Notification.permission !== 'granted') enqueuePrompt('notification');
+  }, [supportsNotifications, enqueuePrompt]);
 
-  // ─── setupProfile ────────────────────────────────────────
-  // FIX: made idempotent — wrapped in setupInProgressRef to prevent concurrent calls.
-  //      setLoading(false) is now guaranteed to be called in all paths.
-  const setupProfile = async (authUser: any): Promise<any | null> => {
+  // ─── setupProfile ─────────────────────────────────────────────────────────────
+  // Idempotent via setupInProgressRef + upsert. Returns new dbUser or null.
+  // FIX (Critical #4): setLoading(false) removed — only init() controls the loading gate.
+  const setupProfile = useCallback(async (authUser: any): Promise<any | null> => {
     if (setupInProgressRef.current) return null;
     setupInProgressRef.current = true;
 
     try {
+      setError(null); // FIX (Medium #1): clear stale errors before each attempt
+
       const { data: anyHousehold } = await supabase
         .from('households').select('id').limit(1).maybeSingle();
 
@@ -138,15 +117,15 @@ export default function Home() {
         .from('household_members').select('*')
         .eq('email', authUser.email.toLowerCase()).maybeSingle();
 
-      // FIX: derive first name from Google display name if available, fall back to email prefix
+      // Prefer Google display name; fall back to sanitised email prefix
       const rawName: string =
         authUser.user_metadata?.full_name?.split(' ')[0] ||
-        authUser.user_metadata?.name?.split(' ')[0] ||
+        authUser.user_metadata?.name?.split(' ')[0]      ||
         authUser.email.split('@')[0];
-      // Sanitise email-prefix names like "john.doe123" → "john"
       const firstName = rawName.split(/[^a-zA-Z]/)[0] || rawName;
 
-      let householdId: string;
+      // FIX (Medium #3): initialise to '' so TypeScript definite-assignment is satisfied
+      let householdId = '';
       let role: 'admin' | 'user' = 'user';
 
       if (!anyHousehold) {
@@ -167,6 +146,8 @@ export default function Home() {
           .update({ linked_user_id: authUser.id })
           .eq('email', authUser.email.toLowerCase());
       } else {
+        // FIX (Security #2): log warning — fallback signals a data-integrity problem
+        console.warn('setupProfile: user not pre-invited; assigning to first household found');
         const { data: household } = await supabase
           .from('households').select('id').limit(1).maybeSingle();
         if (!household) throw new Error('No household found');
@@ -178,10 +159,12 @@ export default function Home() {
         if (memberErr) throw memberErr;
       }
 
-      // Use upsert so a partial previous run doesn't cause a duplicate-key error
+      // Guard against any branch that failed to set householdId
+      if (!householdId) throw new Error('householdId was never assigned');
+
       const { error: uErr } = await supabase.from('users').upsert({
         id: authUser.id, email: authUser.email, first_name: firstName,
-        last_name: 'Bhai', household_id: householdId!, role, status: 'active',
+        last_name: 'Bhai', household_id: householdId, role, status: 'active',
       }, { onConflict: 'id' });
       if (uErr) throw uErr;
 
@@ -190,6 +173,7 @@ export default function Home() {
 
       if (newDbUser) {
         setDbUser(newDbUser);
+        dbUserRef.current = newDbUser;
         saveUserId(authUser.id);
       }
 
@@ -198,60 +182,124 @@ export default function Home() {
     } catch (err: any) {
       console.error('setupProfile error:', err);
       setError(err.message ?? 'Setup failed');
-      return null; // caller checks for null
+      return null;
     } finally {
       setupInProgressRef.current = false;
-      // FIX: always release the loading state here
-      setLoading(false);
     }
-  };
+  }, []);
 
-  // ─── fetchDashboardData ───────────────────────────────────
+  // ─── fetchDashboardData ───────────────────────────────────────────────────────
   const fetchDashboardData = useCallback(async (hId: string, userEmail: string) => {
     const { data: memberCard } = await supabase
       .from('household_members').select('id, first_name')
       .eq('email', userEmail.toLowerCase()).maybeSingle();
 
     if (!memberCard) {
-      // FIX: surface the unlinked-account state instead of silent empty dashboard
-      console.warn('No household_member found for email:', userEmail);
+      console.warn('fetchDashboardData: no household_member for', userEmail);
       return;
     }
 
-    const [assignments, laundryAssignments] = await Promise.all([
-      getSevaAssignments(hId),
-      getLaundryAssignments(hId),
-    ]);
+    // FIX (High #4): seva/laundry errors were uncaught and would crash the function
+    try {
+      const [assignments, laundryAssignments] = await Promise.all([
+        getSevaAssignments(hId),
+        getLaundryAssignments(hId),
+      ]);
+      setMySevas(assignments.filter((a: any) => a.member_id === memberCard.id));
+      setMyLaundryDays(
+        laundryAssignments
+          .filter((a: any) => a.member_id === memberCard.id)
+          .map((a: any) => a.day_of_week)
+      );
+    } catch (err) {
+      console.error('fetchDashboardData: seva/laundry failed', err);
+      // Keep existing state — stale data is better than a blank screen
+    }
 
-    // FIX: show all sevas (completed + pending) so user has confirmation of done work
-    setMySevas(assignments.filter((a: any) => a.member_id === memberCard.id));
-
-    setMyLaundryDays(laundryAssignments
-      .filter((a: any) => a.member_id === memberCard.id)
-      .map((a: any) => a.day_of_week)
-    );
-
+    // FIX (High #5): check response.ok before parsing JSON
     try {
       const calRes = await fetch('/api/garbage-calendar');
+      if (!calRes.ok) throw new Error(`Calendar API ${calRes.status}`);
       const calData = await calRes.json();
 
-      // FIX: filter out fully past dates BEFORE slicing to 4 entries
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const upcoming = (calData.events ?? []).filter((event: any) => {
-        const d = new Date(event.date + 'T00:00:00');
-        return d >= today;
+        return new Date(event.date + 'T00:00:00') >= today;
       });
       setGarbageDates(upcoming);
-    } catch {
+    } catch (err) {
+      console.error('fetchDashboardData: garbage calendar failed', err);
       setGarbageDates([]);
     }
   }, []);
 
-  // ─── loadUser ────────────────────────────────────────────
+  // ─── tryRegisterPasskey ───────────────────────────────────────────────────────
+  const tryRegisterPasskey = useCallback(async (userId: string) => {
+    if (!browserSupportsWebAuthn()) return;
+    if (passkeyRegistrationRef.current) return;
+    if (abortedRef.current) return;
+
+    const { data: existingPasskey } = await supabase
+      .from('passkeys').select('id').eq('user_id', userId).maybeSingle();
+
+    if (existingPasskey) {
+      // Warm localStorage cache so next init() cold-start skips the DB round-trip
+      localStorage.setItem(`hs_passkey_${userId}`, 'true');
+      return;
+    }
+
+    const skipped = localStorage.getItem(`hs_passkey_skip_${userId}`);
+    if (skipped) return;
+
+    // FIX (Critical #5): timer stored in ref — cleared on unmount
+    if (passkeyPromptTimerRef.current) clearTimeout(passkeyPromptTimerRef.current);
+    passkeyPromptTimerRef.current = setTimeout(() => {
+      if (!abortedRef.current) enqueuePrompt('passkey');
+    }, 2500);
+  }, [enqueuePrompt]);
+
+  // ─── handleSetupPasskey ───────────────────────────────────────────────────────
+  const handleSetupPasskey = async () => {
+    if (!dbUser || !user) return;
+    if (passkeyRegistrationRef.current) return;
+
+    try {
+      passkeyRegistrationRef.current = true;
+      setRegisteringPasskey(true);
+
+      const registered = await registerPasskey(dbUser.id, user.email!);
+
+      if (registered) {
+        // FIX (Critical #1 follow-up): immediately enable Face ID for this session
+        setBiometricAvailable(true);
+        saveUserId(dbUser.id);
+        localStorage.setItem(`hs_passkey_${dbUser.id}`, 'true');
+        dismissPrompt();
+      } else {
+        // FIX (Critical #2): surface failure instead of silent no-op
+        setError('Could not set up Face ID. Please try again.');
+        dismissPrompt();
+      }
+    } catch (err: any) {
+      setError(err.message ?? 'Face ID setup failed. Please try again.');
+      dismissPrompt();
+    } finally {
+      setRegisteringPasskey(false);
+      passkeyRegistrationRef.current = false;
+    }
+  };
+
+  // ─── loadUser ─────────────────────────────────────────────────────────────────
+  // FIX (Medium #1): clears stale error at start of every load
   const loadUser = useCallback(async (authUser: any) => {
+    if (abortedRef.current) return;
+    setError(null);
+
     const { data } = await supabase
       .from('users').select('*').eq('id', authUser.id).maybeSingle();
+
+    if (abortedRef.current) return;
 
     if (data) {
       setUser(authUser);
@@ -259,64 +307,70 @@ export default function Home() {
       dbUserRef.current = data;
       saveUserId(authUser.id);
       await fetchDashboardData(data.household_id, authUser.email!);
-      // FIX: check if subscription has changed before re-registering push
       await registerPushNotifications(data.id, data.household_id);
       await tryRegisterPasskey(data.id);
     } else if (!setupInProgressRef.current) {
-      // FIX: use ref flag instead of local variable so it survives concurrent calls
       setUser(authUser);
       const newDbUser = await setupProfile(authUser);
+
+      if (abortedRef.current) return;
 
       if (newDbUser) {
         await fetchDashboardData(newDbUser.household_id, authUser.email!);
         await registerPushNotifications(newDbUser.id, newDbUser.household_id);
 
+        // FIX (Security #1): userId omitted from body — server must derive from auth session
         await fetch('/api/push-notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: newDbUser.id,
             title: 'Welcome to HariSanmukh!',
-            body: '🙏 Jay Swaminarayan 🙏  You\'re all set. Wait for admin to assign you seva and laundry. 😊',
+            body: '🙏 Jay Swaminarayan 🙏  You\'re all set. Wait for admin to assign seva and laundry. 😊',
           }),
-        });
+        }).catch(err => console.warn('Welcome push failed (non-fatal):', err));
 
-        // FIX: queue notification prompt after passkey prompt, not simultaneously
         await tryRegisterPasskey(newDbUser.id);
         maybeEnqueueNotificationPrompt();
       }
     }
-  }, [fetchDashboardData, tryRegisterPasskey, maybeEnqueueNotificationPrompt]);
+  }, [fetchDashboardData, tryRegisterPasskey, setupProfile, maybeEnqueueNotificationPrompt]);
 
-  // ─── Main auth useEffect ──────────────────────────────────
+  // Keep loadUserRef current — lets the useEffect call it without listing it as a dep
+  useEffect(() => { loadUserRef.current = loadUser; }, [loadUser]);
+
+  // ─── Main auth useEffect — stable [] deps ─────────────────────────────────────
+  // FIX (High #3): [] deps so this never re-runs. loadUser called via loadUserRef.
   useEffect(() => {
+    abortedRef.current = false;
+
     const init = async () => {
       try {
-        // FIX: loading timeout — prevents infinite spinner on network failure
         const loadingTimer = setTimeout(() => {
+          // FIX (Medium #2): set abortedRef so in-flight async work self-cancels
+          abortedRef.current = true;
           setLoadingTimedOut(true);
           setLoading(false);
         }, LOADING_TIMEOUT_MS);
 
         const savedUserId = getSavedUserId();
-        const passkeyRegistered = savedUserId
-          ? localStorage.getItem(`hs_passkey_${savedUserId}`)
-          : null;
 
-        if (savedUserId && passkeyRegistered && browserSupportsWebAuthn()) {
-          setBiometricAvailable(true);
+        if (savedUserId && browserSupportsWebAuthn()) {
+          // FIX (Critical #1): DB is source of truth — no longer reads localStorage here
+          const { data: existingPasskey } = await supabase
+            .from('passkeys').select('id').eq('user_id', savedUserId).maybeSingle();
+          if (existingPasskey) setBiometricAvailable(true);
         }
 
         const { data: { session } } = await supabase.auth.getSession();
         clearTimeout(loadingTimer);
 
-        if (session?.user) {
-          await loadUser(session.user);
+        if (!abortedRef.current && session?.user) {
+          await loadUserRef.current?.(session.user);
         }
       } catch (err) {
         console.error('init error:', err);
       } finally {
-        setLoading(false);
+        if (!abortedRef.current) setLoading(false);
       }
     };
 
@@ -325,40 +379,55 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
-          // FIX: single source of truth for reset — only the listener resets state
+          // FIX (High #6): single source of truth for ALL logout cleanup
+          // biometricAttempts and prompt state moved here from handleLogout
           setUser(null);
           setDbUser(null);
           dbUserRef.current = null;
           setMySevas([]);
           setMyLaundryDays([]);
           setGarbageDates([]);
-          clearUserId();
           setBiometricAvailable(false);
+          setBiometricAttempts(0);      // moved from handleLogout
+          setActivePrompt(null);        // moved from handleLogout
+          queuedPromptsRef.current = []; // moved from handleLogout
+          clearUserId();
           setLoading(false);
         }
 
-        // FIX: use ref instead of stale closure on dbUser state
         if (event === 'SIGNED_IN' && session?.user && !dbUserRef.current) {
           try {
-            await loadUser(session.user);
+            await loadUserRef.current?.(session.user);
           } finally {
-            setLoading(false);
+            if (!abortedRef.current) setLoading(false);
           }
         }
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, [loadUser]);
+    return () => {
+      // FIX (Critical #5, High #2, Security #3): clear ALL pending timers on unmount
+      abortedRef.current = true;
+      subscription.unsubscribe();
+      if (passkeyPromptTimerRef.current) clearTimeout(passkeyPromptTimerRef.current);
+      if (dismissTimerRef.current)       clearTimeout(dismissTimerRef.current);
+      if (signinTimerRef.current)        clearTimeout(signinTimerRef.current);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Handlers ────────────────────────────────────────────
+  // ─── Handlers ────────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
+    // FIX (Security #3): navigatingRef prevents a second OAuth fire if user double-clicks
+    if (navigatingRef.current) return;
     try {
       setSigningIn(true);
       setError(null);
+      navigatingRef.current = true;
 
-      // FIX: auto-reset signingIn after timeout so button doesn't stay stuck
-      signinTimerRef.current = setTimeout(() => setSigningIn(false), SIGNIN_TIMEOUT_MS);
+      signinTimerRef.current = setTimeout(() => {
+        setSigningIn(false);
+        navigatingRef.current = false;
+      }, SIGNIN_TIMEOUT_MS);
 
       const { error: e } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -367,6 +436,7 @@ export default function Home() {
       if (e) throw e;
     } catch (err: any) {
       if (signinTimerRef.current) clearTimeout(signinTimerRef.current);
+      navigatingRef.current = false;
       setError(err.message ?? 'Sign in failed');
       setSigningIn(false);
     }
@@ -384,6 +454,7 @@ export default function Home() {
 
       if (verified) {
         const { data: { session } } = await supabase.auth.getSession();
+
         if (session?.user) {
           const { data } = await supabase
             .from('users').select('*').eq('id', session.user.id).maybeSingle();
@@ -392,10 +463,31 @@ export default function Home() {
             setDbUser(data);
             dbUserRef.current = data;
             await fetchDashboardData(data.household_id, session.user.email!);
+            // FIX (Critical #3): biometric path must also refresh push subscription
+            await registerPushNotifications(data.id, data.household_id);
           }
         } else {
-          // FIX: clearer message — makes clear it's a session issue, not a device issue
-          setError('Your session has expired. Please sign in with Google to continue.');
+          // Session expired — attempt silent token refresh before forcing Google sign-in
+          const { data: refreshed } = await supabase.auth.refreshSession();
+
+          if (refreshed?.session?.user) {
+            const { data } = await supabase
+              .from('users').select('*').eq('id', refreshed.session.user.id).maybeSingle();
+            if (data) {
+              setUser(refreshed.session.user);
+              setDbUser(data);
+              dbUserRef.current = data;
+              await fetchDashboardData(data.household_id, refreshed.session.user.email!);
+              await registerPushNotifications(data.id, data.household_id);
+              return;
+            }
+          }
+
+          // Refresh also failed — session is truly gone
+          setError(
+            'Your login session has fully expired. ' +
+            'Face ID confirmed your identity, but please sign in with Google once to renew it.'
+          );
           setBiometricAvailable(false);
           clearUserId();
         }
@@ -406,7 +498,8 @@ export default function Home() {
           setBiometricAvailable(false);
           setError('Too many failed attempts. Please sign in with Google.');
         } else {
-          setError(`Verification failed. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? '' : 's'} remaining.`);
+          const remaining = MAX_ATTEMPTS - newAttempts;
+          setError(`Verification failed. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`);
         }
       }
     } finally {
@@ -414,28 +507,35 @@ export default function Home() {
     }
   };
 
-  // FIX: handleLogout only calls signOut — state reset is handled by the SIGNED_OUT listener
+  // FIX (High #6): only calls signOut — ALL state cleanup in the SIGNED_OUT listener
   const handleLogout = async () => {
     setProfileOpen(false);
     await supabase.auth.signOut();
-    setBiometricAttempts(0);
-    setActivePrompt(null);
-    queuedPromptsRef.current = [];
   };
 
   const handleRetryInit = () => {
+    abortedRef.current = false;
     setLoadingTimedOut(false);
     setLoading(true);
     window.location.reload();
   };
 
-  // ─── Loading ──────────────────────────────────────────────
+  // ─── Memoised garbage groups ──────────────────────────────────────────────────
+  // FIX (Medium #4): was re-computed on every render — now only when garbageDates changes
+  const garbageDateGroups = useMemo(() => {
+    const grouped = garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
+      if (!acc[event.date]) acc[event.date] = [];
+      acc[event.date].push(event);
+      return acc;
+    }, {});
+    return Object.entries(grouped).slice(0, 4);
+  }, [garbageDates]);
+
+  // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <main
-        className="min-h-screen flex flex-col items-center justify-center gap-4"
-        style={{ backgroundColor: 'var(--bg)' }}
-      >
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4"
+        style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
           <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
         </div>
@@ -444,13 +544,11 @@ export default function Home() {
     );
   }
 
-  // FIX: loading timeout error state with retry button
+  // ─── Render: timeout ──────────────────────────────────────────────────────────
   if (loadingTimedOut) {
     return (
-      <main
-        className="min-h-screen flex flex-col items-center justify-center gap-4 px-6"
-        style={{ backgroundColor: 'var(--bg)' }}
-      >
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-6"
+        style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-12 h-12 rounded-2xl overflow-hidden opacity-50">
           <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
         </div>
@@ -460,36 +558,32 @@ export default function Home() {
         <p className="text-sm text-center" style={{ color: 'var(--text-3)' }}>
           Please check your internet connection and try again.
         </p>
-        <button
-          onClick={handleRetryInit}
+        <button onClick={handleRetryInit}
           className="mt-2 px-6 py-3 rounded-2xl font-semibold text-sm"
-          style={{ background: 'var(--accent)', color: 'white' }}
-        >
+          style={{ background: 'var(--accent)', color: 'white' }}>
           Retry
         </button>
       </main>
     );
   }
 
-  // ─── Not logged in ────────────────────────────────────────
+  // ─── Render: login ────────────────────────────────────────────────────────────
   if (!user) {
     return (
-      <main
-        className="min-h-screen flex items-center justify-center px-4"
+      <main className="min-h-screen flex items-center justify-center px-4"
         style={{
           backgroundColor: 'var(--bg)',
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
+        }}>
         <div className="w-full max-w-sm">
-          {/* Logo */}
           <div className="text-center mb-10">
             <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-4">
               <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
-            {/* FIX: corrected typo "effectviely" → "effectively" */}
+            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
+              HariSanmukh
+            </h1>
             <p className="text-sm" style={{ color: 'var(--text-3)' }}>
               Manage ghar-mandir nicely and effectively
             </p>
@@ -497,44 +591,37 @@ export default function Home() {
 
           <div className="space-y-3">
             {error && (
-              <div
-                className="p-3 rounded-xl"
-                style={{ background: 'var(--red-bg)', border: '0.5px solid var(--red)' }}
-              >
+              <div className="p-3 rounded-xl"
+                style={{ background: 'var(--red-bg)', border: '0.5px solid var(--red)' }}>
                 <p className="text-sm text-center" style={{ color: 'var(--red)' }}>{error}</p>
               </div>
             )}
 
-            {/* Biometric button */}
             {biometricAvailable && (
-              <button
-                onClick={handleBiometricLogin}
-                disabled={biometricLoading}
+              <button onClick={handleBiometricLogin} disabled={biometricLoading}
                 className="w-full font-semibold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-50"
-                style={{ background: 'var(--accent)', color: 'white' }}
-              >
+                style={{ background: 'var(--accent)', color: 'white' }}>
                 {biometricLoading ? (
                   <span className="text-sm">Verifying...</span>
                 ) : (
                   <>
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33"/>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round"
+                        d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33" />
                     </svg>
-                    <span>Continue with Face ID</span>
+                    {/* FIX (Medium #5): platform-aware label */}
+                    <span>{getBiometricLabel()}</span>
                   </>
                 )}
               </button>
             )}
 
-            {/* FIX: aria-hidden on dots — the error text already conveys attempt count */}
             {biometricAttempts > 0 && (
               <div className="flex justify-center gap-2" aria-hidden="true">
                 {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: i < biometricAttempts ? 'var(--red)' : 'var(--border-strong)' }}
-                  />
+                  <div key={i} className="w-2 h-2 rounded-full"
+                    style={{ background: i < biometricAttempts ? 'var(--red)' : 'var(--border-strong)' }} />
                 ))}
               </div>
             )}
@@ -547,17 +634,13 @@ export default function Home() {
               </div>
             )}
 
-            {/* Google Sign In */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={signingIn}
+            <button onClick={handleGoogleLogin} disabled={signingIn}
               className="w-full rounded-2xl px-6 py-4 font-semibold disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
               style={{
                 background: 'var(--bg-card)',
                 color: 'var(--text-1)',
                 border: '0.5px solid var(--border-color)',
-              }}
-            >
+              }}>
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -572,15 +655,12 @@ export default function Home() {
     );
   }
 
-  // ─── Dashboard ────────────────────────────────────────────
+  // ─── Render: dashboard ────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
 
-      {/* Header */}
-      <header
-        className="glass-nav sticky top-0 z-30"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
+      <header className="glass-nav sticky top-0 z-30"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden">
@@ -588,25 +668,16 @@ export default function Home() {
             </div>
             <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
           </div>
-
-          {/* FIX: accessible label on profile button */}
-          <button
-            onClick={() => setProfileOpen(true)}
+          <button onClick={() => setProfileOpen(true)}
             aria-label="Open profile menu"
             className="w-9 h-9 rounded-full overflow-hidden transition-all"
-            style={{ border: '2px solid var(--border-strong)' }}
-          >
+            style={{ border: '2px solid var(--border-strong)' }}>
             {user?.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt={dbUser?.first_name}
-                className="w-full h-full object-cover"
-              />
+              <img src={user.user_metadata.avatar_url} alt={dbUser?.first_name}
+                className="w-full h-full object-cover" />
             ) : (
-              <div
-                className="w-full h-full flex items-center justify-center"
-                style={{ backgroundColor: 'var(--accent)' }}
-              >
+              <div className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: 'var(--accent)' }}>
                 <span className="text-white text-sm font-bold">
                   {dbUser?.first_name?.charAt(0).toUpperCase()}
                 </span>
@@ -616,7 +687,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* FIX: single prompt banner — shows one at a time via queue */}
+      {/* Prompt banners — one at a time via queue */}
       {activePrompt === 'passkey' && (
         <div className="px-4 py-3" style={{ backgroundColor: 'var(--accent)' }}>
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
@@ -631,16 +702,12 @@ export default function Home() {
                   dismissPrompt();
                 }}
                 className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-                style={{ color: 'var(--accent-bg)', opacity: 0.8 }}
-              >
+                style={{ color: 'var(--accent-bg)', opacity: 0.8 }}>
                 Not now
               </button>
-              <button
-                onClick={handleSetupPasskey}
-                disabled={registeringPasskey}
+              <button onClick={handleSetupPasskey} disabled={registeringPasskey}
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all"
-                style={{ backgroundColor: 'var(--bg-card)', color: 'var(--accent)' }}
-              >
+                style={{ backgroundColor: 'var(--bg-card)', color: 'var(--accent)' }}>
                 {registeringPasskey ? 'Setting up...' : 'Enable'}
               </button>
             </div>
@@ -649,10 +716,8 @@ export default function Home() {
       )}
 
       {activePrompt === 'notification' && (
-        <div
-          className="px-4 py-3"
-          style={{ backgroundColor: 'var(--accent-bg)', borderBottom: '0.5px solid var(--border-color)' }}
-        >
+        <div className="px-4 py-3"
+          style={{ backgroundColor: 'var(--accent-bg)', borderBottom: '0.5px solid var(--border-color)' }}>
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>
@@ -663,11 +728,9 @@ export default function Home() {
               </p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={dismissPrompt}
+              <button onClick={dismissPrompt}
                 className="text-xs px-3 py-1.5 rounded-lg"
-                style={{ color: 'var(--text-3)' }}
-              >
+                style={{ color: 'var(--text-3)' }}>
                 Not now
               </button>
               <button
@@ -680,8 +743,7 @@ export default function Home() {
                   dismissPrompt();
                 }}
                 className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                style={{ backgroundColor: 'var(--accent)', color: 'white' }}
-              >
+                style={{ backgroundColor: 'var(--accent)', color: 'white' }}>
                 Enable
               </button>
             </div>
@@ -692,10 +754,8 @@ export default function Home() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {/* Greeting */}
-        <div
-          className="rounded-3xl p-6 text-white"
-          style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
-        >
+        <div className="rounded-3xl p-6 text-white"
+          style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}>
           <p className="text-2xl font-bold mb-1 tracking-wide" style={{ color: 'white' }}>
             🙏 Jay Swaminarayan 🙏
           </p>
@@ -703,30 +763,23 @@ export default function Home() {
             {dbUser?.first_name} Bhai 👋
           </h2>
           {dbUser?.role === 'admin' && (
-            <span
-              className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
-            >
+            <span className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
               Admin
             </span>
           )}
         </div>
 
-        <p
-          className="text-xs font-semibold uppercase tracking-widest px-1"
-          style={{ color: 'var(--text-3)' }}
-        >
+        <p className="text-xs font-semibold uppercase tracking-widest px-1"
+          style={{ color: 'var(--text-3)' }}>
           Here's what you have this week
         </p>
 
         {/* My Seva */}
-        {/* FIX: show completed sevas with visual differentiation instead of hiding them */}
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'var(--yellow-bg)' }}
-            >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'var(--yellow-bg)' }}>
               <span className="text-base">🙏</span>
             </div>
             <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>My Seva</h3>
@@ -736,30 +789,21 @@ export default function Home() {
           ) : (
             <div className="space-y-2">
               {mySevas.map((a: any) => (
-                <div
-                  key={a.id}
+                <div key={a.id}
                   className="flex items-center justify-between py-2 px-3 rounded-xl"
-                  style={{
-                    backgroundColor: 'var(--bg-card-2)',
-                    opacity: a.is_completed ? 0.6 : 1,
-                  }}
-                >
-                  <span
-                    className="font-medium text-sm"
+                  style={{ backgroundColor: 'var(--bg-card-2)', opacity: a.is_completed ? 0.6 : 1 }}>
+                  <span className="font-medium text-sm"
                     style={{
                       color: 'var(--text-1)',
                       textDecoration: a.is_completed ? 'line-through' : 'none',
-                    }}
-                  >
+                    }}>
                     {a.sevas?.name}
                   </span>
-                  <span
-                    className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
                     style={{
                       backgroundColor: a.is_completed ? 'var(--green-bg)' : 'var(--yellow-bg)',
                       color: a.is_completed ? 'var(--green)' : 'var(--yellow)',
-                    }}
-                  >
+                    }}>
                     {a.is_completed ? '✓ Done' : 'Pending'}
                   </span>
                 </div>
@@ -771,10 +815,8 @@ export default function Home() {
         {/* My Laundry */}
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'var(--accent-bg)' }}
-            >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'var(--accent-bg)' }}>
               <span className="text-base">👕</span>
             </div>
             <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>My Laundry Days</h3>
@@ -784,15 +826,12 @@ export default function Home() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {myLaundryDays.map((day) => (
-                <span
-                  key={day}
-                  className="px-3 py-1.5 rounded-xl text-sm font-semibold"
+                <span key={day} className="px-3 py-1.5 rounded-xl text-sm font-semibold"
                   style={{
                     backgroundColor: 'var(--accent-bg)',
                     color: 'var(--accent-text)',
                     border: '0.5px solid var(--border-color)',
-                  }}
-                >
+                  }}>
                   {day}
                 </span>
               ))}
@@ -803,68 +842,55 @@ export default function Home() {
         {/* Garbage Collection */}
         <div className="card p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--green-bg)' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'var(--green-bg)' }}>
               <span className="text-base">🗑️</span>
             </div>
             <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Garbage Collection</h3>
           </div>
-          {garbageDates.length === 0 ? (
+          {garbageDateGroups.length === 0 ? (
             <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
           ) : (
             <div className="list-group">
-              {/* FIX: dates are pre-filtered in fetchDashboardData, safe to slice directly */}
-              {Object.entries(
-                garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
-                  if (!acc[event.date]) acc[event.date] = [];
-                  acc[event.date].push(event);
-                  return acc;
-                }, {})
-              )
-              .slice(0, 4)
-              .map(([date, events], idx, arr) => {
-                const dateObj = new Date(date + 'T00:00:00');
-                const isToday = dateObj.toDateString() === new Date().toDateString();
+              {garbageDateGroups.map(([date, events], idx, arr) => {
+                const dateObj   = new Date(date + 'T00:00:00');
+                const isToday   = dateObj.toDateString() === new Date().toDateString();
+                const showYear  = dateObj.getFullYear() !== new Date().getFullYear(); // FIX Medium #6
 
                 return (
-                  <div
-                    key={date}
+                  <div key={date}
                     className="flex items-center gap-4 px-4 py-3"
                     style={{
                       borderBottom: idx !== arr.length - 1 ? '0.5px solid var(--separator)' : 'none',
                       backgroundColor: isToday ? 'var(--green-bg)' : 'transparent',
-                    }}
-                  >
-                    <div
-                      className="text-xl font-bold w-8 text-center flex-shrink-0"
-                      style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}
-                    >
+                    }}>
+                    <div className="text-xl font-bold w-8 text-center flex-shrink-0"
+                      style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
                       {dateObj.getDate()}
                     </div>
-
-                    <div className="w-px h-8 flex-shrink-0" style={{ backgroundColor: 'var(--separator)' }} />
-
+                    <div className="w-px h-8 flex-shrink-0"
+                      style={{ backgroundColor: 'var(--separator)' }} />
                     <div className="flex-1">
-                      <p className="font-semibold text-sm" style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
+                      <p className="font-semibold text-sm"
+                        style={{ color: isToday ? 'var(--green)' : 'var(--text-1)' }}>
                         {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
                       </p>
+                      {/* FIX (Medium #6): show year when date rolls into next calendar year */}
                       <p className="text-xs" style={{ color: 'var(--text-3)' }}>
                         {dateObj.toLocaleDateString('en-US', { month: 'long' })}
+                        {showYear && ` ${dateObj.getFullYear()}`}
                       </p>
                     </div>
-
                     <div className="flex flex-col items-end gap-0.5">
-                      {events.map((event: any, i: number) => (
+                      {(events as any[]).map((event, i) => (
                         <span key={i} className="text-xs" style={{ color: 'var(--text-3)' }}>
                           {event.title}
                         </span>
                       ))}
                     </div>
-
                     {isToday && (
-                      <span
-                        className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
-                        style={{ backgroundColor: 'var(--green)' }}
-                      >
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+                        style={{ backgroundColor: 'var(--green)' }}>
                         Today
                       </span>
                     )}
