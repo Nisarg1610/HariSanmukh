@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { Plus, Trash2, RotateCcw, Bell, Edit2 } from 'lucide-react';
+import { Plus, Copy, Trash2, RotateCcw, Bell, Edit2 } from 'lucide-react';
 import {
   getSevas, getSevaAssignments, getPendingSevas,
   createSeva, updateSeva, deleteSeva,
@@ -47,6 +47,27 @@ export default function SevaPage() {
     setPendingSevas(p);
   };
 
+  const handleCopySevaList = () => {
+  if (sevas.length === 0) return;
+
+  const lines: string[] = [];
+  lines.push('🏠 HOUSE CLEANING LIST 🏠');
+  lines.push('📍 List of seva and who will do it');
+  lines.push('');
+
+  sevas.forEach(seva => {
+    const sa = assignments.filter(a => a.seva_id === seva.id && !a.is_completed);
+    if (sa.length === 0) return;
+    const names = sa.map(a => `${a.household_members?.first_name} Bhai`).join(', ');
+    lines.push(`• ${seva.name} — ${names}`);
+  });
+
+  lines.push('');
+  lines.push('Bhaio please ensure these are completed in a timely manner.');
+  lines.push('Update it on HariSanmukh app after you do your seva 🙏');
+
+  navigator.clipboard.writeText(lines.join('\n'));
+};
   useEffect(() => {
     const init = async () => {
       try {
@@ -290,6 +311,16 @@ export default function SevaPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Seva</h1>
         <div className="flex gap-1">
+          <button
+  onClick={handleCopySevaList}
+  className="p-2.5 rounded-xl transition-all"
+  style={{ color: 'var(--text-3)' }}
+  title="Copy seva list"
+  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--green-bg)')}
+  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+>
+  <Copy size={20} />
+</button>
           <button
             onClick={handleNotify}
             disabled={notifying}

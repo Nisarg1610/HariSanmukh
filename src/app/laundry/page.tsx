@@ -377,7 +377,7 @@ export default function LaundryPage() {
   </div>
   <div className="space-y-2">
     {[
-      '📲 Inform the WhatsApp group if you swap days with someone.',
+      '📲 Inform in the WhatsApp group if you swap days with someone.',
       '💬 Missed your day? No stress — just communicate!',
       '🧴 Don\'t overuse detergent or overfill the dryer.',
       '🧹 Clean the lint tray gently after every dryer cycle.',
