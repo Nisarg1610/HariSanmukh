@@ -333,26 +333,39 @@ if (loading) {
 }
 
   // ── Not logged in ─────────────────────────────────────────
-  if (!user) {
+ if (!user) {
     return (
       <main
-        className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center px-4"
-        style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ 
+          backgroundColor: 'var(--bg)',
+          paddingTop: 'env(safe-area-inset-top)', 
+          paddingBottom: 'env(safe-area-inset-bottom)' 
+        }}
       >
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="text-center mb-10">
-            <div className="w-20 h-20 rounded-3xl bg-blue-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div 
+              className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'var(--accent)' }}
+            >
               <span className="text-4xl">🙏</span>
             </div>
-            <h1 className="text-4xl font-bold text-white mb-2">HariSanmukh</h1>
-            <p className="text-slate-400 text-sm">Manage household duties together</p>
+            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
+            <p className="text-sm" style={{ color: 'var(--text-3)' }}>Manage household duties together</p>
           </div>
 
           <div className="space-y-3">
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-red-400 text-sm text-center">{error}</p>
+              <div 
+                className="p-3 rounded-xl"
+                style={{ 
+                  background: 'var(--red-bg)', 
+                  border: '0.5px solid var(--red)' 
+                }}
+              >
+                <p className="text-sm text-center" style={{ color: 'var(--red)' }}>{error}</p>
               </div>
             )}
 
@@ -361,7 +374,11 @@ if (loading) {
               <button
                 onClick={handleBiometricLogin}
                 disabled={biometricLoading}
-                className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-lg shadow-blue-600/20"
+                className="w-full font-semibold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+                style={{ 
+                  background: 'var(--accent)', 
+                  color: 'white' 
+                }}
               >
                 {biometricLoading ? (
                   <span className="text-sm">Verifying...</span>
@@ -380,7 +397,11 @@ if (loading) {
             {biometricAttempts > 0 && (
               <div className="flex justify-center gap-2">
                 {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-                  <div key={i} className={`w-2 h-2 rounded-full ${i < biometricAttempts ? 'bg-red-500' : 'bg-slate-600'}`} />
+                  <div 
+                    key={i} 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ background: i < biometricAttempts ? 'var(--red)' : 'var(--border-strong)' }} 
+                  />
                 ))}
               </div>
             )}
@@ -388,9 +409,9 @@ if (loading) {
             {/* Divider */}
             {biometricAvailable && (
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-slate-700" />
-                <span className="text-xs text-slate-500">or</span>
-                <div className="flex-1 h-px bg-slate-700" />
+                <div className="flex-1 h-px" style={{ background: 'var(--separator)' }} />
+                <span className="text-xs" style={{ color: 'var(--text-3)' }}>or</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--separator)' }} />
               </div>
             )}
 
@@ -398,7 +419,12 @@ if (loading) {
             <button
               onClick={handleGoogleLogin}
               disabled={signingIn}
-              className="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-800 border border-slate-600 rounded-2xl px-6 py-4 font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
+              className="w-full rounded-2xl px-6 py-4 font-semibold disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
+              style={{ 
+                background: 'var(--bg-card)', 
+                color: 'var(--text-1)',
+                border: '0.5px solid var(--border-color)'
+              }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
