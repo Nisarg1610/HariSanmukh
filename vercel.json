@@ -5,8 +5,12 @@
       "schedule": "0 23 * * 2"
     },
     {
-      "path": "/api/cron/laundry-reminder",
-      "schedule": "0 12 * * *"
+      "path": "/api/cron/laundry-reminder?type=reminder",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/laundry-reminder?type=evening",
+      "schedule": "0 2 * * *"
     }
   ]
 }
