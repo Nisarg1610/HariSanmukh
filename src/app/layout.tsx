@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
 const APP_NAME = 'HariSanmukh';
-const APP_DESCRIPTION = 'Manage household duties with your family';
+const APP_DESCRIPTION = 'Manage ghar-mandir more nicely and effectively.';
 
 export const metadata: Metadata = {
   title: APP_NAME,
