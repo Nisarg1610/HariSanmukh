@@ -141,8 +141,8 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           householdId: newDbUser?.household_id,
-          title: '🙏 Welcome to HariSanmukh!',
-          body: `Jay Swaminarayan ${newDbUser?.first_name} Bhai! You're all set. Check your seva and laundry schedule 😊`,
+          title: 'Welcome to HariSanmukh!',
+          body: `🙏 Jay Swaminarayan 🙏 Your profile is ready. Admin will assign your seva & laundry soon. `,
         }),
       });
 
