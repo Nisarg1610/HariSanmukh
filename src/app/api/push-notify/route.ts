@@ -14,13 +14,18 @@ webpush.setVapidDetails(
 );
 
 export async function POST(request: Request) {
-  const { householdId, title, body } = await request.json();
+  const { householdId, userId, title, body } = await request.json();
 
-  // If householdId is 'all', fetch all subscriptions, otherwise filter by household
   let query = supabase.from('push_subscriptions').select('subscription');
-  if (householdId !== 'all') {
+
+  if (userId) {
+    // Target specific user only (e.g. welcome notification)
+    query = query.eq('user_id', userId);
+  } else if (householdId !== 'all') {
+    // Target specific household
     query = query.eq('household_id', householdId);
   }
+  // else fetch all (householdId === 'all')
 
   const { data: subscriptions } = await query;
 

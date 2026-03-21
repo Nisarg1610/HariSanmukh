@@ -34,7 +34,7 @@ export default function Home() {
   const passkeyRegistrationRef = useRef(false);
   const MAX_ATTEMPTS = 3;
   const [profileOpen, setProfileOpen] = useState(false);
-
+const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   // ── Passkey helpers ───────────────────────────────────────
   const tryRegisterPasskey = async (userId: string) => {
     if (!browserSupportsWebAuthn()) return;
@@ -136,15 +136,8 @@ export default function Home() {
       setDbUser(newDbUser);
       saveUserId(authUser.id);
       await tryRegisterPasskey(authUser.id);
-      await fetch('/api/push-notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          householdId: newDbUser?.household_id,
-          title: 'Welcome to HariSanmukh!',
-          body: `🙏 Jay Swaminarayan 🙏 Your profile is ready. Admin will assign your seva & laundry soon. `,
-        }),
-      });
+      
+        
 
     } catch (err: any) {
       console.error('setupProfile error:', err);
@@ -198,11 +191,35 @@ export default function Home() {
         await fetchDashboardData(data.household_id, authUser.email!);
         await registerPushNotifications(data.id, data.household_id);
         await tryRegisterPasskey(data.id);
-      } else if (!profileSetupDone) {
-        profileSetupDone = true;
-        setUser(authUser);
-        await setupProfile(authUser);
-      }
+     } else if (!profileSetupDone) {
+  profileSetupDone = true;
+  setUser(authUser);
+  await setupProfile(authUser);
+
+  const { data: newDbUser } = await supabase
+    .from('users').select('*').eq('id', authUser.id).maybeSingle();
+
+  if (newDbUser) {
+    // Register push FIRST so subscription exists
+    await registerPushNotifications(newDbUser.id, newDbUser.household_id);
+
+    // Send welcome only to this user
+    await fetch('/api/push-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: newDbUser.id,
+        title: 'Welcome to HariSanmukh!',
+        body: `🙏 Jay Swaminarayan🙏  You're all set. Wait for admin to assign you seva and laundry. 😊`,
+      }),
+    });
+
+    // Show notification prompt if not yet granted
+    if (Notification.permission !== 'granted') {
+      setShowNotificationPrompt(true);
+    }
+  }
+}
     };
 
     const init = async () => {
@@ -520,6 +537,46 @@ return (
         </div>
       </div>
     )}
+
+    {showNotificationPrompt && (
+  <div
+    className="px-4 py-3"
+    style={{ backgroundColor: 'var(--accent-bg)', borderBottom: '0.5px solid var(--border-color)' }}
+  >
+    <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+      <div>
+        <p className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>
+          🔔 Enable Notifications
+        </p>
+        <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+          Get reminders for seva, laundry & garbage
+        </p>
+      </div>
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          onClick={() => setShowNotificationPrompt(false)}
+          className="text-xs px-3 py-1.5 rounded-lg"
+          style={{ color: 'var(--text-3)' }}
+        >
+          Not now
+        </button>
+        <button
+          onClick={async () => {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted' && dbUser) {
+              await registerPushNotifications(dbUser.id, dbUser.household_id);
+            }
+            setShowNotificationPrompt(false);
+          }}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg"
+          style={{ backgroundColor: 'var(--accent)', color: 'white' }}
+        >
+          Enable
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
