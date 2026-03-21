@@ -935,14 +935,15 @@ setGarbageDates(thisMonth);
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-0.5">
-          {events.map((event: any, i: number) => (
-            <span key={i} className="text-xs font-medium"
-              style={{ color: isPast ? 'var(--text-4)' : 'var(--text-3)' }}>
-              {event.title}
-            </span>
-          ))}
-        </div>
+        {/* Event type labels */}
+<div className="flex flex-wrap justify-end gap-x-1 gap-y-0 max-w-[120px]">
+  {events.map((event: any, i: number) => (
+    <span key={i} className="text-xs font-medium"
+      style={{ color: isPast ? 'var(--text-4)' : 'var(--text-3)' }}>
+      {event.title}{i < events.length - 1 ? ' ·' : ''}
+    </span>
+  ))}
+</div>
 
         {isToday && (
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
