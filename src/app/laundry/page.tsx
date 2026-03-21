@@ -170,6 +170,33 @@ export default function LaundryPage() {
           })}
         </div>
       </div>
+      {/* Ground Rules */}
+<div className="card p-5">
+  <div className="flex items-center gap-2 mb-3">
+    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+      style={{ backgroundColor: 'var(--yellow-bg)' }}>
+      <span className="text-base">📋</span>
+    </div>
+    <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Ground Rules</h3>
+  </div>
+  <div className="space-y-2">
+    {[
+      '📲 Inform the WhatsApp group if you swap days with someone.',
+      '💬 Missed your day? No stress — just communicate!',
+      '🧴 Don\'t overuse detergent or overfill the dryer.',
+      '🧹 Clean the lint tray gently after every dryer cycle.',
+      '🟦 Use 1–3 dryer sheets depending on load size.',
+      '🔔 Remind each other about laundry day!',
+    ].map((rule, i) => (
+      <div key={i} className="flex items-start gap-2.5">
+        <span className="text-xs leading-5 flex-1"
+          style={{ color: 'var(--text-2)' }}>
+          {rule}
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
       <BottomNav isAdmin={false} />
     </main>
   );
@@ -339,6 +366,33 @@ export default function LaundryPage() {
       </div>
 
     </div>
+    {/* Ground Rules */}
+<div className="card p-5">
+  <div className="flex items-center gap-2 mb-3">
+    <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+      style={{ backgroundColor: 'var(--yellow-bg)' }}>
+      <span className="text-base">📋</span>
+    </div>
+    <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Ground Rules</h3>
+  </div>
+  <div className="space-y-2">
+    {[
+      '📲 Inform the WhatsApp group if you swap days with someone.',
+      '💬 Missed your day? No stress — just communicate!',
+      '🧴 Don\'t overuse detergent or overfill the dryer.',
+      '🧹 Clean the lint tray gently after every dryer cycle.',
+      '🟦 Use 1–3 dryer sheets depending on load size.',
+      '🔔 Remind each other about laundry day!',
+    ].map((rule, i) => (
+      <div key={i} className="flex items-start gap-2.5">
+        <span className="text-xs leading-5 flex-1"
+          style={{ color: 'var(--text-2)' }}>
+          {rule}
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
     <BottomNav isAdmin={true} />
   </main>
 );
