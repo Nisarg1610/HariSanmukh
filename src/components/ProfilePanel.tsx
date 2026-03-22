@@ -42,11 +42,7 @@ const handleToggleNotifications = async () => {
   }
 };
 // WRONG — this runs on every mount and sets the popup
-useEffect(() => {
-  if (Notification.permission === 'denied') {
-    setShowNotifPopup(true);  // ← remove this
-  }
-}, []);
+
   // Check notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
