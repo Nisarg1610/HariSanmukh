@@ -6,10 +6,11 @@ import { ProfilePanel } from '@/components/ProfilePanel';
 interface AppHeaderProps {
   user?: any;
   dbUser?: any;
+   displayName?: string;
   onLogout?: () => void;
 }
 
-export function AppHeader({ user, dbUser, onLogout }: AppHeaderProps) {
+export function AppHeader({ user, dbUser, displayName, onLogout }: AppHeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -69,14 +70,15 @@ export function AppHeader({ user, dbUser, onLogout }: AppHeaderProps) {
       </header>
 
       {user && onLogout && (
-        <ProfilePanel
-          user={user}
-          dbUser={dbUser}
-          isOpen={profileOpen}
-          onClose={() => setProfileOpen(false)}
-          onLogout={() => { setProfileOpen(false); onLogout(); }}
-          onSwitchAccount={() => { setProfileOpen(false); onLogout(); }}
-        />
+      <ProfilePanel
+  user={user}
+  dbUser={dbUser}
+  displayName={displayName ?? ''}
+  isOpen={profileOpen}
+  onClose={() => setProfileOpen(false)}
+  onLogout={onLogout!}
+  onSwitchAccount={onLogout!}
+/>
       )}
     </>
   );
