@@ -1009,13 +1009,14 @@ const handleLogout = async () => {
       <BottomNav isAdmin={dbUser?.role === 'admin'} />
       {/* NEW: pass displayName to ProfilePanel so it also shows the correct name */}
       <ProfilePanel
-        user={user}
-        dbUser={dbUser}
-        isOpen={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        onLogout={handleLogout}
-        onSwitchAccount={handleLogout}
-      />
+  user={user}
+  dbUser={dbUser}
+  displayName={displayName}   {/* add this line */}
+  isOpen={profileOpen}
+  onClose={() => setProfileOpen(false)}
+  onLogout={handleLogout}
+  onSwitchAccount={handleLogout}
+/>
     </main>
   );
 }
