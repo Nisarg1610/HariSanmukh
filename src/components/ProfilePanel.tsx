@@ -18,7 +18,35 @@ export function ProfilePanel({
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+const [showNotifPopup, setShowNotifPopup] = useState(false);
 
+const hasInteracted = useRef(false);
+
+const handleToggleNotifications = async () => {
+  hasInteracted.current = true;  // mark that user actually tapped
+
+  if (notificationsEnabled) {
+    setShowNotifPopup(true);
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    setShowNotifPopup(true);
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  setNotificationsEnabled(permission === 'granted');
+  if (permission === 'denied') {
+    setShowNotifPopup(true);
+  }
+};
+// WRONG — this runs on every mount and sets the popup
+useEffect(() => {
+  if (Notification.permission === 'denied') {
+    setShowNotifPopup(true);  // ← remove this
+  }
+}, []);
   // Check notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
@@ -66,28 +94,6 @@ const handleToggleDarkMode = () => {
   }
 };
 
-const [showNotifPopup, setShowNotifPopup] = useState(false);
-
-const handleToggleNotifications = async () => {
-  if (notificationsEnabled) {
-    // Can't programmatically disable — show instructions
-    setShowNotifPopup(true);
-    return;
-  }
-
-  if (Notification.permission === 'denied') {
-    // Already denied — can't re-request, must go to browser settings
-    setShowNotifPopup(true);
-    return;
-  }
-
-  // permission is 'default' — request it
-  const permission = await Notification.requestPermission();
-  setNotificationsEnabled(permission === 'granted');
-  if (permission === 'denied') {
-    setShowNotifPopup(true);
-  }
-};
 
   const avatarUrl = user?.user_metadata?.avatar_url;
   const firstName = dbUser?.first_name ?? '';
