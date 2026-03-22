@@ -66,15 +66,28 @@ const handleToggleDarkMode = () => {
   }
 };
 
-  const handleToggleNotifications = async () => {
-    if (notificationsEnabled) {
-      // Can't programmatically disable — tell user
-      alert('To disable notifications, go to your browser settings.');
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    setNotificationsEnabled(permission === 'granted');
-  };
+const [showNotifPopup, setShowNotifPopup] = useState(false);
+
+const handleToggleNotifications = async () => {
+  if (notificationsEnabled) {
+    // Can't programmatically disable — show instructions
+    setShowNotifPopup(true);
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    // Already denied — can't re-request, must go to browser settings
+    setShowNotifPopup(true);
+    return;
+  }
+
+  // permission is 'default' — request it
+  const permission = await Notification.requestPermission();
+  setNotificationsEnabled(permission === 'granted');
+  if (permission === 'denied') {
+    setShowNotifPopup(true);
+  }
+};
 
   const avatarUrl = user?.user_metadata?.avatar_url;
   const firstName = dbUser?.first_name ?? '';
@@ -258,6 +271,60 @@ const handleToggleDarkMode = () => {
         </p>
       </div>
     </div>
+    {showNotifPopup && (
+  <div
+    className="fixed inset-0 z-60 flex items-end justify-center px-4 pb-8"
+    style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+    onClick={() => setShowNotifPopup(false)}
+  >
+    <div
+      className="w-full max-w-sm rounded-3xl p-6 space-y-4"
+      style={{ backgroundColor: 'var(--bg-card)' }}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'var(--yellow-bg)' }}>
+          <Bell size={20} style={{ color: 'var(--yellow)' }} />
+        </div>
+        <div>
+          <p className="font-bold text-sm" style={{ color: 'var(--text-1)' }}>
+            Enable Notifications
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+            Notifications are blocked
+          </p>
+        </div>
+      </div>
+
+      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+        To receive laundry, seva and garbage reminders, you need to allow
+        notifications for this app in your device settings.
+      </p>
+
+      <div className="space-y-2 text-xs rounded-2xl p-4"
+        style={{ backgroundColor: 'var(--bg-card-2)' }}>
+        <p className="font-semibold" style={{ color: 'var(--text-1)' }}>How to enable:</p>
+        <p style={{ color: 'var(--text-3)' }}>
+          <strong style={{ color: 'var(--text-2)' }}>iPhone:</strong> Settings → HariSanmukh → Notifications → Allow
+        </p>
+        <p style={{ color: 'var(--text-3)' }}>
+          <strong style={{ color: 'var(--text-2)' }}>Android:</strong> Settings → Apps → HariSanmukh → Notifications → Turn on
+        </p>
+        <p style={{ color: 'var(--text-3)' }}>
+          <strong style={{ color: 'var(--text-2)' }}>Chrome:</strong> Click the lock icon in the address bar → Notifications → Allow
+        </p>
+      </div>
+
+      <button
+        onClick={() => setShowNotifPopup(false)}
+        className="w-full py-3.5 rounded-2xl font-semibold text-sm"
+        style={{ backgroundColor: 'var(--accent)', color: 'white' }}>
+        Got it
+      </button>
+    </div>
+  </div>
+)}
   </>
 );
 }
