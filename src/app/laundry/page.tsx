@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { X } from 'lucide-react';
+import { X,Bell, Check } from 'lucide-react';
 import {
   DAYS,
   getLaundryAssignments,
@@ -22,7 +22,8 @@ export default function LaundryPage() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-
+const [notifying, setNotifying] = useState(false);
+const [notified, setNotified] = useState(false);
   const fetchAll = async (hId: string) => {
     const [a, m] = await Promise.all([
       getLaundryAssignments(hId),
@@ -31,7 +32,34 @@ export default function LaundryPage() {
     setAssignments(a);
     setMembers(m.filter((mem: any) => mem.status === 'active'));
   };
+const handleNotify = async () => {
+  setNotifying(true);
+  try {
+    const today = DAYS[new Date().getDay()];
+    const todayAssignments = assignments.filter(a => a.day_of_week === today);
 
+    if (todayAssignments.length === 0) {
+      alert('No one is assigned to laundry today.');
+      return;
+    }
+
+    const res = await fetch('/api/cron/laundry-reminder?type=evening', {
+      method: 'GET',
+      headers: { authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET}` },
+    });
+
+    const data = await res.json();
+
+    if (data.sent > 0) {
+      setNotified(true);
+      setTimeout(() => setNotified(false), 3000);
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setNotifying(false);
+  }
+};
   useEffect(() => {
     const init = async () => {
       try {
@@ -216,7 +244,26 @@ export default function LaundryPage() {
   
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
-      <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry</h1>
+<div className="flex items-center justify-between">
+  <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry</h1>
+  <button
+    onClick={handleNotify}
+    disabled={notifying}
+    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-semibold text-sm transition-all disabled:opacity-50"
+    style={{
+      backgroundColor: notified ? 'var(--green-bg)' : 'var(--yellow-bg)',
+      color: notified ? 'var(--green)' : 'var(--yellow)',
+    }}
+    title="Notify today's members"
+  >
+    {notified
+      ? <><Check size={16} /> Sent!</>
+      : notifying
+      ? <><Bell size={16} /> Sending...</>
+      : <><Bell size={16} /> Notify today</>
+    }
+  </button>
+</div>
 
       {error && (
         <div
