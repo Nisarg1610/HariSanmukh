@@ -1011,7 +1011,7 @@ const handleLogout = async () => {
       <ProfilePanel
   user={user}
   dbUser={dbUser}
-  displayName={displayName}   {/* add this line */}
+  displayName={displayName} 
   isOpen={profileOpen}
   onClose={() => setProfileOpen(false)}
   onLogout={handleLogout}
