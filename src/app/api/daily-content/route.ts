@@ -16,8 +16,8 @@ export async function GET() {
 
     // Get total counts
     const [{ count: sikshaCount }, { count: swaminiCount }] = await Promise.all([
-      supabase.from('Sikshapatri').select('*', { count: 'exact', head: true }),
-      supabase.from('SwaminiVato').select('*', { count: 'exact', head: true }),
+      supabase.from('sikshapatri').select('*', { count: 'exact', head: true }),
+      supabase.from('swaminivato').select('*', { count: 'exact', head: true }),
     ]);
 
     // Calculate which row to show using modulo
@@ -27,7 +27,7 @@ export async function GET() {
     // Fetch the specific rows
     const [{ data: siksha }, { data: swamini }] = await Promise.all([
       supabase
-        .from('Sikshapatri')
+        .from('sikshapatri')
         .select('*')
         .eq('id', sikshaIndex)
         .single(),
