@@ -53,7 +53,10 @@ export default function Home() {
   const [activePrompt, setActivePrompt]             = useState<PromptKind>(null);
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
   const [profileOpen, setProfileOpen]               = useState(false);
-
+const [dailyContent, setDailyContent] = useState<{
+  siksha: any;
+  swamini: any;
+} | null>(null);
   // ── Refs ──────────────────────────────────────────────────────────────────────
   const dbUserRef              = useRef<any>(null);
   const setupInProgressRef     = useRef(false);
@@ -218,6 +221,13 @@ export default function Home() {
     } catch (err) {
       console.error('fetchDashboardData: seva/laundry failed', err);
     }
+    try {
+  const contentRes = await fetch('/api/daily-content');
+  const contentData = await contentRes.json();
+  setDailyContent(contentData);
+} catch {
+  console.error('Failed to fetch daily content');
+}
 
     try {
       const calRes = await fetch('/api/garbage-calendar');
@@ -843,7 +853,91 @@ const handleLogout = async () => {
             </span>
           )}
         </div>
+{/* Content of the Day */}
+{dailyContent && (
+  <div className="card p-5">
+    {/* Header */}
+    <div className="flex items-center gap-2 mb-4">
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: 'var(--accent-bg)' }}
+      >
+        <span style={{ fontSize: 16 }}>📖</span>
+      </div>
+      <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>
+        Content of the Day
+      </h3>
+    </div>
 
+    {/* Sikshapatri */}
+    {dailyContent.siksha && (
+      <div className="mb-4">
+        <p
+          className="text-xs font-semibold uppercase tracking-widest mb-2"
+          style={{ color: 'var(--text-3)' }}
+        >
+          Sikshapatri
+          {dailyContent.siksha.shloka_number && (
+            <span className="ml-2 normal-case" style={{ color: 'var(--accent)' }}>
+              #{dailyContent.siksha.shloka_number}
+            </span>
+          )}
+        </p>
+        <p
+          className="text-base leading-relaxed"
+          style={{
+            color: 'var(--text-1)',
+            fontFamily: 'system-ui, sans-serif',
+            lineHeight: '1.8',
+          }}
+        >
+          {dailyContent.siksha.gujarati_text}
+        </p>
+      </div>
+    )}
+
+    {/* Divider */}
+    <div
+      className="my-4"
+      style={{ height: '0.5px', backgroundColor: 'var(--separator)' }}
+    />
+
+    {/* Swamini Vato */}
+    {dailyContent.swamini && (
+      <div>
+        <p
+          className="text-xs font-semibold uppercase tracking-widest mb-2"
+          style={{ color: 'var(--text-3)' }}
+        >
+          Swamini Vato
+          {dailyContent.swamini.vat_number && (
+            <span className="ml-2 normal-case" style={{ color: 'var(--accent)' }}>
+              #{dailyContent.swamini.vat_number}
+            </span>
+          )}
+        </p>
+        <p
+          className="text-base leading-relaxed"
+          style={{
+            color: 'var(--text-1)',
+            fontFamily: 'system-ui, sans-serif',
+            lineHeight: '1.8',
+          }}
+        >
+          {dailyContent.swamini.gujarati_text}
+        </p>
+        {dailyContent.swamini.reference && (
+          <p
+            className="text-xs mt-2"
+            style={{ color: 'var(--text-3)' }}
+          >
+            {dailyContent.swamini.reference}
+          </p>
+        )}
+      </div>
+    )}
+  </div>
+)}
         <p className="text-xs font-semibold uppercase tracking-widest px-1"
           style={{ color: 'var(--text-3)' }}>
           Here's what you have this week
