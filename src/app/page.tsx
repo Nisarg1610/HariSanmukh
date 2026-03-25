@@ -865,7 +865,7 @@ const handleLogout = async () => {
         <span style={{ fontSize: 16 }}>📖</span>
       </div>
       <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>
-        Content of the Day
+        Swadhyay of the Day
       </h3>
     </div>
 
