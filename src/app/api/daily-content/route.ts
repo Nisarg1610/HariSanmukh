@@ -32,7 +32,7 @@ export async function GET() {
         .eq('id', sikshaIndex)
         .single(),
       supabase
-        .from('SwaminiVato')
+        .from('swaminivato')
         .select('*')
         .eq('id', swaminiIndex)
         .single(),
