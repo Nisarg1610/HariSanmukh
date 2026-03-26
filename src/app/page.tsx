@@ -976,7 +976,7 @@ const handleLogout = async () => {
                   style={{ color: 'var(--text-3)' }}>
                   My Seva
                 </p>
-                <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
+                <p className="text-lg font-bold mt-2 leading-snug break-words" style={{ color: 'var(--text-1)' }}>
                   {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No seva'}
                 </p>
               </div>
