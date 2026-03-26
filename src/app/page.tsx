@@ -877,14 +877,7 @@ const handleLogout = async () => {
   </h2>
 
   {/* WiFi Info */}
-  <div className="text-sm space-y-1">
-    <p>
-      📶 <span className="font-semibold">WiFi:</span> Your_WiFi_Name
-    </p>
-    <p>
-      🔑 <span className="font-semibold">Password:</span> Your_Password
-    </p>
-  </div>
+
 </div>
 
         {/* General + Swadhyay tiles */}
