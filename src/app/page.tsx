@@ -769,12 +769,6 @@ const handleLogout = async () => {
             </div>
             <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
           </div>
-          {dbUser?.role === 'admin' && (
-            <span className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
-              Admin
-            </span>
-          )}
           <button onClick={() => setProfileOpen(true)}
             aria-label="Open profile menu"
             className="w-9 h-9 rounded-full overflow-hidden transition-all"
@@ -862,17 +856,34 @@ const handleLogout = async () => {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {/* Greeting — NEW: uses displayName from household_members */}
-        <div className="rounded-3xl p-6 text-white"
-          style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}>
-          <p className="text-2xl font-bold mb-1 tracking-wide" style={{ color: 'white' }}>
-            🙏 Jay Swaminarayan 🙏
-          </p>
-          <h2 className="text-base font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
-            {/* NEW: displayName comes from household_members.first_name — admin-editable */}
-            {displayName} Bhai 👋
-          </h2>
-          
-        </div>
+        <div
+  className="rounded-3xl p-6 text-white"
+  style={{
+    background:
+      'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)',
+  }}
+>
+  <p className="text-2xl font-bold mb-1 tracking-wide">
+    🙏 Jay Swaminarayan 🙏
+  </p>
+
+  <h2
+    className="text-base font-semibold mb-3"
+    style={{ color: 'rgba(255,255,255,0.8)' }}
+  >
+    {displayName} Bhai 👋
+  </h2>
+
+  {/* WiFi Info */}
+  <div className="text-sm space-y-1">
+    <p>
+      📶 <span className="font-semibold">WiFi:</span> Your_WiFi_Name
+    </p>
+    <p>
+      🔑 <span className="font-semibold">Password:</span> Your_Password
+    </p>
+  </div>
+</div>
 
         {/* General + Swadhyay tiles */}
         <div className="grid grid-cols-2 gap-3">
