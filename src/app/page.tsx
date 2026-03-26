@@ -1000,7 +1000,17 @@ const handleLogout = async () => {
                   style={{ color: 'var(--text-3)' }}>
                   My Seva
                 </p>
-                <p className="text-lg font-bold mt-2 leading-snug break-words" style={{ color: 'var(--text-1)' }}>
+                <p
+                  className="font-bold mt-2 leading-tight break-words"
+                  style={{
+                    color: 'var(--text-1)',
+                    fontSize: 'clamp(14px, 1.8vw, 18px)',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
                   {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No seva'}
                 </p>
               </div>
