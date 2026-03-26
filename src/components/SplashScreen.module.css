@@ -14,7 +14,13 @@
   justify-content: center;
   gap: 18px;
   overflow: hidden;
-  background: var(--splash-bg);
+  /* Rich dark background (original feel): deep base + subtle purple/amber glow */
+  background:
+    radial-gradient(circle at 50% 38%, rgba(167, 139, 250, 0.14), transparent 46%),
+    radial-gradient(circle at 50% 78%, rgba(255, 221, 122, 0.10), transparent 52%),
+    radial-gradient(circle at 20% 25%, rgba(167, 139, 250, 0.08), transparent 45%),
+    radial-gradient(circle at 80% 75%, rgba(255, 221, 122, 0.06), transparent 50%),
+    var(--splash-bg);
 }
 
 /* Sequence: logo → title → loading line */
