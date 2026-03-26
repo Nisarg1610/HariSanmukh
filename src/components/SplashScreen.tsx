@@ -38,6 +38,28 @@ export function SplashScreen({
 
   return (
     <main className={styles.root}>
+      <div className={styles.bgGlow} />
+
+<div className={styles.floatingDots}>
+  {Array.from({ length: 20 }).map((_, i) => {
+    const size = Math.random() * 4 + 2;
+    const left = Math.random() * 100;
+    const duration = Math.random() * 10 + 10;
+
+    return (
+      <span
+        key={i}
+        style={{
+          width: size,
+          height: size,
+          left: `${left}%`,
+          bottom: '-10px',
+          animationDuration: `${duration}s`,
+        }}
+      />
+    );
+  })}
+</div>
       
       {/* Rings (optional - you can remove if you want ultra clean) */}
       <div className={styles.rings} aria-hidden="true">
