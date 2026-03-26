@@ -16,6 +16,14 @@
   --radius-lg: 18px;
   --radius-xl: 24px;
 
+  /* ── Splash Screen Palette ── */
+  --splash-bg: #0d0d1a;
+  --splash-purple: #a78bfa;
+  --splash-purple-2: rgba(167, 139, 250, 0.55);
+  --splash-ring: rgba(167, 139, 250, 0.35);
+  --splash-amber: var(--yellow);
+  --splash-amber-2: #ffdd7a;
+
   /* ══════════════════════════════════════
      LIGHT MODE — Navy Blue Palette
   ══════════════════════════════════════ */
@@ -68,6 +76,12 @@ html.dark {
   --yellow-bg:     #201808;
   --separator:     rgba(120, 180, 160, 0.07);
   color-scheme:    dark;
+
+  /* Keep splash purple/amber consistent in dark mode */
+  --splash-bg: #0d0d1a;
+  --splash-purple: #a78bfa;
+  --splash-purple-2: rgba(167, 139, 250, 0.55);
+  --splash-ring: rgba(167, 139, 250, 0.35);
 }
 
 /* ══════════════════════════════════════

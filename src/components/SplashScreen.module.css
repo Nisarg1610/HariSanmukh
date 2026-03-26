@@ -1,0 +1,242 @@
+.root {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: var(--splash-bg);
+  overflow: hidden;
+}
+
+.rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ring1,
+.ring2,
+.ring3 {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid var(--splash-ring);
+  opacity: 0;
+  transform-origin: center;
+  animation: ringOut 2.9s ease-out infinite;
+}
+
+.ring1 {
+  width: 220px;
+  height: 220px;
+  animation-delay: 0s;
+}
+
+.ring2 {
+  width: 320px;
+  height: 320px;
+  border-color: rgba(167, 139, 250, 0.28);
+  animation-delay: 0.55s;
+}
+
+.ring3 {
+  width: 420px;
+  height: 420px;
+  border-color: rgba(167, 139, 250, 0.18);
+  animation-delay: 1.1s;
+}
+
+@keyframes ringOut {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  15% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+
+.stack {
+  position: relative;
+  width: 142px;
+  height: 142px;
+  z-index: 1;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Paper cutout layers (depth) */
+.layerBack {
+  transform: translate3d(0, 16px, 0) rotate(-2deg) scale(0.96);
+  background: rgba(167, 139, 250, 0.06);
+  border-color: rgba(167, 139, 250, 0.18);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(167, 139, 250, 0.10);
+}
+
+.layerMid {
+  transform: translate3d(0, 8px, 0) rotate(-1deg) scale(0.985);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.layerFront {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconGlow {
+  width: 106px;
+  height: 106px;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(167, 139, 250, 0.34), rgba(167, 139, 250, 0.10) 45%, rgba(0, 0, 0, 0) 70%);
+  box-shadow:
+    0 0 0 1px rgba(167, 139, 250, 0.22),
+    0 0 34px rgba(167, 139, 250, 0.35);
+  animation: glowPulse 2.15s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(167, 139, 250, 0.20),
+      0 0 20px rgba(167, 139, 250, 0.30);
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(167, 139, 250, 0.30),
+      0 0 48px rgba(167, 139, 250, 0.46);
+    transform: translate3d(0, -1px, 0);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(167, 139, 250, 0.20),
+      0 0 20px rgba(167, 139, 250, 0.30);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 28px;
+  filter: drop-shadow(0 12px 24px rgba(167, 139, 250, 0.18));
+}
+
+.textBlock {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.heading {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, var(--splash-amber) 0%, var(--splash-amber-2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subheading {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.progressWrap {
+  position: relative;
+  z-index: 1;
+  width: min(360px, calc(100vw - 48px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--splash-amber) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    var(--splash-amber-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: progressShimmer 1.65s linear infinite;
+  transition: width 0.25s ease;
+}
+
+@keyframes progressShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.progressMeta {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.progressPct {
+  color: rgba(255, 255, 255, 0.86);
+  font-weight: 700;
+}
+
+.progressStatus {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring1,
+  .ring2,
+  .ring3,
+  .iconGlow,
+  .progressFill {
+    animation: none !important;
+  }
+}
+

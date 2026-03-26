@@ -15,6 +15,7 @@ import {
   clearUserId,
 } from '@/utils/webauthn';
 import { ProfilePanel } from '@/components/ProfilePanel';
+import { SplashScreen } from '@/components/SplashScreen';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_ATTEMPTS       = 3;
@@ -616,15 +617,7 @@ const handleLogout = async () => {
 
   // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
-    return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-4"
-        style={{ backgroundColor: 'var(--bg)' }}>
-        <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
-          <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
-        </div>
-        <p className="text-sm" style={{ color: 'var(--text-3)' }}>Loading...</p>
-      </main>
-    );
+    return <SplashScreen durationMs={LOADING_TIMEOUT_MS} subheading="Preparing your dashboard" />;
   }
 
   // ─── Render: timeout ──────────────────────────────────────────────────────────
