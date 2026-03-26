@@ -1005,6 +1005,8 @@ const handleLogout = async () => {
                   style={{
                     color: 'var(--text-1)',
                     fontSize: 'clamp(14px, 1.8vw, 18px)',
+                    // Keep the tile height stable: reserve space for 2 lines
+                    minHeight: '2.4em',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
