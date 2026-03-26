@@ -21,6 +21,56 @@
   z-index: 0;
 }
 
+.screenDots {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.screenDots::before,
+.screenDots::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 221, 122, 1) 1px, transparent 1.5px);
+  opacity: var(--dotAmberAlpha, 0.18);
+  background-size: 26px 26px;
+  animation: dotsDriftA 10s ease-in-out infinite;
+  transform: translate3d(0, 0, 0);
+}
+
+.screenDots::after {
+  background-image: radial-gradient(circle, rgba(167, 139, 250, 1) 1px, transparent 1.5px);
+  opacity: var(--dotPurpleAlpha, 0.12);
+  background-size: 40px 40px;
+  animation: dotsDriftB 12s ease-in-out infinite;
+}
+
+@keyframes dotsDriftA {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-18px, 12px, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes dotsDriftB {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(16px, -10px, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .ring1,
 .ring2,
 .ring3 {
@@ -102,56 +152,6 @@
   justify-content: center;
 }
 
-.orbitWrap {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  animation: orbitSpin 2.8s linear infinite;
-}
-
-@keyframes orbitSpin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.orbitDot {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 221, 122, 0.12);
-  box-shadow: 0 0 0 rgba(255, 221, 122, 0.0);
-  opacity: 0.55;
-  transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0));
-}
-
-.dotActive {
-  background: var(--splash-amber);
-  opacity: 1;
-  box-shadow:
-    0 0 14px rgba(255, 221, 122, 0.28),
-    0 0 42px rgba(255, 221, 122, 0.12);
-  animation: dotTwinkle 1.25s ease-in-out infinite;
-}
-
-@keyframes dotTwinkle {
-  0% {
-    transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0)) scale(0.85);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0)) scale(1.15);
-  }
-  100% {
-    transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0)) scale(0.95);
-  }
-}
-
 .iconGlow {
   width: 106px;
   height: 106px;
@@ -166,6 +166,33 @@
     0 0 0 1px rgba(167, 139, 250, 0.22),
     0 0 34px rgba(167, 139, 250, 0.35);
   animation: glowPulse 2.15s ease-in-out infinite;
+}
+
+.iconGlow::before {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  border-radius: 40px;
+  background:
+    radial-gradient(circle at 65% 70%, rgba(167, 139, 250, 0.45), rgba(167, 139, 250, 0.18) 45%, rgba(0, 0, 0, 0) 70%);
+  filter: blur(14px);
+  z-index: -1;
+  animation: logoBackGlow 2.8s ease-in-out infinite;
+}
+
+@keyframes logoBackGlow {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(0, -2px, 0) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    opacity: 0.75;
+  }
 }
 
 @keyframes glowPulse {
@@ -229,11 +256,8 @@
     animation: none !important;
   }
 
-  .orbitWrap {
-    animation: none !important;
-  }
-
-  .dotActive {
+  .screenDots::before,
+  .screenDots::after {
     animation: none !important;
   }
 }

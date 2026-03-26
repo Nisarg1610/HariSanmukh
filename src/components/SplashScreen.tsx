@@ -20,8 +20,8 @@ export function SplashScreen({
 }) {
   const [progress, setProgress] = useState(0);
 
-  const dotsCount = 12;
-  const activeDots = Math.max(0, Math.min(dotsCount, Math.round((progress / 100) * dotsCount)));
+  const dotAmberAlpha = 0.08 + (progress / 100) * 0.22;
+  const dotPurpleAlpha = 0.05 + (progress / 100) * 0.16;
 
   useEffect(() => {
     if (mode !== 'loading') return;
@@ -47,6 +47,8 @@ export function SplashScreen({
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
+        ['--dotAmberAlpha' as any]: dotAmberAlpha,
+        ['--dotPurpleAlpha' as any]: dotPurpleAlpha,
       }}
       role="status"
       aria-live="polite"
@@ -57,32 +59,12 @@ export function SplashScreen({
         <span className={styles.ring3} />
       </div>
 
+      <div className={styles.screenDots} aria-hidden="true" />
+
       <div className={styles.stack} aria-hidden="true">
         <div className={`${styles.layer} ${styles.layerBack}`} />
         <div className={`${styles.layer} ${styles.layerMid}`} />
         <div className={`${styles.layer} ${styles.layerFront}`}>
-          <div className={styles.orbitWrap}>
-            {Array.from({ length: dotsCount }).map((_, i) => {
-              const angle = (2 * Math.PI * i) / dotsCount;
-              const orbitRadius = 58;
-              const x = Math.cos(angle) * orbitRadius;
-              const y = Math.sin(angle) * orbitRadius;
-              const isActive = i < activeDots;
-              return (
-                <span
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={i}
-                  className={`${styles.orbitDot} ${isActive ? styles.dotActive : ''}`}
-                  style={{
-                    // Used by CSS for stable position while animation scales.
-                    ['--tx' as any]: `${x}px`,
-                    ['--ty' as any]: `${y}px`,
-                    transitionDelay: `${i * 35}ms`,
-                  }}
-                />
-              );
-            })}
-          </div>
             <div className={styles.iconGlow}>
               <img src="/icon-256.png" alt="" className={styles.icon} />
             </div>
