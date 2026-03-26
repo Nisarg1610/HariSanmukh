@@ -23,9 +23,6 @@ export function SplashScreen({
       role="status"
       aria-live="polite"
     >
-      {/* Background */}
-      <div className={styles.bgAmbient} aria-hidden="true" />
-
       {/* Calm rings */}
       <div className={styles.rings} aria-hidden="true">
         <span className={styles.ring1} />

@@ -14,11 +14,7 @@
   justify-content: center;
   gap: 18px;
   overflow: hidden;
-
-  background:
-    radial-gradient(circle at 20% 30%, rgba(167, 139, 250, 0.12), transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(255, 221, 122, 0.10), transparent 45%),
-    var(--splash-bg);
+  background: var(--splash-bg);
 }
 
 /* Sequence: logo → title → loading line */
@@ -63,49 +59,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-.bgAmbient {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.bgAmbient::before,
-.bgAmbient::after {
-  content: '';
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.25;
-}
-
-/* Purple glow */
-.bgAmbient::before {
-  background: var(--splash-purple);
-  top: 10%;
-  left: 15%;
-  animation: floatAmbient1 10s ease-in-out infinite;
-}
-
-/* Amber glow */
-.bgAmbient::after {
-  background: var(--splash-amber-2);
-  bottom: 10%;
-  right: 15%;
-  animation: floatAmbient2 12s ease-in-out infinite;
-}
-
-@keyframes floatAmbient1 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(40px, -25px); }
-}
-
-@keyframes floatAmbient2 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-30px, 30px); }
 }
 .rings {
   position: absolute;
@@ -286,8 +239,7 @@
   .ring3,
   .iconGlow,
   .dot,
-  .bgAmbient::before,
-  .bgAmbient::after {
+  {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;
