@@ -17,6 +17,8 @@
   --radius-xl: 24px;
 
   /* ── Splash Screen Palette ── */
+ --radius-xl: 24px;
+  /* ── Splash Screen Palette ── */
   --splash-bg: #0d0d1a;
   --splash-purple: #a78bfa;
   --splash-purple-2: rgba(167, 139, 250, 0.55);
