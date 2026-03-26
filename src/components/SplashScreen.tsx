@@ -62,19 +62,7 @@ export function SplashScreen({
             Loading Dashboard<span className={styles.dots}></span>
           </div>}
       </div>
-      {mode === 'loading' ? (
-        <div className={styles.progressWrap}>
-          <div className={styles.progressTrack} aria-hidden="true">
-            <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-          </div>
-          <div className={styles.progressMeta}>
-            <span className={styles.progressPct}>{Math.round(progress)}%</span>
-            <span className={styles.progressStatus}>Loading</span>
-          </div>
-        </div>
-      ) : (
-        children
-      )}
+      {mode === 'timeout' ? children : null}
     </main>
   );
 }
