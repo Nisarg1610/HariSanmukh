@@ -976,13 +976,8 @@ const handleLogout = async () => {
                   style={{ color: 'var(--text-3)' }}>
                   My Seva
                 </p>
-                <p className="text-lg font-bold mt-1 truncate" style={{ color: 'var(--text-1)' }}>
+                <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
                   {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No seva'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  {(mySevas?.length ?? 0) === 0
-                    ? 'Nothing assigned'
-                    : `${mySevas.filter((a: any) => !a.is_completed).length} pending · ${mySevas.filter((a: any) => a.is_completed).length} done`}
                 </p>
               </div>
               <div
@@ -1029,13 +1024,8 @@ const handleLogout = async () => {
                   style={{ color: 'var(--text-3)' }}>
                   My Laundry
                 </p>
-                <p className="text-lg font-bold mt-1 truncate" style={{ color: 'var(--text-1)' }}>
+                <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
                   {myLaundryDays?.[0] || 'No days'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  {(myLaundryDays?.length ?? 0) === 0
-                    ? 'Nothing assigned'
-                    : `${myLaundryDays.length} day${myLaundryDays.length === 1 ? '' : 's'} assigned`}
                 </p>
               </div>
               <div
