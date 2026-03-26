@@ -769,6 +769,12 @@ const handleLogout = async () => {
             </div>
             <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
           </div>
+          {dbUser?.role === 'admin' && (
+            <span className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+              Admin
+            </span>
+          )}
           <button onClick={() => setProfileOpen(true)}
             aria-label="Open profile menu"
             className="w-9 h-9 rounded-full overflow-hidden transition-all"
@@ -865,12 +871,7 @@ const handleLogout = async () => {
             {/* NEW: displayName comes from household_members.first_name — admin-editable */}
             {displayName} Bhai 👋
           </h2>
-          {dbUser?.role === 'admin' && (
-            <span className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
-              Admin
-            </span>
-          )}
+          
         </div>
 
         {/* General + Swadhyay tiles */}

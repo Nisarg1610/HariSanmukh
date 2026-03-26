@@ -26,16 +26,16 @@ export default function LinksPage() {
           </p>
           <div className="grid grid-cols-1 gap-3">
             <a
-              href="https://www.youtube.com/results?search_query=Swaminarayan+Aarti"
+              href="https://youtu.be/gOe1zn4Nvrc"
               target="_blank"
               rel="noreferrer"
               className="w-full rounded-2xl px-4 py-4 font-semibold transition-all"
               style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent-text)', border: '0.5px solid var(--border-color)' }}
             >
-              Aarti
+              Maha Aarti
             </a>
             <a
-              href="https://www.youtube.com/results?search_query=Swaminarayan+Pooja+Thal"
+              href="https://youtu.be/1nSItb3D97Q?si=FTekfmkJrmUGSgSA"
               target="_blank"
               rel="noreferrer"
               className="w-full rounded-2xl px-4 py-4 font-semibold transition-all"
