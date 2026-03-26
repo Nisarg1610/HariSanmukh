@@ -59,7 +59,7 @@ export function SplashScreen({
         <span className={styles.ring3} />
       </div>
 
-      <div className={styles.screenDots} aria-hidden="true" />
+  
 
       <div className={styles.stack} aria-hidden="true">
         <div className={`${styles.layer} ${styles.layerBack}`} />
@@ -72,9 +72,18 @@ export function SplashScreen({
       </div>
 
       <div className={styles.textBlock}>
-        <div className={styles.heading}>{heading}</div>
-        {mode === 'loading' && <div className={styles.subheading}>{subheading}</div>}
+        <div className={styles.heading}>
+  {heading.slice(0, Math.floor(progress / 10))}
+</div>
+        {mode === 'loading' && <div className={styles.subheading}>
+  Dashboard loading...
+</div>}
       </div>
+      <div className={styles.loader}>
+  {Array.from({ length: 8 }).map((_, i) => (
+    <span key={i} style={{ ['--i' as any]: i }} />
+  ))}
+</div>
 
       {mode === 'timeout' ? children : null}
     </main>
