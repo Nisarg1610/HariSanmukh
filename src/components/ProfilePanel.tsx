@@ -96,7 +96,7 @@ export function ProfilePanel({
   // ── Notification toggle ───────────────────────────────────────────────────
   // Four scenarios handled cleanly:
   // 1. Unsupported  → do nothing (toggle is hidden)
-  // 2. Granted      → user wants to turn OFF → unsubscribe + remove from DB
+  // 2. Granted      → locked ON (can't turn OFF in-app)
   // 3. Denied       → user wants to turn ON  → can't request, show instructions
   // 4. Default      → user wants to turn ON  → request permission
   const handleToggleNotifications = useCallback(async () => {
@@ -105,30 +105,7 @@ export function ProfilePanel({
     if (current === 'unsupported') return;
 
     if (current === 'granted') {
-      // ── Turn OFF: unsubscribe from push + remove from DB ──────────────────
-      setNotifLoading(true);
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-
-        if (sub) {
-          await sub.unsubscribe();
-        }
-
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await supabase
-            .from('push_subscriptions')
-            .delete()
-            .eq('user_id', session.user.id);
-        }
-
-        setNotifState('default');
-      } catch (err) {
-        console.error('Failed to unsubscribe from push:', err);
-      } finally {
-        setNotifLoading(false);
-      }
+      // Locked ON once allowed: don't offer in-app disable
       return;
     }
 
@@ -169,6 +146,7 @@ export function ProfilePanel({
   const email      = user?.email ?? '';
   const isEnabled  = notifState === 'granted';
   const isSupported = notifState !== 'unsupported';
+  const notifLockedOn = notifState === 'granted';
 
   return (
     <>
@@ -306,7 +284,7 @@ export function ProfilePanel({
                            notifState === 'granted' ? 'var(--green)' :
                            'var(--text-4)'
                   }}>
-                    {notifState === 'granted' ? 'Enabled'
+                    {notifState === 'granted' ? 'Enabled (locked)'
                    : notifState === 'denied'  ? 'Blocked in settings'
                    :                            'Tap to enable'}
                   </p>
@@ -314,7 +292,7 @@ export function ProfilePanel({
               </div>
               <button
                 onClick={handleToggleNotifications}
-                disabled={notifLoading}
+                disabled={notifLoading || notifLockedOn}
                 className={`toggle ${isEnabled ? 'on' : ''} disabled:opacity-50`}
                 style={isEnabled ? { background: 'var(--green)' } : undefined}
                 aria-label="Toggle notifications"
