@@ -33,36 +33,40 @@ export function SplashScreen({
     return () => window.clearInterval(id);
   }, [mode, durationMs]);
   return (
-    <main
-      className={styles.root}
-      style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
-      role="status"
-      aria-live="polite"
-    >
-      <div className={styles.rings} aria-hidden="true">
-        <span className={styles.ring1} />
-        <span className={styles.ring2} />
-        <span className={styles.ring3} />
+    <main className={styles.root}>
+
+  {/* ✅ Background layers */}
+  <div className={styles.bgAmbient} />
+  <div className={styles.particles}>...</div>
+
+  {/* Rings */}
+  <div className={styles.rings} aria-hidden="true">
+    <span className={styles.ring1} />
+    <span className={styles.ring2} />
+    <span className={styles.ring3} />
+  </div>
+
+  {/* Logo */}
+  <div className={styles.stack}>
+    <div className={`${styles.layer} ${styles.layerBack}`} />
+    <div className={`${styles.layer} ${styles.layerMid}`} />
+    <div className={`${styles.layer} ${styles.layerFront}`}>
+      <div className={styles.iconGlow}>
+        <img src="/icon-256.png" className={styles.icon} />
       </div>
-      <div className={styles.stack} aria-hidden="true">
-        <div className={`${styles.layer} ${styles.layerBack}`} />
-        <div className={`${styles.layer} ${styles.layerMid}`} />
-        <div className={`${styles.layer} ${styles.layerFront}`}>
-          <div className={styles.iconGlow}>
-            <img src="/icon-256.png" alt="" className={styles.icon} />
-          </div>
-        </div>
+    </div>
+  </div>
+
+  {/* Text */}
+  <div className={styles.textBlock}>
+    <div className={styles.heading}>{heading}</div>
+    {mode === 'loading' && (
+      <div className={styles.subheading}>
+        Loading Dashboard<span className={styles.dots}></span>
       </div>
-      <div className={styles.textBlock}>
-        <div className={styles.heading}>{heading}</div>
-        {mode === 'loading' &&  <div className={styles.subheading}>
-            Loading Dashboard<span className={styles.dots}></span>
-          </div>}
-      </div>
-      {mode === 'timeout' ? children : null}
-    </main>
+    )}
+  </div>
+
+</main>
   );
 }

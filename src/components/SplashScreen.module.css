@@ -1,3 +1,9 @@
+.stack,
+.textBlock,
+.rings {
+  position: relative;
+  z-index: 1;
+}
 .root {
   position: relative;
   min-height: 100vh;
@@ -7,8 +13,85 @@
   align-items: center;
   justify-content: center;
   gap: 18px;
-  background: var(--splash-bg);
   overflow: hidden;
+
+  background:
+    radial-gradient(circle at 20% 30%, rgba(167, 139, 250, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255, 221, 122, 0.10), transparent 45%),
+    var(--splash-bg);
+}
+.bgAmbient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bgAmbient::before,
+.bgAmbient::after {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.25;
+}
+
+/* Purple glow */
+.bgAmbient::before {
+  background: var(--splash-purple);
+  top: 10%;
+  left: 15%;
+  animation: floatAmbient1 10s ease-in-out infinite;
+}
+
+/* Amber glow */
+.bgAmbient::after {
+  background: var(--splash-amber-2);
+  bottom: 10%;
+  right: 15%;
+  animation: floatAmbient2 12s ease-in-out infinite;
+}
+
+@keyframes floatAmbient1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, -25px); }
+}
+
+@keyframes floatAmbient2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-30px, 30px); }
+}
+.particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.particles span {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--splash-purple);
+  opacity: 0.7;
+  filter: blur(1px);
+  box-shadow: 0 0 8px var(--splash-purple-2);
+  animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
 }
 .rings {
   position: absolute;
