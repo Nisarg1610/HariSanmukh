@@ -20,6 +20,11 @@ export function SplashScreen({
 }) {
   const [progress, setProgress] = useState(0);
 
+  // SVG progress halo around the icon
+  const haloRadius = 52;
+  const haloCircumference = 2 * Math.PI * haloRadius;
+  const haloDashOffset = haloCircumference * (1 - progress / 100);
+
   useEffect(() => {
     if (mode !== 'loading') return;
     const start = performance.now();
@@ -58,8 +63,32 @@ export function SplashScreen({
         <div className={`${styles.layer} ${styles.layerBack}`} />
         <div className={`${styles.layer} ${styles.layerMid}`} />
         <div className={`${styles.layer} ${styles.layerFront}`}>
-          <div className={styles.iconGlow}>
-            <img src="/icon-256.png" alt="" className={styles.icon} />
+          <div className={styles.iconRingWrap}>
+            <svg
+              viewBox="0 0 120 120"
+              className={styles.haloSvg}
+              aria-hidden="true"
+            >
+              <circle
+                className={styles.haloTrack}
+                cx="60"
+                cy="60"
+                r={haloRadius}
+              />
+              <circle
+                className={styles.haloFill}
+                cx="60"
+                cy="60"
+                r={haloRadius}
+                style={{
+                  strokeDasharray: haloCircumference,
+                  strokeDashoffset: haloDashOffset,
+                }}
+              />
+            </svg>
+            <div className={styles.iconGlow}>
+              <img src="/icon-256.png" alt="" className={styles.icon} />
+            </div>
           </div>
         </div>
       </div>
@@ -69,19 +98,7 @@ export function SplashScreen({
         {mode === 'loading' && <div className={styles.subheading}>{subheading}</div>}
       </div>
 
-      {mode === 'loading' ? (
-        <div className={styles.progressWrap}>
-          <div className={styles.progressTrack} aria-hidden="true">
-            <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-          </div>
-          <div className={styles.progressMeta}>
-            <span className={styles.progressPct}>{Math.round(progress)}%</span>
-            <span className={styles.progressStatus}>Loading</span>
-          </div>
-        </div>
-      ) : (
-        children
-      )}
+      {mode === 'timeout' ? children : null}
     </main>
   );
 }

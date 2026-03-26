@@ -102,6 +102,39 @@
   justify-content: center;
 }
 
+.iconRingWrap {
+  position: relative;
+  width: 122px;
+  height: 122px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.haloSvg {
+  position: absolute;
+  inset: 0;
+  width: 122px;
+  height: 122px;
+  z-index: 0;
+  transform: rotate(-90deg);
+}
+
+.haloTrack {
+  fill: none;
+  stroke: rgba(255, 221, 122, 0.12);
+  stroke-width: 5;
+}
+
+.haloFill {
+  fill: none;
+  stroke: var(--splash-amber);
+  stroke-width: 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 16px rgba(255, 221, 122, 0.22));
+  transition: stroke-dashoffset 0.12s ease;
+}
+
 .iconGlow {
   width: 106px;
   height: 106px;
@@ -171,71 +204,11 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
-.progressWrap {
-  position: relative;
-  z-index: 1;
-  width: min(360px, calc(100vw - 48px));
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-}
-
-.progressTrack {
-  width: 100%;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 0.5px solid rgba(255, 255, 255, 0.10);
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--splash-amber) 0%,
-    rgba(255, 255, 255, 0.5) 50%,
-    var(--splash-amber-2) 100%
-  );
-  background-size: 200% 100%;
-  animation: progressShimmer 1.65s linear infinite;
-  transition: width 0.25s ease;
-}
-
-@keyframes progressShimmer {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
-}
-
-.progressMeta {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.68);
-}
-
-.progressPct {
-  color: rgba(255, 255, 255, 0.86);
-  font-weight: 700;
-}
-
-.progressStatus {
-  font-weight: 600;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .ring1,
   .ring2,
   .ring3,
-  .iconGlow,
-  .progressFill {
+  .iconGlow {
     animation: none !important;
   }
 }
