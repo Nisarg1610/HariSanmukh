@@ -58,7 +58,9 @@ export function SplashScreen({
       </div>
       <div className={styles.textBlock}>
         <div className={styles.heading}>{heading}</div>
-        {mode === 'loading' && <div className={styles.subheading}>{subheading}</div>}
+        {mode === 'loading' &&  <div className={styles.subheading}>
+            Loading Dashboard<span className={styles.dots}></span>
+          </div>}
       </div>
       {mode === 'loading' ? (
         <div className={styles.progressWrap}>
