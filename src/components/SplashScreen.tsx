@@ -20,10 +20,8 @@ export function SplashScreen({
 }) {
   const [progress, setProgress] = useState(0);
 
-  // SVG progress halo around the icon
-  const haloRadius = 52;
-  const haloCircumference = 2 * Math.PI * haloRadius;
-  const haloDashOffset = haloCircumference * (1 - progress / 100);
+  const dotsCount = 12;
+  const activeDots = Math.max(0, Math.min(dotsCount, Math.round((progress / 100) * dotsCount)));
 
   useEffect(() => {
     if (mode !== 'loading') return;
@@ -63,33 +61,31 @@ export function SplashScreen({
         <div className={`${styles.layer} ${styles.layerBack}`} />
         <div className={`${styles.layer} ${styles.layerMid}`} />
         <div className={`${styles.layer} ${styles.layerFront}`}>
-          <div className={styles.iconRingWrap}>
-            <svg
-              viewBox="0 0 120 120"
-              className={styles.haloSvg}
-              aria-hidden="true"
-            >
-              <circle
-                className={styles.haloTrack}
-                cx="60"
-                cy="60"
-                r={haloRadius}
-              />
-              <circle
-                className={styles.haloFill}
-                cx="60"
-                cy="60"
-                r={haloRadius}
-                style={{
-                  strokeDasharray: haloCircumference,
-                  strokeDashoffset: haloDashOffset,
-                }}
-              />
-            </svg>
+          <div className={styles.orbitWrap}>
+            {Array.from({ length: dotsCount }).map((_, i) => {
+              const angle = (2 * Math.PI * i) / dotsCount;
+              const orbitRadius = 58;
+              const x = Math.cos(angle) * orbitRadius;
+              const y = Math.sin(angle) * orbitRadius;
+              const isActive = i < activeDots;
+              return (
+                <span
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={i}
+                  className={`${styles.orbitDot} ${isActive ? styles.dotActive : ''}`}
+                  style={{
+                    // Used by CSS for stable position while animation scales.
+                    ['--tx' as any]: `${x}px`,
+                    ['--ty' as any]: `${y}px`,
+                    transitionDelay: `${i * 35}ms`,
+                  }}
+                />
+              );
+            })}
+          </div>
             <div className={styles.iconGlow}>
               <img src="/icon-256.png" alt="" className={styles.icon} />
             </div>
-          </div>
         </div>
       </div>
 
