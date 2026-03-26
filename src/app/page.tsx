@@ -865,30 +865,6 @@ const handleLogout = async () => {
             {/* NEW: displayName comes from household_members.first_name — admin-editable */}
             {displayName} Bhai 👋
           </h2>
-          <p className="text-[11px] uppercase tracking-widest mt-3 mb-2"
-            style={{ color: 'rgba(255,255,255,0.7)' }}>
-            General Links
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <a
-              href="https://www.youtube.com/results?search_query=Swaminarayan+Aarti"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-semibold px-3 py-1.5 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.16)', color: 'white' }}
-            >
-              Aarti
-            </a>
-            <a
-              href="https://www.youtube.com/results?search_query=Swaminarayan+Pooja+Thal"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-semibold px-3 py-1.5 rounded-full"
-              style={{ backgroundColor: 'rgba(255,255,255,0.16)', color: 'white' }}
-            >
-              Pooja Thal
-            </a>
-          </div>
           {dbUser?.role === 'admin' && (
             <span className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
               style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
@@ -896,91 +872,67 @@ const handleLogout = async () => {
             </span>
           )}
         </div>
-{/* Content of the Day */}
-{dailyContent && (
-  <div className="card p-5">
-    {/* Header */}
-    <div className="flex items-center gap-2 mb-4">
-      <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center"
-        style={{ backgroundColor: 'var(--accent-bg)' }}
-      >
-        <span style={{ fontSize: 16 }}>📖</span>
-      </div>
-      <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>
-        Swadhyay of the Day
-      </h3>
-    </div>
 
-    {/* Sikshapatri */}
-    {dailyContent.siksha && (
-      <div className="mb-4">
-        <p
-          className="text-xs font-semibold uppercase tracking-widest mb-2"
-          style={{ color: 'var(--text-3)' }}
-        >
-          Sikshapatri
-          {dailyContent.siksha.shloka_number && (
-            <span className="ml-2 normal-case" style={{ color: 'var(--accent)' }}>
-              #{dailyContent.siksha.shloka_number}
-            </span>
-          )}
-        </p>
-        <p
-          className="text-base leading-relaxed"
-          style={{
-            color: 'var(--text-1)',
-            fontFamily: 'system-ui, sans-serif',
-            lineHeight: '1.8',
-          }}
-        >
-          {dailyContent.siksha.gujarati_text}
-        </p>
-      </div>
-    )}
-
-    {/* Divider */}
-    <div
-      className="my-4"
-      style={{ height: '0.5px', backgroundColor: 'var(--separator)' }}
-    />
-
-    {/* Swamini Vato */}
-    {dailyContent.swamini && (
-      <div>
-        <p
-          className="text-xs font-semibold uppercase tracking-widest mb-2"
-          style={{ color: 'var(--text-3)' }}
-        >
-          Swamini Vato
-          {dailyContent.swamini.vat_number && (
-            <span className="ml-2 normal-case" style={{ color: 'var(--accent)' }}>
-              #{dailyContent.swamini.vat_number}
-            </span>
-          )}
-        </p>
-        <p
-          className="text-base leading-relaxed"
-          style={{
-            color: 'var(--text-1)',
-            fontFamily: 'system-ui, sans-serif',
-            lineHeight: '1.8',
-          }}
-        >
-          {dailyContent.swamini.gujarati_text}
-        </p>
-        {dailyContent.swamini.reference && (
-          <p
-            className="text-xs mt-2"
-            style={{ color: 'var(--text-3)' }}
+        {/* General + Swadhyay tiles */}
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/links"
+            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 150 }}
           >
-            {dailyContent.swamini.reference}
-          </p>
-        )}
-      </div>
-    )}
-  </div>
-)}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--text-3)' }}>
+                  General Links
+                </p>
+                <p className="text-lg font-bold mt-2" style={{ color: 'var(--text-1)' }}>
+                  Aarti &amp; Pooja
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
+                  Quick access
+                </p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--accent-bg)' }}
+                aria-hidden="true"
+              >
+                <span className="text-lg">🔗</span>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/swadhyay"
+            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 150 }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--text-3)' }}>
+                  Swadhyay
+                </p>
+                <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
+                  {dailyContent?.siksha?.shloka_number
+                    ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
+                    : 'Swadhyay of the Day'}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
+                  Tap to read
+                </p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--yellow-bg)' }}
+                aria-hidden="true"
+              >
+                <span className="text-lg">📖</span>
+              </div>
+            </div>
+          </Link>
+        </div>
         <p className="text-xs font-semibold uppercase tracking-widest px-1"
           style={{ color: 'var(--text-3)' }}>
           Here's what you have this week
