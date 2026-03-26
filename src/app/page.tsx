@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { getSevaAssignments } from '@/utils/seva';
+import { getSevaAssignments, markSevaComplete } from '@/utils/seva';
 import { getLaundryAssignments } from '@/utils/laundry';
 import { registerPushNotifications } from '@/utils/pushNotifications';
 import {
@@ -615,6 +616,31 @@ const handleLogout = async () => {
     });
 }, [garbageDates]);
 
+  const firstPendingSeva = useMemo(
+    () => (mySevas ?? []).find((a: any) => !a.is_completed) ?? null,
+    [mySevas]
+  );
+
+  const handleMarkSevaDone = useCallback(async () => {
+    if (!firstPendingSeva?.id) return;
+    const assignmentId = firstPendingSeva.id as string;
+
+    try {
+      const ok = await markSevaComplete(assignmentId);
+      if (!ok) return;
+
+      setMySevas((prev) =>
+        prev.map((a: any) =>
+          a.id === assignmentId
+            ? { ...a, is_completed: true, completed_at: new Date().toISOString() }
+            : a
+        )
+      );
+    } catch (err) {
+      console.error('handleMarkSevaDone failed', err);
+    }
+  }, [firstPendingSeva]);
+
   // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
     return <SplashScreen/>;
@@ -936,68 +962,116 @@ const handleLogout = async () => {
           Here's what you have this week
         </p>
 
-        {/* My Seva */}
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'var(--yellow-bg)' }}>
-              <span className="text-base">🙏</span>
+        {/* Apple-widget tiles */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Seva tile */}
+          <Link
+            href="/seva"
+            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 150 }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--text-3)' }}>
+                  My Seva
+                </p>
+                <p className="text-lg font-bold mt-1 truncate" style={{ color: 'var(--text-1)' }}>
+                  {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No seva'}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
+                  {(mySevas?.length ?? 0) === 0
+                    ? 'Nothing assigned'
+                    : `${mySevas.filter((a: any) => !a.is_completed).length} pending · ${mySevas.filter((a: any) => a.is_completed).length} done`}
+                </p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--yellow-bg)' }}
+                aria-hidden="true"
+              >
+                <span className="text-lg">🙏</span>
+              </div>
             </div>
-            <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>My Seva</h3>
-          </div>
-          {mySevas.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--text-4)' }}>No seva assigned this week</p>
-          ) : (
-            <div className="space-y-2">
-              {mySevas.map((a: any) => (
-                <div key={a.id}
-                  className="flex items-center justify-between py-2 px-3 rounded-xl"
-                  style={{ backgroundColor: 'var(--bg-card-2)', opacity: a.is_completed ? 0.6 : 1 }}>
-                  <span className="font-medium text-sm"
-                    style={{
-                      color: 'var(--text-1)',
-                      textDecoration: a.is_completed ? 'line-through' : 'none',
-                    }}>
-                    {a.sevas?.name}
-                  </span>
-                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-                    style={{
-                      backgroundColor: a.is_completed ? 'var(--green-bg)' : 'var(--yellow-bg)',
-                      color: a.is_completed ? 'var(--green)' : 'var(--yellow)',
-                    }}>
-                    {a.is_completed ? '✓ Done' : 'Pending'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* My Laundry */}
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'var(--accent-bg)' }}>
-              <span className="text-base">👕</span>
+            {firstPendingSeva?.id ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault(); // keep tile click from navigating
+                  e.stopPropagation();
+                  handleMarkSevaDone();
+                }}
+                className="mt-3 w-full py-2.5 rounded-2xl text-sm font-semibold transition-all"
+                style={{ backgroundColor: 'var(--green)', color: 'white' }}
+              >
+                Mark done
+              </button>
+            ) : (
+              <div
+                className="mt-3 w-full py-2.5 rounded-2xl text-sm font-semibold text-center"
+                style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-3)' }}
+              >
+                All done
+              </div>
+            )}
+          </Link>
+
+          {/* Laundry tile */}
+          <Link
+            href="/laundry"
+            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 150 }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--text-3)' }}>
+                  My Laundry
+                </p>
+                <p className="text-lg font-bold mt-1 truncate" style={{ color: 'var(--text-1)' }}>
+                  {myLaundryDays?.[0] || 'No days'}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
+                  {(myLaundryDays?.length ?? 0) === 0
+                    ? 'Nothing assigned'
+                    : `${myLaundryDays.length} day${myLaundryDays.length === 1 ? '' : 's'} assigned`}
+                </p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--accent-bg)' }}
+                aria-hidden="true"
+              >
+                <span className="text-lg">👕</span>
+              </div>
             </div>
-            <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>My Laundry Days</h3>
-          </div>
-          {myLaundryDays.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--text-4)' }}>No laundry days assigned</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {myLaundryDays.map((day) => (
-                <span key={day} className="px-3 py-1.5 rounded-xl text-sm font-semibold"
-                  style={{
-                    backgroundColor: 'var(--accent-bg)',
-                    color: 'var(--accent-text)',
-                    border: '0.5px solid var(--border-color)',
-                  }}>
-                  {day}
-                </span>
-              ))}
-            </div>
-          )}
+
+            {(myLaundryDays?.length ?? 0) > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {myLaundryDays.slice(0, 3).map((day) => (
+                  <span key={day} className="px-2.5 py-1 rounded-xl text-xs font-semibold"
+                    style={{
+                      backgroundColor: 'var(--accent-bg)',
+                      color: 'var(--accent-text)',
+                      border: '0.5px solid var(--border-color)',
+                    }}>
+                    {day}
+                  </span>
+                ))}
+                {myLaundryDays.length > 3 && (
+                  <span className="px-2.5 py-1 rounded-xl text-xs font-semibold"
+                    style={{
+                      backgroundColor: 'var(--bg-card-2)',
+                      color: 'var(--text-3)',
+                      border: '0.5px solid var(--separator)',
+                    }}>
+                    +{myLaundryDays.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
+          </Link>
         </div>
 
         {/* Garbage Collection — NEW: full month, no 4-item cap */}

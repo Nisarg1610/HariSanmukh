@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, CheckCircle, ShoppingCart, Shirt, Users,Calendar} from 'lucide-react';
+import { Home, ShoppingCart, Users, Calendar } from 'lucide-react';
 
 interface BottomNavProps {
   isAdmin: boolean;
@@ -13,9 +13,7 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home },
-    { href: '/seva', label: 'Seva', icon: CheckCircle },
     { href: '/grocery', label: 'Grocery', icon: ShoppingCart },
-    { href: '/laundry', label: 'Laundry', icon: Shirt },
     { href: '/calendar', label: 'Calendar', icon: Calendar},
     ...(isAdmin ? [{ href: '/members', label: 'Members', icon: Users }] : []),
   ];
