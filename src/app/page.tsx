@@ -617,7 +617,7 @@ const handleLogout = async () => {
 
   // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
-    return <SplashScreen durationMs={LOADING_TIMEOUT_MS} />;
+    return <SplashScreens/>;
   }
 
   // ─── Render: timeout ──────────────────────────────────────────────────────────
