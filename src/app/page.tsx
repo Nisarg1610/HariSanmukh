@@ -1027,6 +1027,9 @@ const handleLogout = async () => {
                 <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
                   {myLaundryDays?.[0] || 'No days'}
                 </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>
+                  Make sure you do your laundry
+                </p>
               </div>
               <div
                 className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -1037,9 +1040,9 @@ const handleLogout = async () => {
               </div>
             </div>
 
-            {(myLaundryDays?.length ?? 0) > 0 && (
+            {(myLaundryDays?.length ?? 0) > 1 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {myLaundryDays.slice(0, 3).map((day) => (
+                {myLaundryDays.slice(1, 4).map((day) => (
                   <span key={day} className="px-2.5 py-1 rounded-xl text-xs font-semibold"
                     style={{
                       backgroundColor: 'var(--accent-bg)',
@@ -1049,14 +1052,14 @@ const handleLogout = async () => {
                     {day}
                   </span>
                 ))}
-                {myLaundryDays.length > 3 && (
+                {myLaundryDays.length > 4 && (
                   <span className="px-2.5 py-1 rounded-xl text-xs font-semibold"
                     style={{
                       backgroundColor: 'var(--bg-card-2)',
                       color: 'var(--text-3)',
                       border: '0.5px solid var(--separator)',
                     }}>
-                    +{myLaundryDays.length - 3}
+                    +{myLaundryDays.length - 4}
                   </span>
                 )}
               </div>
