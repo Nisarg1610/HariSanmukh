@@ -238,7 +238,7 @@
   .ring2,
   .ring3,
   .iconGlow,
-  .dot,
+  .dot
   {
     animation: none !important;
     transform: none !important;
