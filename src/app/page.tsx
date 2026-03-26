@@ -865,6 +865,30 @@ const handleLogout = async () => {
             {/* NEW: displayName comes from household_members.first_name — admin-editable */}
             {displayName} Bhai 👋
           </h2>
+          <p className="text-[11px] uppercase tracking-widest mt-3 mb-2"
+            style={{ color: 'rgba(255,255,255,0.7)' }}>
+            General Links
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="https://www.youtube.com/results?search_query=Swaminarayan+Aarti"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: 'rgba(255,255,255,0.16)', color: 'white' }}
+            >
+              Aarti
+            </a>
+            <a
+              href="https://www.youtube.com/results?search_query=Swaminarayan+Pooja+Thal"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: 'rgba(255,255,255,0.16)', color: 'white' }}
+            >
+              Pooja Thal
+            </a>
+          </div>
           {dbUser?.role === 'admin' && (
             <span className="inline-block mt-3 text-xs font-semibold px-2.5 py-0.5 rounded-full"
               style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
