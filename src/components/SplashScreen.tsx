@@ -4,11 +4,13 @@ import styles from './SplashScreen.module.css';
 type SplashMode = 'loading' | 'timeout';
 export function SplashScreen({
   mode = 'loading',
-  heading = 'Sanumkh',
+  heading = 'HariSanmukh',
+  subheading = 'Loading your dashboard',
   children,
 }: {
   mode?: SplashMode;
   heading?: string;
+  subheading?: string;
   children?: React.ReactNode;
 }) {
   return (
@@ -47,7 +49,7 @@ export function SplashScreen({
         <div className={styles.heading}>{heading}</div>
         {mode === 'loading' && (
           <div className={styles.subheading}>
-            Loading your dashboard
+            {subheading}
             <span className={styles.dots} aria-hidden="true">
               <span className={styles.dot} />
               <span className={styles.dot} />
