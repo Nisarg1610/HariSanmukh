@@ -73,6 +73,8 @@ const [dailyContent, setDailyContent] = useState<{
 
   useEffect(() => { dbUserRef.current = dbUser; }, [dbUser]);
 
+
+  
   // ─── Prompt queue ─────────────────────────────────────────────────────────────
   const enqueuePrompt = useCallback((kind: PromptKind) => {
     if (!kind) return;
