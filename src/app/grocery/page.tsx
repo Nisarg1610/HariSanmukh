@@ -160,6 +160,22 @@ export default function GroceryPage() {
   const handleAddRow = () => setEditItems([...editItems, { name: '', quantity: '' }]);
   const handleRemoveRow = (index: number) => setEditItems(editItems.filter((_, i) => i !== index));
 
+  const handleClearList = async () => {
+    if (window.confirm('Are you sure you want to clear the entire list?')) {
+      try {
+        setSaving(true);
+        const ok = await saveGroceryItems(householdId, activeTab, []);
+        if (ok) {
+          await fetchItems(householdId, activeTab);
+        } else {
+          setError('Failed to clear list');
+        }
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
   const handleAIPaste = async () => {
     if (!pasteText.trim()) return;
     try {
@@ -176,7 +192,7 @@ export default function GroceryPage() {
       if (!jsonMatch) { setError('AI could not parse the list. Try again.'); return; }
       const parsed = JSON.parse(jsonMatch[0]);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        setEditItems(parsed);
+        setEditItems([...items, ...parsed]);
         setEditMode(true);
         setPasteMode(false);
         setPasteText('');
@@ -733,11 +749,14 @@ if (loading) {
 
         ) : (
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <button onClick={handleStartEdit} className="text-xs font-semibold py-3 rounded-xl text-white" style={{ backgroundColor: 'var(--accent)' }}>Edit List</button>
               <button onClick={() => setPasteMode(true)} className="text-xs font-semibold py-3 rounded-xl flex items-center justify-center gap-1 text-white" style={{ backgroundColor: 'var(--accent-2)' }}><Wand2 size={13} /> AI Paste</button>
               <button onClick={handleCopy} className="btn-secondary text-xs py-3 flex items-center justify-center gap-1">
                 {copied ? <><Check size={13} style={{ color: 'var(--green)' }} /> Copied</> : <><Copy size={13} /> Copy</>}
+              </button>
+              <button onClick={handleClearList} className="btn-secondary text-xs py-3 flex items-center justify-center gap-1" style={{ color: 'var(--red)' }}>
+                <Trash2 size={13} /> Clear
               </button>
             </div>
 
