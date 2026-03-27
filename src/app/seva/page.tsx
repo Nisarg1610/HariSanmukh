@@ -201,7 +201,7 @@ setTimeout(() => setCopied(false), 2000);
             <p className="text-[13px] mt-2" style={{ color: 'var(--text-4)' }}>You don't have any seva assignments right now.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="card rounded-[24px] border border-[var(--separator)] overflow-hidden shadow-sm bg-[var(--bg-card)]">
             {sevas.map((seva, idx) => {
               const sevaAssignments = assignments.filter((a) => a.seva_id === seva.id);
               const myAssignment = sevaAssignments.find((a) => a.member_id === memberId);
@@ -211,30 +211,23 @@ setTimeout(() => setCopied(false), 2000);
               return (
                 <div
                   key={seva.id}
-                  className="card rounded-[24px] overflow-hidden transition-all duration-300"
+                  className="p-4 transition-all"
                   style={{
-                    backgroundColor: isAssignedToMe && !isDoneProps ? 'var(--green-bg)' : isDoneProps ? 'rgba(0,0,0,0.02)' : 'var(--bg-card)',
-                    border: isAssignedToMe && !isDoneProps ? '2px solid rgba(45, 158, 107, 0.4)' : isDoneProps ? '1px dashed var(--separator)' : '1px solid var(--separator)',
+                    borderBottom: idx !== sevas.length - 1 ? '1px solid var(--separator)' : 'none',
+                    backgroundColor: isAssignedToMe && !isDoneProps ? 'var(--green-bg)' : isDoneProps ? 'rgba(0,0,0,0.02)' : 'transparent',
                     opacity: (!isAssignedToMe && userRole === 'user') ? 0.6 : 1,
-                    boxShadow: isAssignedToMe && !isDoneProps ? '0 8px 24px -6px rgba(45, 158, 107, 0.2)' : 'none'
                   }}
                 >
-                  <div className="p-5">
+                  <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-[16px] font-extrabold" style={{ color: isAssignedToMe && !isDoneProps ? '#1A6340' : 'var(--text-1)', textDecoration: isDoneProps ? 'line-through' : 'none', opacity: isDoneProps ? 0.5 : 1 }}>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="text-[15px] font-extrabold" style={{ color: isAssignedToMe && !isDoneProps ? '#1A6340' : 'var(--text-1)', textDecoration: isDoneProps ? 'line-through' : 'none' }}>
                             {seva.name}
                           </h3>
-                          {isAssignedToMe && !isDoneProps && (
-                            <span className="flex h-2.5 w-2.5 relative">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                            </span>
-                          )}
                         </div>
                         {seva.description && (
-                          <p className="text-[12px] font-medium leading-snug mb-3 opacity-80" style={{ color: isAssignedToMe && !isDoneProps ? '#1A6340' : 'var(--text-3)' }}>
+                          <p className="text-[12px] font-medium leading-snug opacity-80" style={{ color: isAssignedToMe && !isDoneProps ? '#1A6340' : 'var(--text-3)' }}>
                             {seva.description}
                           </p>
                         )}
@@ -245,7 +238,7 @@ setTimeout(() => setCopied(false), 2000);
                           <button
                             onClick={() => handleMarkDone(myAssignment.id)}
                             disabled={completingId === myAssignment.id}
-                            className="text-[12px] font-extrabold px-4 py-2.5 rounded-xl shadow-md transition-transform active:scale-95 disabled:scale-100"
+                            className="text-[11px] font-extrabold px-3 py-2 rounded-xl shadow-md transition-transform active:scale-95 disabled:scale-100"
                             style={{ background: 'linear-gradient(135deg, var(--green), #248256)', color: 'white' }}
                           >
                             {completingId === myAssignment.id ? '...' : 'Complete ✓'}
@@ -254,35 +247,32 @@ setTimeout(() => setCopied(false), 2000);
                       )}
                       
                       {isDoneProps && (
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg-card)] border border-[var(--separator)] shadow-sm">
+                        <div className="flex-shrink-0">
                           <span className="text-lg" style={{ color: 'var(--green)' }}>✓</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className="mt-3 pt-3 border-t border-[var(--separator)] border-opacity-50">
-                      <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: isAssignedToMe && !isDoneProps ? 'rgba(26, 99, 64, 0.6)' : 'var(--text-4)' }}>Assigned To</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {sevaAssignments.length === 0 ? (
-                          <span className="text-[12px] italic text-[var(--text-4)]">Not assigned</span>
-                        ) : (
-                          sevaAssignments.map((a) => (
-                            <span
-                              key={a.id}
-                              className="px-2.5 py-1 rounded-[8px] text-[11px] font-bold shadow-sm"
-                              style={{
-                                backgroundColor: a.member_id === memberId ? 'var(--accent)' : 'var(--bg-card-2)',
-                                color: a.member_id === memberId ? 'white' : 'var(--text-2)',
-                                border: a.member_id !== memberId ? '1px solid var(--separator)' : 'none',
-                                opacity: a.is_completed && a.member_id !== memberId ? 0.5 : 1
-                              }}
-                            >
-                              {a.household_members?.first_name} Bhai
-                              {a.is_completed && ' ✓'}
-                            </span>
-                          ))
-                        )}
-                      </div>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {sevaAssignments.length === 0 ? (
+                        <span className="text-[11px] italic" style={{ color: 'var(--text-4)' }}>No one assigned</span>
+                      ) : (
+                        sevaAssignments.map((a) => (
+                          <span
+                            key={a.id}
+                            className="px-2 py-0.5 rounded-[6px] text-[11px] font-bold shadow-sm"
+                            style={{
+                              backgroundColor: a.member_id === memberId ? 'var(--accent)' : 'var(--bg-card-2)',
+                              color: a.member_id === memberId ? 'white' : 'var(--text-2)',
+                              border: a.member_id !== memberId ? '1px solid var(--separator)' : 'none',
+                              opacity: a.is_completed && a.member_id !== memberId ? 0.5 : 1
+                            }}
+                          >
+                            {a.household_members?.first_name} Bhai
+                            {a.is_completed && ' ✓'}
+                          </span>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
