@@ -4,7 +4,7 @@ export async function getHouseholdMembers(householdId: string) {
   if (!householdId) return [];
   const { data, error } = await supabase
     .from('household_members')
-    .select('*')
+    .select('*, users(role)')
     .eq('household_id', householdId)
     .order('created_at', { ascending: true });
 

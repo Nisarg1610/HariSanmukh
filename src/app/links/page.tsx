@@ -51,8 +51,8 @@ export default function LinksPage() {
               style={{ backgroundColor: 'var(--bg-card-2)', border: '0.5px solid var(--border-color)' }}
             >
               <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-3)' }}>Wi-Fi</p>
-              <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>Network Name</p>
-              <p className="text-[14px] font-medium mt-1" style={{ color: 'var(--text-2)' }}>Pass: ••••••••</p>
+              <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>Gunatit</p>
+              <p className="text-[14px] font-medium mt-1" style={{ color: 'var(--text-2)' }}>Pass: Dasnadas@369</p>
             </div>
             
             <div

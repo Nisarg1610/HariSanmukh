@@ -20,6 +20,7 @@ interface Member {
   last_name: string;
   email: string | null;
   status: 'active' | 'inactive';
+  role: 'admin' | 'user';
   created_at: string;
 }
 
@@ -40,6 +41,27 @@ export default function MembersPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
+
+const handleToggleRole = async (member: Member) => {
+  try {
+    setTogglingRoleId(member.id);
+    const newRole = member.role === 'admin' ? 'user' : 'admin';
+
+    const { error } = await supabase
+      .from('users')
+      .update({ role: newRole })
+      .eq('email', member.email!.toLowerCase());
+
+    if (!error) {
+      setMembers((prev) =>
+        prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m))
+      );
+    }
+  } finally {
+    setTogglingRoleId(null);
+  }
+};
   useEffect(() => {
     const init = async () => {
       try {
@@ -350,14 +372,25 @@ export default function MembersPage() {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate" style={{ color: 'var(--text-1)' }}>
-                      {member.first_name} Bhai
-                    </p>
-                    <p className="text-xs truncate" style={{ color: 'var(--text-3)' }}>
-                      {member.email ?? 'No email'}
-                    </p>
-                  </div>
+                  {/* Info */}
+<div className="flex-1 min-w-0">
+  <div className="flex items-center gap-2">
+    <p className="font-semibold truncate" style={{ color: 'var(--text-1)' }}>
+      {member.first_name} Bhai
+    </p>
+    {member.role === 'admin' && (
+      <span
+        className="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+        style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
+      >
+        Admin
+      </span>
+    )}
+  </div>
+  <p className="text-xs truncate" style={{ color: 'var(--text-3)' }}>
+    {member.email ?? 'No email'}
+  </p>
+</div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -376,7 +409,25 @@ export default function MembersPage() {
                     >
                       <Edit2 size={17} />
                     </button>
-
+ <button
+    onClick={() => handleToggleRole(member)}
+    disabled={togglingRoleId === member.id}
+    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+    style={{
+      backgroundColor: member.role === 'admin'
+        ? 'var(--accent-bg)'
+        : 'var(--bg-card-2)',
+      color: member.role === 'admin'
+        ? 'var(--accent)'
+        : 'var(--text-3)',
+    }}
+  >
+    {togglingRoleId === member.id
+      ? '...'
+      : member.role === 'admin'
+      ? 'Admin'
+      : 'User'}
+  </button>
                     <button
                       onClick={() => handleToggle(member)}
                       disabled={togglingId === member.id}
@@ -396,6 +447,7 @@ export default function MembersPage() {
                         ? 'Active'
                         : 'Inactive'}
                     </button>
+                    
 
                     <button
                       onClick={() => handleDelete(member.id)}
