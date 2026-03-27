@@ -528,14 +528,14 @@ const [dailyContent, setDailyContent] = useState<{
         navigatingRef.current = false;
       }, SIGNIN_TIMEOUT_MS);
       const { error: e } = await supabase.auth.signInWithOAuth({
-  provider: 'google',
-  options: {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/`,
-    queryParams: {
-      prompt: 'select_account',   // always show the Google account picker
-    },
-  },
-});
+        provider: 'google',
+        options: {
+          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : '/',
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
+      });
       if (e) throw e;
     } catch (err: any) {
       if (signinTimerRef.current) clearTimeout(signinTimerRef.current);
