@@ -190,48 +190,48 @@ const [dailyContent, setDailyContent] = useState<{
     }
   }, []);
 
-  // ─── fetchDashboardData ───────────────────────────────────────────────────────
-  // NEW: now also fetches first_name from household_members and sets displayName.
-  // This means if an admin renames the user in household_members, the greeting
-  // updates on next login or refresh — it never reads from the users table for display.
   const fetchDashboardData = useCallback(async (hId: string, userEmail: string) => {
+    let nextDisplayName = userEmail.split('@')[0];
+    let nextSevas: any[] = [];
+    let nextLaundryDays: any[] = [];
+    let nextGarbage: any[] = [];
+    let nextContent: any = null;
+
     const { data: memberCard } = await supabase
       .from('household_members')
-      // NEW: also select first_name and last_name for display
       .select('id, first_name, last_name')
       .eq('email', userEmail.toLowerCase())
       .maybeSingle();
 
     if (!memberCard) {
       console.warn('fetchDashboardData: no household_member for', userEmail);
-      return;
-    }
+    } else {
+      nextDisplayName = memberCard.first_name?.trim() || nextDisplayName;
+      setDisplayName(nextDisplayName);
 
-    // NEW: set displayName from household_members — this is the admin-editable source of truth
-    // Use first_name only (last_name is always 'Bhai', appended in the greeting JSX)
-    setDisplayName(memberCard.first_name?.trim() || userEmail.split('@')[0]);
-
-    try {
-      const [assignments, laundryAssignments] = await Promise.all([
-        getSevaAssignments(hId),
-        getLaundryAssignments(hId),
-      ]);
-      setMySevas(assignments.filter((a: any) => a.member_id === memberCard.id));
-      setMyLaundryDays(
-        laundryAssignments
+      try {
+        const [assignments, laundryAssignments] = await Promise.all([
+          getSevaAssignments(hId),
+          getLaundryAssignments(hId),
+        ]);
+        nextSevas = assignments.filter((a: any) => a.member_id === memberCard.id);
+        nextLaundryDays = laundryAssignments
           .filter((a: any) => a.member_id === memberCard.id)
-          .map((a: any) => a.day_of_week)
-      );
-    } catch (err) {
-      console.error('fetchDashboardData: seva/laundry failed', err);
+          .map((a: any) => a.day_of_week);
+        setMySevas(nextSevas);
+        setMyLaundryDays(nextLaundryDays);
+      } catch (err) {
+        console.error('fetchDashboardData: seva/laundry failed', err);
+      }
     }
+
     try {
-  const contentRes = await fetch('/api/daily-content');
-  const contentData = await contentRes.json();
-  setDailyContent(contentData);
-} catch {
-  console.error('Failed to fetch daily content');
-}
+      const contentRes = await fetch('/api/daily-content');
+      nextContent = await contentRes.json();
+      setDailyContent(nextContent);
+    } catch {
+      console.error('Failed to fetch daily content');
+    }
 
     try {
       const calRes = await fetch('/api/garbage-calendar');
@@ -239,22 +239,31 @@ const [dailyContent, setDailyContent] = useState<{
       const calData = await calRes.json();
 
       const now = new Date();
-      // Keep dates from 30 days ago to 60 days in the future, 
-      // ensuring we always cross month boundaries smoothly to find next pickups
       const pastLimit = new Date();
       pastLimit.setDate(now.getDate() - 30);
       const futureLimit = new Date();
       futureLimit.setDate(now.getDate() + 60);
 
-      const relevantEvents = (calData.events ?? []).filter((event: any) => {
+      nextGarbage = (calData.events ?? []).filter((event: any) => {
         const d = new Date(event.date + 'T00:00:00');
         return d >= pastLimit && d <= futureLimit;
       });
-      setGarbageDates(relevantEvents);
+      setGarbageDates(nextGarbage);
     } catch (err) {
       console.error('fetchDashboardData: garbage calendar failed', err);
       setGarbageDates([]);
     }
+
+    // Cache to localStorage for offline access
+    try {
+      localStorage.setItem(`hs_dash_${userEmail.toLowerCase()}`, JSON.stringify({
+        displayName: nextDisplayName,
+        mySevas: nextSevas,
+        myLaundryDays: nextLaundryDays,
+        garbageDates: nextGarbage,
+        dailyContent: nextContent
+      }));
+    } catch(e) {}
   }, []);
 
   // ─── tryRegisterPasskey ───────────────────────────────────────────────────────
@@ -422,17 +431,45 @@ const [dailyContent, setDailyContent] = useState<{
           })();
         }
 
+        // Fast Offline PWA path to bypass session hang
+        let fastUnlock = false;
+        try {
+          const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+          if (sbKey) {
+            const lsData = JSON.parse(localStorage.getItem(sbKey) || '{}');
+            if (lsData?.user) {
+              setUser(lsData.user);
+              fastUnlock = true;
+              clearTimeout(loadingTimer);
+              setLoading(false);
+
+              const cachedDash = localStorage.getItem(`hs_dash_${lsData.user.email?.toLowerCase()}`);
+              if (cachedDash) {
+                const cache = JSON.parse(cachedDash);
+                if (cache.displayName) setDisplayName(cache.displayName);
+                if (cache.mySevas) setMySevas(cache.mySevas);
+                if (cache.myLaundryDays) setMyLaundryDays(cache.myLaundryDays);
+                if (cache.garbageDates) setGarbageDates(cache.garbageDates);
+                if (cache.dailyContent) setDailyContent(cache.dailyContent);
+              }
+            }
+          }
+        } catch(e) {}
+
         const { data: { session } } = await supabase.auth.getSession();
         
-        clearTimeout(loadingTimer);
-
-        if (!abortedRef.current && session?.user) {
-          // Immediately unblock the UI since we have a locally cached session
-          setUser(session.user);
-          setLoading(false);
-          await loadUserRef.current?.(session.user);
-        } else {
-          setLoading(false);
+        if (!fastUnlock) {
+          clearTimeout(loadingTimer);
+          if (!abortedRef.current && session?.user) {
+            setUser(session.user);
+            setLoading(false);
+            await loadUserRef.current?.(session.user);
+          } else {
+            setLoading(false);
+          }
+        } else if (session?.user && !abortedRef.current) {
+          // Background sync
+          loadUserRef.current?.(session.user);
         }
       } catch (err) {
         console.error('init error:', err);
