@@ -999,7 +999,7 @@ const handleLogout = async () => {
                 className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-extrabold text-white transition-all shadow-md active:scale-95"
                 style={{ background: 'linear-gradient(135deg, var(--green), #248256)' }}
               >
-                Complete ✓
+                Seva Done ✓
               </button>
             ) : (
               <div
