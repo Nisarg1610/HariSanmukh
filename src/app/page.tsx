@@ -239,13 +239,18 @@ const [dailyContent, setDailyContent] = useState<{
       const calData = await calRes.json();
 
       const now = new Date();
-const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-const thisMonth = (calData.events ?? []).filter((event: any) => {
-  const d = new Date(event.date + 'T00:00:00');
-  return d >= monthStart && d <= monthEnd;
-});
-setGarbageDates(thisMonth);
+      // Keep dates from 30 days ago to 60 days in the future, 
+      // ensuring we always cross month boundaries smoothly to find next pickups
+      const pastLimit = new Date();
+      pastLimit.setDate(now.getDate() - 30);
+      const futureLimit = new Date();
+      futureLimit.setDate(now.getDate() + 60);
+
+      const relevantEvents = (calData.events ?? []).filter((event: any) => {
+        const d = new Date(event.date + 'T00:00:00');
+        return d >= pastLimit && d <= futureLimit;
+      });
+      setGarbageDates(relevantEvents);
     } catch (err) {
       console.error('fetchDashboardData: garbage calendar failed', err);
       setGarbageDates([]);
