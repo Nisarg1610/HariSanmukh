@@ -954,10 +954,10 @@ const handleLogout = async () => {
             </div>
           </Link>
         </div>
-        <p className="text-xs font-semibold uppercase tracking-widest px-1 mt-2"
-          style={{ color: 'var(--text-3)' }}>
-          Here's what you have this week
-        </p>
+        <div className="flex items-center gap-2 mt-8 mb-2 px-2">
+          <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
+          <h3 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>This week you have</h3>
+        </div>
 
         {/* Responsibility Widgets */}
         <div className="grid grid-cols-2 gap-3">
