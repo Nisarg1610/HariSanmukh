@@ -410,6 +410,15 @@ const [dailyContent, setDailyContent] = useState<{
     abortedRef.current = false;
 
     const init = async () => {
+      const initStart = Date.now();
+      const enforceSplash = () => {
+        const elapsed = Date.now() - initStart;
+        const remaining = Math.max(0, 2500 - elapsed);
+        setTimeout(() => {
+          if (!abortedRef.current) setLoading(false);
+        }, remaining);
+      };
+
       try {
         const loadingTimer = setTimeout(() => {
           abortedRef.current = true;
@@ -441,7 +450,7 @@ const [dailyContent, setDailyContent] = useState<{
               setUser(lsData.user);
               fastUnlock = true;
               clearTimeout(loadingTimer);
-              setLoading(false);
+              enforceSplash(); // Hold splash for at least 2.5s to mask the background sync jump
 
               const cachedDash = localStorage.getItem(`hs_dash_${lsData.user.email?.toLowerCase()}`);
               if (cachedDash) {
@@ -462,10 +471,10 @@ const [dailyContent, setDailyContent] = useState<{
           clearTimeout(loadingTimer);
           if (!abortedRef.current && session?.user) {
             setUser(session.user);
-            setLoading(false);
             await loadUserRef.current?.(session.user);
+            enforceSplash();
           } else {
-            setLoading(false);
+            enforceSplash();
           }
         } else if (session?.user && !abortedRef.current) {
           // Background sync
@@ -473,7 +482,7 @@ const [dailyContent, setDailyContent] = useState<{
         }
       } catch (err) {
         console.error('init error:', err);
-        if (!abortedRef.current) setLoading(false);
+        if (!abortedRef.current) enforceSplash(); // if it fails, still unveil gracefully
       }
     };
 
