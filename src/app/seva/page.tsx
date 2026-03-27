@@ -185,15 +185,7 @@ setTimeout(() => setCopied(false), 2000);
     >
       <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: 'var(--green-bg)' }}>
-            <span className="text-2xl">🙏</span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--text-1)' }}>My Seva</h1>
-            <p className="text-[13px] font-medium" style={{ color: 'var(--text-3)' }}>Your tasks for the ghar mandir</p>
-          </div>
-        </div>
+        <h1 className="text-3xl font-extrabold mb-6" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
 
         {error && (
           <div className="p-4 rounded-[20px] shadow-sm flex gap-3 items-center" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
