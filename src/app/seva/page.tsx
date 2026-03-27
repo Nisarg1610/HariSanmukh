@@ -183,112 +183,114 @@ setTimeout(() => setCopied(false), 2000);
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
-   
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
-        <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ backgroundColor: 'var(--green-bg)' }}>
+            <span className="text-2xl">🙏</span>
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--text-1)' }}>My Seva</h1>
+            <p className="text-[13px] font-medium" style={{ color: 'var(--text-3)' }}>Your tasks for the ghar mandir</p>
+          </div>
+        </div>
 
         {error && (
-          <div
-            className="mb-4 p-4 rounded-xl"
-            style={{ backgroundColor: 'var(--red-bg)', border: '0.5px solid var(--red)' }}
-          >
-            <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>
+          <div className="p-4 rounded-[20px] shadow-sm flex gap-3 items-center" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
+            <span className="text-xl">⚠️</span>
+            <p className="text-[13px] font-bold text-red-600">{error}</p>
           </div>
         )}
 
         {sevas.length === 0 ? (
-          <div className="list-group p-12 text-center">
-            <p className="text-sm" style={{ color: 'var(--text-4)' }}>No sevas assigned yet</p>
+          <div className="card rounded-[24px] p-10 text-center border border-[var(--separator)] shadow-sm mt-4">
+            <span className="text-5xl block mb-4 opacity-50">✨</span>
+            <p className="text-[16px] font-bold" style={{ color: 'var(--text-2)' }}>No Sevas Assigned</p>
+            <p className="text-[13px] mt-2" style={{ color: 'var(--text-4)' }}>You don't have any seva assignments right now.</p>
           </div>
         ) : (
-          <div className="list-group">
-            {/* Header row */}
-            <div
-              className="px-4 py-3"
-              style={{
-                borderBottom: '0.5px solid var(--separator)',
-                backgroundColor: 'var(--bg-card-2)',
-              }}
-            >
-              <div className="grid grid-cols-3 gap-4">
-                <span className="section-header" style={{ marginBottom: 0 }}>Seva</span>
-                <span className="section-header" style={{ marginBottom: 0 }}>Assigned To</span>
-                <span className="section-header text-center" style={{ marginBottom: 0 }}>Status</span>
-              </div>
-            </div>
-
+          <div className="space-y-4">
             {sevas.map((seva, idx) => {
               const sevaAssignments = assignments.filter((a) => a.seva_id === seva.id);
               const myAssignment = sevaAssignments.find((a) => a.member_id === memberId);
+              const isAssignedToMe = !!myAssignment;
+              const isDoneProps = myAssignment?.is_completed;
 
               return (
                 <div
                   key={seva.id}
-                  className="px-4 py-4"
+                  className="card rounded-[24px] overflow-hidden transition-all duration-300"
                   style={{
-                    borderBottom: idx !== sevas.length - 1
-                      ? '0.5px solid var(--separator)'
-                      : 'none',
-                    backgroundColor: myAssignment
-                      ? 'var(--accent-bg)'
-                      : 'transparent',
+                    backgroundColor: isAssignedToMe && !isDoneProps ? 'var(--green-bg)' : isDoneProps ? 'rgba(0,0,0,0.02)' : 'var(--bg-card)',
+                    border: isAssignedToMe && !isDoneProps ? '2px solid rgba(45, 158, 107, 0.4)' : isDoneProps ? '1px dashed var(--separator)' : '1px solid var(--separator)',
+                    opacity: (!isAssignedToMe && userRole === 'user') ? 0.6 : 1,
+                    boxShadow: isAssignedToMe && !isDoneProps ? '0 8px 24px -6px rgba(45, 158, 107, 0.2)' : 'none'
                   }}
                 >
-                  <div className="grid grid-cols-3 gap-4 items-center">
-                    {/* Seva name */}
-                    <div>
-                      <p className="font-semibold text-sm" style={{ color: 'var(--text-1)' }}>
-                        {seva.name}
-                      </p>
-                      {seva.description && (
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
-                          {seva.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Assigned members */}
-                    <div className="flex flex-wrap gap-1">
-                      {sevaAssignments.length === 0 ? (
-                        <span className="text-xs" style={{ color: 'var(--text-4)' }}>—</span>
-                      ) : (
-                        sevaAssignments.map((a) => (
-                          <span
-                            key={a.id}
-                            className="px-2 py-0.5 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: a.member_id === memberId
-                                ? 'var(--accent)'
-                                : 'var(--bg-card-2)',
-                              color: a.member_id === memberId
-                                ? 'white'
-                                : 'var(--text-2)',
-                            }}
+                  <div className="p-5">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-[16px] font-extrabold" style={{ color: isAssignedToMe && !isDoneProps ? '#1A6340' : 'var(--text-1)', textDecoration: isDoneProps ? 'line-through' : 'none', opacity: isDoneProps ? 0.5 : 1 }}>
+                            {seva.name}
+                          </h3>
+                          {isAssignedToMe && !isDoneProps && (
+                            <span className="flex h-2.5 w-2.5 relative">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                            </span>
+                          )}
+                        </div>
+                        {seva.description && (
+                          <p className="text-[12px] font-medium leading-snug mb-3 opacity-80" style={{ color: isAssignedToMe && !isDoneProps ? '#1A6340' : 'var(--text-3)' }}>
+                            {seva.description}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {myAssignment && !isDoneProps && (
+                        <div className="flex-shrink-0">
+                          <button
+                            onClick={() => handleMarkDone(myAssignment.id)}
+                            disabled={completingId === myAssignment.id}
+                            className="text-[12px] font-extrabold px-4 py-2.5 rounded-xl shadow-md transition-transform active:scale-95 disabled:scale-100"
+                            style={{ background: 'linear-gradient(135deg, var(--green), #248256)', color: 'white' }}
                           >
-                            {a.household_members?.first_name} Bhai
-                            {a.is_completed && ' ✓'}
-                          </span>
-                        ))
+                            {completingId === myAssignment.id ? '...' : 'Complete ✓'}
+                          </button>
+                        </div>
+                      )}
+                      
+                      {isDoneProps && (
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg-card)] border border-[var(--separator)] shadow-sm">
+                          <span className="text-lg" style={{ color: 'var(--green)' }}>✓</span>
+                        </div>
                       )}
                     </div>
-
-                    {/* Status / action */}
-                    <div className="text-center">
-                      {myAssignment && !myAssignment.is_completed ? (
-                        <button
-                          onClick={() => handleMarkDone(myAssignment.id)}
-                          disabled={completingId === myAssignment.id}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all text-white"
-                          style={{ backgroundColor: 'var(--accent)' }}
-                        >
-                          {completingId === myAssignment.id ? '...' : 'Mark Done'}
-                        </button>
-                      ) : myAssignment?.is_completed ? (
-                        <span className="font-bold text-lg" style={{ color: 'var(--green)' }}>✓</span>
-                      ) : (
-                        <span style={{ color: 'var(--text-4)' }}>—</span>
-                      )}
+                    
+                    <div className="mt-3 pt-3 border-t border-[var(--separator)] border-opacity-50">
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: isAssignedToMe && !isDoneProps ? 'rgba(26, 99, 64, 0.6)' : 'var(--text-4)' }}>Assigned To</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sevaAssignments.length === 0 ? (
+                          <span className="text-[12px] italic text-[var(--text-4)]">Not assigned</span>
+                        ) : (
+                          sevaAssignments.map((a) => (
+                            <span
+                              key={a.id}
+                              className="px-2.5 py-1 rounded-[8px] text-[11px] font-bold shadow-sm"
+                              style={{
+                                backgroundColor: a.member_id === memberId ? 'var(--accent)' : 'var(--bg-card-2)',
+                                color: a.member_id === memberId ? 'white' : 'var(--text-2)',
+                                border: a.member_id !== memberId ? '1px solid var(--separator)' : 'none',
+                                opacity: a.is_completed && a.member_id !== memberId ? 0.5 : 1
+                              }}
+                            >
+                              {a.household_members?.first_name} Bhai
+                              {a.is_completed && ' ✓'}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -300,7 +302,7 @@ setTimeout(() => setCopied(false), 2000);
       <BottomNav isAdmin={false} />
     </main>
   );
-}
+ }
 
   // ─── ADMIN VIEW ──────────────────────────────────────────────
  return (
@@ -308,11 +310,10 @@ setTimeout(() => setCopied(false), 2000);
     className="min-h-screen pb-28"
     style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
   >
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-8">
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Seva</h1>
         <div className="flex gap-1">
           <button
   onClick={handleCopySevaList}
@@ -451,51 +452,85 @@ setTimeout(() => setCopied(false), 2000);
         </div>
       </section>
 
+      {/* Pending Sevas */}
+      {pendingSevas.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-4 px-2">
+            <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
+            <h2 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Pending Rollcall</h2>
+          </div>
+          <div className="card rounded-[24px] p-2 border border-[var(--separator)] bg-[var(--bg-card)] shadow-sm">
+            {pendingSevas.map((a, idx) => (
+              <div
+                key={a.id}
+                className="flex items-center gap-4 px-4 py-3"
+                style={{ borderBottom: idx !== pendingSevas.length - 1 ? '1px solid var(--separator)' : 'none' }}
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--yellow-bg)] flex-shrink-0 shadow-inner">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--yellow)] animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-extrabold truncate" style={{ color: 'var(--text-1)' }}>
+                    {a.household_members?.first_name} Bhai
+                  </p>
+                  <p className="text-[12px] font-bold truncate mt-0.5 opacity-80" style={{ color: 'var(--text-3)' }}>
+                    {a.sevas?.name}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Manage Sevas */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="section-header">Manage Sevas</h2>
+        <div className="flex items-center justify-between mb-4 px-2 mt-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--text-4)' }} />
+            <h2 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Seva Directory</h2>
+          </div>
           {!showForm && (
             <button
               onClick={() => { setEditingId(null); setForm({ name: '', description: '', cap: 0 }); setShowForm(true); }}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition-all"
-              style={{
-                backgroundColor: 'var(--accent)',
-                color: 'white',
-              }}
+              className="flex items-center gap-1.5 text-[12px] font-extrabold px-3.5 py-2 rounded-xl shadow-sm transition-transform active:scale-95 text-white"
+              style={{ background: 'var(--accent)' }}
             >
-              <Plus size={14} /> Add Seva
+              <Plus size={14} /> New
             </button>
           )}
         </div>
 
         {/* Form */}
         {showForm && (
-          <div className="list-group p-5 mb-3">
-            <h3 className="font-bold text-sm mb-4" style={{ color: 'var(--text-1)' }}>
-              {editingId ? 'Edit Seva' : 'New Seva'}
+          <div className="card rounded-[24px] p-6 mb-4 border border-[var(--separator)] shadow-md bg-[var(--bg-card)]">
+            <h3 className="font-extrabold text-[15px] mb-5 uppercase tracking-wider text-center" style={{ color: 'var(--text-1)' }}>
+              {editingId ? 'Edit Seva' : 'Create New Seva'}
             </h3>
-            <form onSubmit={handleSubmitForm} className="space-y-3">
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Seva name (e.g. Hall Cleaning)"
-                className="input text-sm"
-              />
-              <input
-                type="text"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Description (optional)"
-                className="input text-sm"
-              />
+            <form onSubmit={handleSubmitForm} className="space-y-4">
               <div>
-                <label
-                  className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: 'var(--text-3)' }}
-                >
-                  Cap — {members.length} total members
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Seva name (e.g. Hall Cleaning)"
+                  className="w-full bg-[var(--bg-card-2)] border border-[var(--separator)] rounded-[14px] px-4 py-3.5 text-[14px] font-semibold outline-none focus:border-[var(--accent)] transition-colors"
+                  style={{ color: 'var(--text-1)' }}
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Description (optional)"
+                  className="w-full bg-[var(--bg-card-2)] border border-[var(--separator)] rounded-[14px] px-4 py-3.5 text-[14px] font-medium outline-none focus:border-[var(--accent)] transition-colors"
+                  style={{ color: 'var(--text-1)' }}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold mb-2 uppercase tracking-wide px-1" style={{ color: 'var(--text-3)' }}>
+                  Max members ({members.length} total)
                 </label>
                 <input
                   type="number"
@@ -503,23 +538,26 @@ setTimeout(() => setCopied(false), 2000);
                   onChange={(e) => setForm({ ...form, cap: parseInt(e.target.value) || 0 })}
                   min={0}
                   max={members.length || 0}
-                  className="input text-sm"
+                  className="w-full bg-[var(--bg-card-2)] border border-[var(--separator)] rounded-[14px] px-4 py-3.5 text-[14px] font-semibold outline-none focus:border-[var(--accent)] transition-colors"
+                  style={{ color: 'var(--text-1)' }}
                 />
               </div>
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="btn-primary py-2.5 text-sm disabled:opacity-50"
-                >
-                  {formLoading ? 'Saving...' : editingId ? 'Update' : 'Create Seva'}
-                </button>
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setEditingId(null); setForm({ name: '', description: '', cap: 0 }); }}
-                  className="btn-secondary py-2.5 text-sm"
+                  className="flex-1 py-3.5 rounded-[14px] text-[13px] font-bold bg-[var(--bg-card-2)] hover:bg-black/5 transition-colors border border-[var(--separator)]"
+                  style={{ color: 'var(--text-2)' }}
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className="flex-1 py-3.5 rounded-[14px] text-[13px] font-extrabold text-white shadow-md disabled:opacity-50 transition-transform active:scale-95"
+                  style={{ background: 'var(--accent)' }}
+                >
+                  {formLoading ? 'Saving...' : editingId ? 'Update' : 'Save Seva'}
                 </button>
               </div>
             </form>
@@ -527,54 +565,46 @@ setTimeout(() => setCopied(false), 2000);
         )}
 
         {/* Sevas list */}
-        <div className="list-group">
+        <div className="card rounded-[24px] border border-[var(--separator)] bg-[var(--bg-card)] shadow-sm py-2">
           {sevas.length === 0 ? (
-            <p className="text-sm p-6 text-center" style={{ color: 'var(--text-4)' }}>
-              No sevas yet. Create one!
+            <p className="text-[14px] font-medium p-8 text-center" style={{ color: 'var(--text-4)' }}>
+              No sevas yet.
             </p>
           ) : (
             sevas.map((seva, idx) => (
               <div
                 key={seva.id}
-                className="list-row"
-                style={{
-                  borderBottom: idx !== sevas.length - 1
-                    ? '0.5px solid var(--separator)'
-                    : 'none',
-                  justifyContent: 'space-between',
-                }}
+                className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-black/5"
+                style={{ borderBottom: idx !== sevas.length - 1 ? '1px solid var(--separator)' : 'none' }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-1)' }}>
-                    {seva.name}
-                  </p>
+                <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-bold text-[15px]" style={{ color: 'var(--text-1)' }}>
+                      {seva.name}
+                    </p>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--bg-card-2)] border border-[var(--separator)]" style={{ color: 'var(--text-4)' }}>
+                      CAP {seva.cap}
+                    </span>
+                  </div>
                   {seva.description && (
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                    <p className="text-[12px] font-medium truncate" style={{ color: 'var(--text-3)' }}>
                       {seva.description}
                     </p>
                   )}
                 </div>
-                <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-4)' }}>
-                  Cap: {seva.cap}
-                </span>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-2 flex-shrink-0">
                   <button
                     onClick={() => { setEditingId(seva.id); setForm({ name: seva.name, description: seva.description || '', cap: seva.cap }); setShowForm(true); }}
-                    className="p-2 rounded-lg transition-all"
-                    style={{ color: 'var(--accent)' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-bg)')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    className="p-2.5 rounded-xl transition-colors bg-[var(--bg-card-2)] hover:bg-[var(--accent-bg)] border border-[var(--separator)] hover:border-transparent"
+                    style={{ color: 'var(--text-2)' }}
                   >
-                    <Edit2 size={15} />
+                    <Edit2 size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(seva.id)}
-                    className="p-2 rounded-lg transition-all"
-                    style={{ color: 'var(--red)' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--red-bg)')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    className="p-2.5 rounded-xl transition-colors bg-[var(--red-bg)] text-[var(--red)] border border-transparent shadow-sm hover:opacity-80"
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -582,38 +612,6 @@ setTimeout(() => setCopied(false), 2000);
           )}
         </div>
       </section>
-
-      {/* Pending Sevas */}
-      {pendingSevas.length > 0 && (
-        <section>
-          <h2 className="section-header mb-3">Pending Sevas</h2>
-          <div className="list-group">
-            {pendingSevas.map((a, idx) => (
-              <div
-                key={a.id}
-                className="list-row"
-                style={{
-                  borderBottom: idx !== pendingSevas.length - 1
-                    ? '0.5px solid var(--separator)'
-                    : 'none',
-                }}
-              >
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: 'var(--yellow)' }}
-                />
-                <p className="text-sm" style={{ color: 'var(--text-2)' }}>
-                  <span className="font-semibold" style={{ color: 'var(--text-1)' }}>
-                    {a.household_members?.first_name} Bhai
-                  </span>
-                  <span className="mx-1.5" style={{ color: 'var(--text-4)' }}>→</span>
-                  {a.sevas?.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
     </div>
     <BottomNav isAdmin={true} />
