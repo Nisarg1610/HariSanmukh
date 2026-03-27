@@ -678,24 +678,37 @@ const handleLogout = async () => {
   );
 
   const handleMarkSevaDone = useCallback(async () => {
-    if (!firstPendingSeva?.id) return;
+    if (!firstPendingSeva?.id || !user) return;
     const assignmentId = firstPendingSeva.id as string;
 
     try {
       const ok = await markSevaComplete(assignmentId);
       if (!ok) return;
 
-      setMySevas((prev) =>
-        prev.map((a: any) =>
+      setMySevas((prev) => {
+        const next = prev.map((a: any) =>
           a.id === assignmentId
             ? { ...a, is_completed: true, completed_at: new Date().toISOString() }
             : a
-        )
-      );
+        );
+
+        // Update offline cache so refresh doesn't show it pending again
+        try {
+          const cacheKey = `hs_dash_${user.email?.toLowerCase()}`;
+          const str = localStorage.getItem(cacheKey);
+          if (str) {
+            const data = JSON.parse(str);
+            data.mySevas = next;
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+          }
+        } catch(e) {}
+
+        return next;
+      });
     } catch (err) {
       console.error('handleMarkSevaDone failed', err);
     }
-  }, [firstPendingSeva]);
+  }, [firstPendingSeva, user]);
 
   // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
