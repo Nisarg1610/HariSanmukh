@@ -867,301 +867,226 @@ const handleLogout = async () => {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
-        {/* Greeting — NEW: uses displayName from household_members */}
-        <div
-  className="rounded-3xl p-6 text-white"
-  style={{
-    background:
-      'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)',
-  }}
->
-  <p className="text-2xl font-bold mb-1 tracking-wide">
-    🙏 Jay Swaminarayan 🙏
-  </p>
+        {/* Greeting Card */}
+        <div 
+          className="relative rounded-[28px] p-7 text-white overflow-hidden shadow-lg transition-transform hover:scale-[1.01]"
+          style={{ background: 'linear-gradient(135deg, var(--splash-purple) 0%, var(--accent) 100%)' }}
+        >
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-6 -ml-6 w-24 h-24 bg-white opacity-10 rounded-full blur-xl pointer-events-none" />
 
-  <h2
-    className="text-base font-semibold mb-3"
-    style={{ color: 'rgba(255,255,255,0.8)' }}
-  >
-    {displayName} Bhai 👋
-  </h2>
+          <p className="text-sm font-semibold uppercase tracking-widest mb-1 opacity-80">
+            🙏 Jay Swaminarayan
+          </p>
+          <h2 className="text-3xl font-extrabold mb-1">
+            {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'},<br />{displayName} Bhai!
+          </h2>
+          <p className="text-[14px] opacity-90 font-medium max-w-[250px] mt-2 leading-tight">
+            Here's everything you need to manage your ghar-mandir today.
+          </p>
+        </div>
 
-  {/* WiFi Info */}
-
-</div>
-
-        {/* General + Swadhyay tiles */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            href="/links"
-            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 150 }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: 'var(--text-3)' }}>
-                  General Links
-                </p>
-                <p className="text-lg font-bold mt-2" style={{ color: 'var(--text-1)' }}>
-                  Aarti &amp; Pooja
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  Quick access
-                </p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--accent-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">🔗</span>
-              </div>
-            </div>
-          </Link>
-
+        {/* Action Widgets */}
+        <div className="grid grid-cols-2 gap-4">
           <Link
             href="/swadhyay"
-            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 150 }}
+            className="group relative overflow-hidden card p-5 rounded-[24px] block transition-transform active:scale-[0.98] shadow-sm hover:shadow-md"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: 'var(--text-3)' }}>
-                  Swadhyay
-                </p>
-                <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
-                  {dailyContent?.siksha?.shloka_number
-                    ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
-                    : 'Swadhyay of the Day'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  Tap to read
-                </p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--yellow-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">📖</span>
-              </div>
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+              <span className="text-6xl">📖</span>
             </div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-inner" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}>
+              <span className="text-xl text-white">📖</span>
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--yellow)' }}>Daily Swadhyay</p>
+            <p className="text-[16px] font-extrabold leading-tight mb-1 truncate" style={{ color: 'var(--text-1)' }}>
+              {dailyContent?.siksha?.shloka_number ? `Sikshapatri #${dailyContent.siksha.shloka_number}` : 'Read Today'}
+            </p>
+            <p className="text-[13px] font-medium" style={{ color: 'var(--text-3)' }}>Tap to open</p>
+          </Link>
+
+          <Link
+            href="/links"
+            className="group relative overflow-hidden card p-5 rounded-[24px] block transition-transform active:scale-[0.98] shadow-sm hover:shadow-md"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+              <span className="text-6xl">🔗</span>
+            </div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-inner" style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}>
+              <span className="text-xl text-white">🔗</span>
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-1 text-blue-500">General Links</p>
+            <p className="text-[16px] font-extrabold leading-tight mb-1" style={{ color: 'var(--text-1)' }}>Aarti &amp; Pooja</p>
+            <p className="text-[13px] font-medium" style={{ color: 'var(--text-3)' }}>Quick access</p>
           </Link>
         </div>
-        <p className="text-xs font-semibold uppercase tracking-widest px-1"
-          style={{ color: 'var(--text-3)' }}>
-          Here's what you have this week
-        </p>
 
-        {/* Apple-widget tiles */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2 mt-8 mb-2 px-2">
+          <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--accent)' }} />
+          <h3 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Your Tasks</h3>
+        </div>
+
+        {/* Responsibility Widgets */}
+        <div className="grid grid-cols-2 gap-4">
           {/* Seva tile */}
           <Link
             href="/seva"
-            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 150 }}
+            className="flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md h-[210px] relative"
+            style={{ 
+              backgroundColor: firstPendingSeva?.id ? 'var(--green-bg)' : 'var(--bg-card)',
+              border: firstPendingSeva?.id ? '2px solid rgba(45, 158, 107, 0.4)' : '1px solid var(--separator)' 
+            }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: 'var(--text-3)' }}>
-                  My Seva
-                </p>
-                <p
-                  className="font-bold mt-2 leading-tight break-words"
-                  style={{
-                    color: 'var(--text-1)',
-                    fontSize: 'clamp(14px, 1.8vw, 18px)',
-                    // Keep the tile height stable: reserve space for 2 lines
-                    minHeight: '2.4em',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No seva'}
-                </p>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: firstPendingSeva?.id ? 'white' : 'var(--bg-card-2)' }}>
+                  <span className="text-lg">🙏</span>
+                </div>
+                {firstPendingSeva?.id && (
+                  <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                )}
               </div>
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--yellow-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">🙏</span>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-3)' }}>My Seva</p>
+              <p className="text-[16px] font-extrabold leading-snug line-clamp-2" style={{ color: firstPendingSeva?.id ? '#1A6340' : 'var(--text-1)' }}>
+                {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No active seva'}
+              </p>
             </div>
 
             {firstPendingSeva?.id ? (
               <button
                 type="button"
                 onClick={(e) => {
-                  e.preventDefault(); // keep tile click from navigating
+                  e.preventDefault();
                   e.stopPropagation();
                   handleMarkSevaDone();
                 }}
-                className="mt-3 w-full py-2.5 rounded-2xl text-sm font-semibold transition-all"
-                style={{ backgroundColor: 'var(--green)', color: 'white' }}
+                className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-extrabold text-white transition-all shadow-md active:scale-95"
+                style={{ background: 'linear-gradient(135deg, var(--green), #248256)' }}
               >
-                Mark done
+                Complete ✓
               </button>
             ) : (
               <div
-                className="mt-3 w-full py-2.5 rounded-2xl text-sm font-semibold text-center"
-                style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-3)' }}
+                className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-bold text-center border-2 border-dashed"
+                style={{ backgroundColor: 'transparent', color: 'var(--text-4)', borderColor: 'var(--separator)' }}
               >
-                All done
+                Caught up!
               </div>
             )}
           </Link>
 
           {/* Laundry tile */}
+          {/* Laundry tile */}
           <Link
             href="/laundry"
-            className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 150 }}
+            className="flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md h-[210px]"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: 'var(--text-3)' }}>
-                  My Laundry
-                </p>
-                <p className="text-lg font-bold mt-2 truncate" style={{ color: 'var(--text-1)' }}>
-                  {myLaundryDays?.[0] || 'No days'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>
-                  Make sure you do your laundry
-                </p>
+            <div>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-inner" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                <span className="text-lg text-[var(--accent)]">👕</span>
               </div>
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--accent-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">👕</span>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--accent)' }}>My Laundry</p>
+              <p className="text-[20px] font-extrabold leading-tight truncate pb-1" style={{ color: 'var(--text-1)' }}>
+                {myLaundryDays?.[0] || 'No schedule'}
+              </p>
             </div>
 
-            {(myLaundryDays?.length ?? 0) > 1 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {myLaundryDays.slice(1, 4).map((day) => (
-                  <span key={day} className="px-2.5 py-1 rounded-xl text-xs font-semibold"
-                    style={{
-                      backgroundColor: 'var(--accent-bg)',
-                      color: 'var(--accent-text)',
-                      border: '0.5px solid var(--border-color)',
-                    }}>
-                    {day}
-                  </span>
-                ))}
-                {myLaundryDays.length > 4 && (
-                  <span className="px-2.5 py-1 rounded-xl text-xs font-semibold"
-                    style={{
-                      backgroundColor: 'var(--bg-card-2)',
-                      color: 'var(--text-3)',
-                      border: '0.5px solid var(--separator)',
-                    }}>
-                    +{myLaundryDays.length - 4}
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="mt-auto">
+              {(myLaundryDays?.length ?? 0) > 1 ? (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {myLaundryDays.slice(1, 3).map((day) => (
+                    <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold line-clamp-1 shadow-sm leading-none"
+                      style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
+                      {day.substring(0, 3).toUpperCase()}
+                    </span>
+                  ))}
+                  {myLaundryDays.length > 3 && (
+                    <span className="px-2 py-1.5 rounded-[10px] text-[11px] font-bold leading-none"
+                      style={{ backgroundColor: 'rgba(0,0,0,0.03)', color: 'var(--text-3)' }}>
+                      +{myLaundryDays.length - 3}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[13px] font-medium mt-2" style={{ color: 'var(--text-3)' }}>Wash on your assigned day.</p>
+              )}
+            </div>
           </Link>
         </div>
 
-        {/* Garbage Collection — NEW: full month, no 4-item cap */}
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'var(--green-bg)' }}>
-              <span className="text-base">🗑️</span>
-            </div>
-            <h3 className="font-bold" style={{ color: 'var(--text-1)' }}>Garbage Collection</h3>
-          </div>
+        {/* Garbage Collection */}
+        <div className="flex items-center gap-2 mt-8 mb-2 px-2">
+          <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
+          <h3 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Garbage Schedule</h3>
+        </div>
+
+        <div className="card rounded-[28px] shadow-sm overflow-hidden border border-[var(--separator)] pb-3 mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
           {garbageDateGroups.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--text-4)' }}>No upcoming dates</p>
+            <div className="p-10 text-center text-[14px] font-medium" style={{ color: 'var(--text-4)' }}>
+              <span className="text-4xl block mb-3 opacity-60">🗑️</span>
+              No upcoming collections this month.
+            </div>
           ) : (
-           <div className="list-group">
-  {garbageDateGroups.map(({ date, events, status }, idx, arr) => {
-    const dateObj  = new Date(date + 'T00:00:00');
-    const showYear = dateObj.getFullYear() !== new Date().getFullYear();
-    const isPast   = status === 'past';
-    const isToday  = status === 'today';
-    const isNextUp = status === 'upcoming' &&
-      !arr.slice(0, idx).some(g => g.status === 'upcoming');
+            <div className="flex flex-col relative pt-2">
+              <div className="absolute left-[39px] top-6 bottom-6 w-[2px] bg-[var(--separator)] z-0 rounded-full" />
+              {garbageDateGroups.map(({ date, events, status }, idx, arr) => {
+                const dateObj  = new Date(date + 'T00:00:00');
+                const isPast   = status === 'past';
+                const isToday  = status === 'today';
+                const isNextUp = status === 'upcoming' && !arr.slice(0, idx).some(g => g.status === 'upcoming');
+                const isImportant = isToday || isNextUp;
 
-    return (
-      <div key={date}
-        className="flex items-center gap-4 px-4 py-3"
-        style={{
-          borderBottom: idx !== arr.length - 1 ? '0.5px solid var(--separator)' : 'none',
-          backgroundColor: isToday  ? 'var(--green-bg)'
-                         : isNextUp ? 'var(--bg-card-2)'
-                         :             'transparent',
-          opacity: isPast ? 0.35 : 1,
-          borderLeft: isNextUp ? '3px solid var(--green)' : '3px solid transparent',
-        }}>
+                return (
+                  <div key={date} className="relative z-10 flex items-start gap-4 px-5 py-4 transition-colors hover:bg-black/5" style={{ opacity: isPast ? 0.45 : 1 }}>
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 transition-all"
+                      style={{ 
+                        backgroundColor: isToday ? 'var(--green)' : isNextUp ? 'var(--yellow)' : 'var(--bg-card)', 
+                        border: isImportant ? 'none' : '2px solid var(--border-strong)',
+                        transform: isImportant ? 'scale(1.1)' : 'scale(1)'
+                      }}
+                    >
+                      <span className="text-[15px] font-extrabold" style={{ color: isImportant ? 'white' : 'var(--text-1)' }}>
+                        {dateObj.getDate()}
+                      </span>
+                    </div>
 
-        <div className="text-xl font-bold w-8 text-center flex-shrink-0"
-          style={{
-            color: isToday || isNextUp ? 'var(--green)'
-                 : isPast             ? 'var(--text-4)'
-                 :                      'var(--text-1)',
-          }}>
-          {dateObj.getDate()}
-        </div>
-
-        <div className="w-px h-8 flex-shrink-0"
-          style={{ backgroundColor: 'var(--separator)' }} />
-
-        <div className="flex-1">
-          <p className="font-semibold text-sm"
-            style={{ color: isToday || isNextUp ? 'var(--green)' : 'var(--text-1)' }}>
-            {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
-          </p>
-          <p className="text-xs" style={{ color: 'var(--text-3)' }}>
-            {dateObj.toLocaleDateString('en-US', { month: 'long' })}
-            {showYear && ` ${dateObj.getFullYear()}`}
-          </p>
-        </div>
-
-        {/* Event type labels */}
-<div className="flex flex-wrap justify-end gap-x-1 gap-y-0 max-w-[120px]">
-  {events.map((event: any, i: number) => (
-    <span key={i} className="text-xs font-medium"
-      style={{ color: isPast ? 'var(--text-4)' : 'var(--text-3)' }}>
-      {event.title}{i < events.length - 1 ? ' ,' : ''}
-    </span>
-  ))}
-</div>
-
-        {isToday && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white flex-shrink-0"
-            style={{ backgroundColor: 'var(--green)' }}>
-            Today
-          </span>
-        )}
-        {isNextUp && !isToday && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: 'var(--green-bg)', color: 'var(--green)' }}>
-            Next
-          </span>
-        )}
-        {isPast && (
-          <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-4)' }}>
-            Done
-          </span>
-        )}
-      </div>
-    );
-  })}
-</div>
+                    <div className="flex-1 min-w-0 pt-0.5 pb-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="font-extrabold text-[16px] leading-tight" style={{ color: isImportant ? 'var(--text-1)' : 'var(--text-2)' }}>
+                          {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
+                        </p>
+                        {isToday && (
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm text-white" style={{ backgroundColor: 'var(--green)' }}>Today</span>
+                        )}
+                        {isNextUp && !isToday && (
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm" style={{ backgroundColor: 'var(--yellow-bg)', color: 'var(--yellow)' }}>Next UP</span>
+                        )}
+                      </div>
+                      <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
+                        {dateObj.toLocaleDateString('en-US', { month: 'long' })}{dateObj.getFullYear() !== new Date().getFullYear() && ` ${dateObj.getFullYear()}`}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {events.map((event: any, i: number) => (
+                          <span key={i} className="text-[12px] font-bold px-2.5 py-1 rounded-[10px] bg-[var(--bg-card-2)] border border-[var(--separator)] truncate max-w-full shadow-sm" style={{ color: isPast ? 'var(--text-4)' : 'var(--text-1)' }}>
+                            {event.title}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
