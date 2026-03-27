@@ -405,20 +405,32 @@ setGarbageDates(thisMonth);
 
         const savedUserId = getSavedUserId();
         if (savedUserId && browserSupportsWebAuthn()) {
-          const { data: existingPasskey } = await supabase
-            .from('passkeys').select('id').eq('user_id', savedUserId).maybeSingle();
-          if (existingPasskey) setBiometricAvailable(true);
+          // Fire and forget so we don't block the UI
+          (async () => {
+            try {
+              const { data } = await supabase
+                .from('passkeys').select('id').eq('user_id', savedUserId).maybeSingle();
+              if (data) setBiometricAvailable(true);
+            } catch (err) {
+              console.error(err);
+            }
+          })();
         }
 
         const { data: { session } } = await supabase.auth.getSession();
+        
         clearTimeout(loadingTimer);
 
         if (!abortedRef.current && session?.user) {
+          // Immediately unblock the UI since we have a locally cached session
+          setUser(session.user);
+          setLoading(false);
           await loadUserRef.current?.(session.user);
+        } else {
+          setLoading(false);
         }
       } catch (err) {
         console.error('init error:', err);
-      } finally {
         if (!abortedRef.current) setLoading(false);
       }
     };
