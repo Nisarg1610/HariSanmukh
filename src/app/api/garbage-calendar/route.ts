@@ -5,8 +5,14 @@ const GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.go
 
 async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycle', apiKey: string) {
   const now = new Date();
-  const timeMin = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+  // Fetch from 30 days in the past to 60 days in the future
+  const pastLimit = new Date();
+  pastLimit.setDate(now.getDate() - 30);
+  const futureLimit = new Date();
+  futureLimit.setDate(now.getDate() + 60);
+
+  const timeMin = pastLimit.toISOString();
+  const timeMax = futureLimit.toISOString();
 
   const res = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`
