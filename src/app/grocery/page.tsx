@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { Bell, Copy, Check, Plus, Trash2, Wand2, X, ShoppingCart, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
+import { Bell, Copy, Check, Plus, Trash2, Wand2, X, ShoppingCart, ChevronDown, ChevronUp, Edit2, Info } from 'lucide-react';
 import {
   getGroceryItems,
   saveGroceryItems,
