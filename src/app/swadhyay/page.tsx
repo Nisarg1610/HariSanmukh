@@ -1,5 +1,6 @@
 'use client';
 
+import { BottomNav } from '@/components/BottomNav';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -37,13 +38,7 @@ export default function SwadhyayPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Swadhyay of the Day</h1>
-          <Link
-            href="/"
-            className="text-sm font-semibold px-4 py-2 rounded-xl"
-            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)', border: '0.5px solid var(--border-color)' }}
-          >
-            Back
-          </Link>
+         
         </div>
 
         {loading ? (
@@ -107,6 +102,7 @@ export default function SwadhyayPage() {
           </>
         )}
       </div>
+      <BottomNav isAdmin={true} />
     </main>
   );
 }

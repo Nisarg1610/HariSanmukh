@@ -1,5 +1,6 @@
 'use client';
 
+import { BottomNav } from '@/components/BottomNav';
 import Link from 'next/link';
 
 export default function LinksPage() {
@@ -11,13 +12,7 @@ export default function LinksPage() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>General Links</h1>
-          <Link
-            href="/"
-            className="text-sm font-semibold px-4 py-2 rounded-xl"
-            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)', border: '0.5px solid var(--border-color)' }}
-          >
-            Back
-          </Link>
+          
         </div>
 
         <div className="card p-5">
@@ -46,6 +41,7 @@ export default function LinksPage() {
           </div>
         </div>
       </div>
+      <BottomNav isAdmin={true} />
     </main>
   );
 }
