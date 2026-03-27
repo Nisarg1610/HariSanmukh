@@ -11,7 +11,7 @@ export default function LinksPage() {
     >
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>General Links</h1>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>General Info</h1>
           
         </div>
 
@@ -38,6 +38,31 @@ export default function LinksPage() {
             >
               Pooja Thal
             </a>
+          </div>
+        </div>
+
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-3)' }}>
+            House Details
+          </p>
+          <div className="grid grid-cols-1 gap-3">
+            <div
+              className="w-full rounded-2xl px-4 py-4 transition-all flex flex-col"
+              style={{ backgroundColor: 'var(--bg-card-2)', border: '0.5px solid var(--border-color)' }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-3)' }}>Wi-Fi</p>
+              <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>Network Name</p>
+              <p className="text-[14px] font-medium mt-1" style={{ color: 'var(--text-2)' }}>Pass: ••••••••</p>
+            </div>
+            
+            <div
+              className="w-full rounded-2xl px-4 py-4 transition-all flex flex-col"
+              style={{ backgroundColor: 'var(--bg-card-2)', border: '0.5px solid var(--border-color)' }}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-3)' }}>House Lock</p>
+              <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>Front Door</p>
+              <p className="text-[20px] font-mono font-medium mt-1 tracking-widest" style={{ color: 'var(--text-2)' }}>••••</p>
+            </div>
           </div>
         </div>
       </div>

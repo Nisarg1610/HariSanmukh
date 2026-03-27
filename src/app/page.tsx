@@ -964,7 +964,7 @@ const handleLogout = async () => {
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-widest"
                   style={{ color: 'var(--text-3)' }}>
-                  General Links
+                  General Info
                 </p>
                 <p className="text-lg font-bold mt-2" style={{ color: 'var(--text-1)' }}>
                   Aarti &amp; Pooja
