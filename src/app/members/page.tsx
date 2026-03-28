@@ -42,22 +42,42 @@ export default function MembersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
-
 const handleToggleRole = async (member: Member) => {
+  // Last admin guard — never allow zero admins in a house
+  if (member.role === 'admin') {
+    const adminCount = members.filter(m => m.role === 'admin' && m.status === 'active').length;
+    if (adminCount <= 1) {
+      setError('Cannot remove admin — this is the only admin in the house. Promote another member first.');
+      return;
+    }
+  }
+
   try {
     setTogglingRoleId(member.id);
+    setError(null);
     const newRole = member.role === 'admin' ? 'user' : 'admin';
 
-    const { error } = await supabase
+    // Update users table
+    const { error: uErr } = await supabase
       .from('users')
       .update({ role: newRole })
       .eq('email', member.email!.toLowerCase());
 
-    if (!error) {
-      setMembers((prev) =>
-        prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m))
-      );
-    }
+    if (uErr) throw uErr;
+
+    // Update household_members table — keeps both in sync
+    const { error: mErr } = await supabase
+      .from('household_members')
+      .update({ role: newRole })
+      .eq('id', member.id);
+
+    if (mErr) throw mErr;
+
+    setMembers(prev =>
+      prev.map(m => m.id === member.id ? { ...m, role: newRole } : m)
+    );
+  } catch (err: any) {
+    setError(err.message ?? 'Failed to update role');
   } finally {
     setTogglingRoleId(null);
   }
@@ -398,25 +418,29 @@ const handleToggleRole = async (member: Member) => {
                     >
                       <Edit2 size={17} />
                     </button>
- <button
-    onClick={() => handleToggleRole(member)}
-    disabled={togglingRoleId === member.id}
-    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
-    style={{
-      backgroundColor: member.role === 'admin'
-        ? 'var(--accent-bg)'
-        : 'var(--bg-card-2)',
-      color: member.role === 'admin'
-        ? 'var(--accent)'
-        : 'var(--text-3)',
-    }}
-  >
-    {togglingRoleId === member.id
-      ? '...'
-      : member.role === 'admin'
-      ? 'Admin'
-      : 'User'}
-  </button>
+<button
+  onClick={() => handleToggleRole(member)}
+  disabled={togglingRoleId === member.id}
+  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+  title={member.role === 'admin' ? 'Tap to make User' : 'Tap to make Admin'}
+  style={{
+    backgroundColor: member.role === 'admin'
+      ? 'var(--accent-bg)'
+      : 'var(--bg-card-2)',
+    color: member.role === 'admin'
+      ? 'var(--accent)'
+      : 'var(--text-3)',
+    border: member.role === 'admin'
+      ? '0.5px solid var(--accent)'
+      : '0.5px solid var(--border-color)',
+  }}
+>
+  {togglingRoleId === member.id
+    ? '...'
+    : member.role === 'admin'
+    ? 'Admin'
+    : 'Make Admin'}
+</button>
                     <button
                       onClick={() => handleToggle(member)}
                       disabled={togglingId === member.id}
