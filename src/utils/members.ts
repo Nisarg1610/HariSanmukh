@@ -2,16 +2,9 @@ import { supabase } from '@/lib/supabase';
 
 export async function getHouseholdMembers(householdId: string) {
   if (!householdId) return [];
-
   const { data, error } = await supabase
     .from('household_members')
-    .select(`
-      *,
-      users:linked_user_id (
-        id,
-        role
-      )
-    `)
+    .select('*')
     .eq('household_id', householdId)
     .order('created_at', { ascending: true });
 
@@ -19,12 +12,7 @@ export async function getHouseholdMembers(householdId: string) {
     console.error('getHouseholdMembers error:', error);
     return [];
   }
-
-  // map role from users table
-  return (data ?? []).map((m: any) => ({
-    ...m,
-    role: m.users?.role ?? 'user',
-  }));
+  return data ?? [];
 }
 
 export async function addMember(
