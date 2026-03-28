@@ -45,19 +45,41 @@ export default function MembersPage() {
 
 const handleToggleRole = async (member: Member) => {
   try {
+    setError(null);
+
+    if (!member.email) {
+      setError('Member must have an email to be assigned a role.');
+      return;
+    }
+
+    if (member.role === 'admin') {
+      const adminCount = members.filter((m) => m.role === 'admin').length;
+      if (adminCount <= 1) {
+        setError('Cannot downgrade the last admin.');
+        return;
+      }
+    }
+
     setTogglingRoleId(member.id);
     const newRole = member.role === 'admin' ? 'user' : 'admin';
 
-    const { error } = await supabase
+    const { error: roleError, data: updatedUsers } = await supabase
       .from('users')
       .update({ role: newRole })
-      .eq('email', member.email!.toLowerCase());
+      .eq('email', member.email.toLowerCase())
+      .select();
 
-    if (!error) {
+    if (roleError) {
+      setError('Failed to update role.');
+    } else if (updatedUsers && updatedUsers.length === 0) {
+      setError('Cannot assign role. User has not signed up yet.');
+    } else {
       setMembers((prev) =>
         prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m))
       );
     }
+  } catch (err) {
+    setError('Failed to update role.');
   } finally {
     setTogglingRoleId(null);
   }

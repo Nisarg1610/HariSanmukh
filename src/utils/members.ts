@@ -2,17 +2,37 @@ import { supabase } from '@/lib/supabase';
 
 export async function getHouseholdMembers(householdId: string) {
   if (!householdId) return [];
-  const { data, error } = await supabase
+  const { data: membersData, error: membersError } = await supabase
     .from('household_members')
     .select('*')
     .eq('household_id', householdId)
     .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('getHouseholdMembers error:', error);
+  if (membersError) {
+    console.error('getHouseholdMembers error:', membersError);
     return [];
   }
-  return data ?? [];
+
+  const { data: usersData, error: usersError } = await supabase
+    .from('users')
+    .select('email, role')
+    .eq('household_id', householdId);
+
+  let mergedData = membersData ?? [];
+
+  if (!usersError && usersData) {
+    mergedData = mergedData.map(member => {
+      const userMatch = usersData.find(u => u.email?.toLowerCase() === member.email?.toLowerCase());
+      return {
+        ...member,
+        role: userMatch ? userMatch.role : 'user',
+      };
+    });
+  } else {
+    mergedData = mergedData.map(member => ({ ...member, role: 'user' }));
+  }
+
+  return mergedData;
 }
 
 export async function addMember(
