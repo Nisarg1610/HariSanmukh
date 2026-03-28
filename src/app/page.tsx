@@ -17,6 +17,8 @@ import {
 } from '@/utils/webauthn';
 import { ProfilePanel } from '@/components/ProfilePanel';
 import { SplashScreen } from '@/components/SplashScreen';
+import { LaundryTracker } from '@/components/LaundryTracker';
+import { getTodayLaundrySessions } from '@/utils/laundry';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_ATTEMPTS       = 3;
@@ -48,6 +50,9 @@ export default function Home() {
   const [error, setError]                           = useState<string | null>(null);
   const [mySevas, setMySevas]                       = useState<any[]>([]);
   const [myLaundryDays, setMyLaundryDays]           = useState<string[]>([]);
+  const [allLaundryDays, setAllLaundryDays]         = useState<any[]>([]);
+  const [todaySessions, setTodaySessions]           = useState<any[]>([]);
+  const [memberId, setMemberId]                     = useState<string | null>(null);
   const [garbageDates, setGarbageDates]             = useState<any[]>([]);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading]     = useState(false);
@@ -210,9 +215,10 @@ const [dailyContent, setDailyContent] = useState<{
       setDisplayName(nextDisplayName);
 
       try {
-        const [assignments, laundryAssignments] = await Promise.all([
+        const [assignments, laundryAssignments, sessions] = await Promise.all([
           getSevaAssignments(hId),
           getLaundryAssignments(hId),
+          getTodayLaundrySessions(hId),
         ]);
         nextSevas = assignments.filter((a: any) => a.member_id === memberCard.id);
         nextLaundryDays = laundryAssignments
@@ -220,6 +226,9 @@ const [dailyContent, setDailyContent] = useState<{
           .map((a: any) => a.day_of_week);
         setMySevas(nextSevas);
         setMyLaundryDays(nextLaundryDays);
+        setMemberId(memberCard.id);
+        setAllLaundryDays(laundryAssignments);
+        setTodaySessions(sessions);
       } catch (err) {
         console.error('fetchDashboardData: seva/laundry failed', err);
       }
@@ -1088,23 +1097,33 @@ const handleLogout = async () => {
             </div>
 
             <div className="mt-auto">
-              {(myLaundryDays?.length ?? 0) > 1 ? (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {myLaundryDays.slice(1, 3).map((day) => (
-                    <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold line-clamp-1 shadow-sm leading-none"
-                      style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
-                      {day.substring(0, 3).toUpperCase()}
-                    </span>
-                  ))}
-                  {myLaundryDays.length > 3 && (
-                    <span className="px-2 py-1.5 rounded-[10px] text-[11px] font-bold leading-none"
-                      style={{ backgroundColor: 'rgba(0,0,0,0.03)', color: 'var(--text-3)' }}>
-                      +{myLaundryDays.length - 3}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-[13px] font-medium mt-2" style={{ color: 'var(--text-3)' }}>Wash on your assigned day.</p>
+              {dbUser?.household_id && memberId && (
+                <LaundryTracker
+                  householdId={dbUser.household_id}
+                  memberId={memberId}
+                  allLaundryDays={allLaundryDays}
+                  initialSessions={todaySessions}
+                />
+              )}
+              {!(new Date().getHours() >= 18 && allLaundryDays.filter(a => a.day_of_week === new Date().toLocaleDateString('en-US', { weekday: 'long' })).some(a => a.member_id === memberId)) && (
+                (myLaundryDays?.length ?? 0) > 1 ? (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {myLaundryDays.slice(1, 3).map((day) => (
+                      <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold line-clamp-1 shadow-sm leading-none"
+                        style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
+                        {day.substring(0, 3).toUpperCase()}
+                      </span>
+                    ))}
+                    {myLaundryDays.length > 3 && (
+                      <span className="px-2 py-1.5 rounded-[10px] text-[11px] font-bold leading-none"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.03)', color: 'var(--text-3)' }}>
+                        +{myLaundryDays.length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[13px] font-medium mt-2" style={{ color: 'var(--text-3)' }}>Wash on your assigned day.</p>
+                )
               )}
             </div>
           </Link>
