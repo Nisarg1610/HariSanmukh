@@ -319,7 +319,7 @@ export default function GroceryPage() {
         </button>
       ))}
       {/* Active pill indicator */}
-      <div 
+      <div
         className="absolute top-1 bottom-1 rounded-xl transition-all duration-300 ease-out shadow-sm"
         style={{ width: 'calc(50% - 4px)', left: activeTab === 'weekly' ? '4px' : 'calc(50%)', backgroundColor: 'var(--bg-card)', zIndex: 0 }}
       />
@@ -440,7 +440,7 @@ export default function GroceryPage() {
                             <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center transition-all duration-300" style={{ backgroundColor: item.checked ? 'var(--green)' : 'transparent', border: item.checked ? '2px solid var(--green)' : '2px solid var(--border-strong)' }}>
                               {item.checked && (
                                 <svg width="12" height="10" viewBox="0 0 10 8" fill="none">
-                                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               )}
                             </div>
@@ -486,7 +486,7 @@ export default function GroceryPage() {
           <div className="card shadow-sm">
             <div className="flex items-center justify-between px-5 py-4" style={{ backgroundColor: 'var(--bg-card-2)', borderBottom: '0.5px solid var(--separator)' }}>
               <p className="font-bold capitalize text-[15px]" style={{ color: 'var(--text-1)' }}>{activeTab} List</p>
-              <button 
+              <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg transition-colors bg-white dark:bg-black/20 shadow-sm"
                 style={{ color: copied ? 'var(--green)' : 'var(--text-2)' }}
@@ -494,7 +494,7 @@ export default function GroceryPage() {
                 {copied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
               </button>
             </div>
-            
+
             {items.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center bg-[var(--bg-card-2)]">
@@ -634,30 +634,30 @@ export default function GroceryPage() {
               </div>
               <p className="text-[13px] font-medium" style={{ color: 'var(--text-3)' }}>Paste text from a recipe, WhatsApp chat, or any list. AI will automatically format it into items and quantities.</p>
             </div>
-            
+
             <div className="p-5" style={{ backgroundColor: 'var(--bg-card)' }}>
-              <textarea 
-                value={pasteText} 
-                onChange={(e) => setPasteText(e.target.value)} 
-                placeholder="E.g. We need 2 liters of milk, a loaf of bread, and a dozen eggs..." 
-                rows={5} 
-                className="w-full text-[15px] resize-none outline-none bg-transparent font-medium" 
+              <textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="E.g. We need 2 liters of milk, a loaf of bread, and a dozen eggs..."
+                rows={5}
+                className="w-full text-[15px] resize-none outline-none bg-transparent font-medium"
                 style={{ color: 'var(--text-1)' }}
               />
             </div>
-            
+
             <div className="flex border-t border-[var(--separator)]">
-              <button 
-                onClick={() => { setPasteMode(false); setPasteText(''); }} 
+              <button
+                onClick={() => { setPasteMode(false); setPasteText(''); }}
                 className="flex-1 py-4 text-[14px] font-bold border-r border-[var(--separator)] transition-colors hover:bg-black/5"
                 style={{ color: 'var(--text-3)', backgroundColor: 'var(--bg-card)' }}
               >
                 Cancel
               </button>
-              <button 
-                onClick={handleAIPaste} 
-                disabled={aiProcessing || !pasteText.trim()} 
-                className="flex-1 flex items-center justify-center gap-2 py-4 text-[15px] font-bold transition-all disabled:opacity-75" 
+              <button
+                onClick={handleAIPaste}
+                disabled={aiProcessing || !pasteText.trim()}
+                className="flex-1 flex items-center justify-center gap-2 py-4 text-[15px] font-bold transition-all disabled:opacity-75"
                 style={{ color: 'white', background: 'linear-gradient(135deg, #8B5CF6, #3B82F6)' }}
               >
                 {aiProcessing ? (
@@ -674,7 +674,7 @@ export default function GroceryPage() {
               <p className="font-bold text-[15px] capitalize" style={{ color: 'var(--text-1)' }}>Editing {activeTab}</p>
               <span className="text-[12px] font-bold px-2 py-1 rounded-full border border-[var(--separator)]" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}>{editItems.length} items</span>
             </div>
-            
+
             <div className="divide-y" style={{ borderColor: 'var(--separator)' }}>
               {editItems.map((item, i) => (
                 <div key={i} className="flex items-center gap-3 px-5 py-3 bg-[var(--bg-card)]">
@@ -687,27 +687,27 @@ export default function GroceryPage() {
                 </div>
               ))}
             </div>
-            
-            <button 
-              onClick={handleAddRow} 
-              className="w-full flex items-center justify-center gap-2 py-4 text-[14px] font-bold transition-colors hover:bg-black/5" 
+
+            <button
+              onClick={handleAddRow}
+              className="w-full flex items-center justify-center gap-2 py-4 text-[14px] font-bold transition-colors hover:bg-black/5"
               style={{ color: 'var(--accent)', borderTop: '0.5px solid var(--separator)', backgroundColor: 'var(--bg-card-2)' }}
             >
               <Plus size={16} /> Add Blank Item
             </button>
 
             <div className="flex p-3 gap-3" style={{ borderTop: '0.5px solid var(--separator)', backgroundColor: 'var(--bg-card)' }}>
-              <button 
-                onClick={() => setEditMode(false)} 
-                className="flex-1 py-3.5 rounded-xl text-[14px] font-bold transition-colors shadow-sm" 
+              <button
+                onClick={() => setEditMode(false)}
+                className="flex-1 py-3.5 rounded-xl text-[14px] font-bold transition-colors shadow-sm"
                 style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)', border: '1px solid var(--separator)' }}
               >
                 Discard
               </button>
-              <button 
-                onClick={handleSaveEdit} 
-                disabled={saving} 
-                className="flex-[2] py-3.5 rounded-xl text-[14px] font-bold text-white shadow-md transition-all disabled:opacity-75" 
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="flex-[2] py-3.5 rounded-xl text-[14px] font-bold text-white shadow-md transition-all disabled:opacity-75"
                 style={{ backgroundColor: 'var(--accent)' }}
               >
                 {saving ? 'Saving changes...' : 'Save List'}
@@ -718,8 +718,8 @@ export default function GroceryPage() {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-4 gap-3">
-              <button 
-                onClick={handleStartEdit} 
+              <button
+                onClick={handleStartEdit}
                 className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
               >
@@ -729,8 +729,8 @@ export default function GroceryPage() {
                 <span className="text-[12px] font-bold" style={{ color: 'var(--text-2)' }}>Edit List</span>
               </button>
 
-              <button 
-                onClick={() => setPasteMode(true)} 
+              <button
+                onClick={() => setPasteMode(true)}
                 className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
               >
@@ -740,8 +740,8 @@ export default function GroceryPage() {
                 <span className="text-[12px] font-bold" style={{ color: 'var(--text-2)' }}>AI Paste</span>
               </button>
 
-              <button 
-                onClick={handleCopy} 
+              <button
+                onClick={handleCopy}
                 className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
               >
@@ -751,8 +751,8 @@ export default function GroceryPage() {
                 <span className="text-[12px] font-bold" style={{ color: 'var(--text-2)' }}>{copied ? 'Copied' : 'Copy Items'}</span>
               </button>
 
-              <button 
-                onClick={handleClearList} 
+              <button
+                onClick={handleClearList}
                 className="flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
               >
@@ -774,14 +774,14 @@ export default function GroceryPage() {
                   </span>
                 )}
               </div>
-              
+
               {items.length === 0 ? (
                 <div className="py-16 text-center px-4 bg-[var(--bg-card)]">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-[var(--bg-card-2)] border border-[var(--separator)]">
                     <ShoppingCart size={28} style={{ color: 'var(--text-4)' }} />
                   </div>
                   <p className="text-[16px] font-bold mb-1" style={{ color: 'var(--text-1)' }}>Your list is empty</p>
-                  <p className="text-[14px] font-medium" style={{ color: 'var(--text-3)' }}>Tap "Edit List" to add items or<br/>use "AI Paste" to magically drop them in.</p>
+                  <p className="text-[14px] font-medium" style={{ color: 'var(--text-3)' }}>Tap "Edit List" to add items or<br />use "AI Paste" to magically drop them in.</p>
                 </div>
               ) : (
                 <ul className="divide-y" style={{ borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}>

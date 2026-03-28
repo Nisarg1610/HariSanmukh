@@ -372,25 +372,14 @@ const handleToggleRole = async (member: Member) => {
                   </div>
 
                   {/* Info */}
-                  {/* Info */}
-<div className="flex-1 min-w-0">
-  <div className="flex items-center gap-2">
-    <p className="font-semibold truncate" style={{ color: 'var(--text-1)' }}>
-      {member.first_name} Bhai
-    </p>
-    {member.role === 'admin' && (
-      <span
-        className="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
-        style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
-      >
-        Admin
-      </span>
-    )}
-  </div>
-  <p className="text-xs truncate" style={{ color: 'var(--text-3)' }}>
-    {member.email ?? 'No email'}
-  </p>
-</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate" style={{ color: 'var(--text-1)' }}>
+                      {member.first_name} Bhai
+                    </p>
+                    <p className="text-xs truncate" style={{ color: 'var(--text-3)' }}>
+                      {member.email ?? 'No email'}
+                    </p>
+                  </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 flex-shrink-0">
