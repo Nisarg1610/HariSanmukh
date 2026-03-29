@@ -8,7 +8,7 @@ export async function getLaundryAssignments(householdId: string) {
     .from('laundry_assignments')
     .select(`
       *,
-      household_members(id, first_name, last_name, status)
+      household_members(id, first_name, last_name, status, linked_user_id)
     `)
     .eq('household_id', householdId);
 

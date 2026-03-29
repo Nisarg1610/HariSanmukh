@@ -139,6 +139,22 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     if (res) {
       const updated = await getTodayLaundrySessions(householdId);
       setSessions(updated);
+
+      // Schedule real-world background push notification
+      const myLinkedId = assignedToday.find(u => u.member_id === memberId)?.household_members?.linked_user_id || memberId;
+      const targetUserIds = type === 'washer'
+        ? assignedToday.map(user => user.household_members?.linked_user_id || user.member_id)
+        : [myLinkedId];
+
+      fetch('/api/schedule-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          delayMins: type === 'washer' ? 40 : 60,
+          msg: type === 'washer' ? 'Washer has been done!' : 'Your laundry has been done.',
+          targetUserIds
+        }),
+      }).catch(console.error);
     }
   };
 
@@ -163,6 +179,15 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     }
   };
 
+  // Determine what button I should see
+  let showWasherBtn = false;
+  let showDryerBtn = false;
+
+  const hasDidWasher = !!mySession?.washer_completed_at;
+  const hasDidDryer = !!mySession?.dryer_completed_at;
+
+  const amIWaitingForWasher = !myRunning && !hasDidWasher;
+
   // Render timer if running
   if (myRunning) {
     const total = myRunning.type === 'Washer' ? 40 : 60;
@@ -176,7 +201,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
   }
 
   // If we are waiting for someone else's washer
-  if (isSomeoneElseUsingWasher) {
+  if (isSomeoneElseUsingWasher && amIWaitingForWasher) {
     const otherSess = otherSessions.find(s => s.washer_started_at && !s.washer_completed_at);
     if (otherSess) {
       const elapsedMins = (currentTime.getTime() - new Date(otherSess.washer_started_at).getTime()) / 60000;
@@ -189,13 +214,6 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
       );
     }
   }
-
-  // Determine what button I should see
-  let showWasherBtn = false;
-  let showDryerBtn = false;
-
-  const hasDidWasher = !!mySession?.washer_completed_at;
-  const hasDidDryer = !!mySession?.dryer_completed_at;
 
   if (!hasDidWasher) showWasherBtn = true;
   else if (!hasDidDryer) showDryerBtn = true;
