@@ -14,26 +14,5 @@ CREATE TABLE public.laundry_sessions (
   CONSTRAINT laundry_sessions_unique_member_date UNIQUE (household_id, member_id, date)
 );
 
--- RLS policies 
-ALTER TABLE public.laundry_sessions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Enable read for household members" ON public.laundry_sessions
-FOR SELECT USING (
-  household_id IN (
-    SELECT household_id FROM public.users WHERE id = auth.uid()
-  )
-);
-
-CREATE POLICY "Enable insert for household members" ON public.laundry_sessions
-FOR INSERT WITH CHECK (
-  household_id IN (
-    SELECT household_id FROM public.users WHERE id = auth.uid()
-  )
-);
-
-CREATE POLICY "Enable update for household members" ON public.laundry_sessions
-FOR UPDATE USING (
-  household_id IN (
-    SELECT household_id FROM public.users WHERE id = auth.uid()
-  )
-);
+-- RLS policies (DISABLED to match other tables without RLS)
+ALTER TABLE public.laundry_sessions DISABLE ROW LEVEL SECURITY;

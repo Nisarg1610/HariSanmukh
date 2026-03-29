@@ -54,17 +54,10 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     if (sess.washer_started_at && !sess.washer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(sess.washer_started_at).getTime()) / 60000;
       if (elapsedMins < 40) return { type: 'Washer', elapsedMins, start: new Date(sess.washer_started_at) };
-      else {
-        // Just crossed 40 mins
-        handleAutoComplete(sess, 'washer');
-      }
     }
     if (sess.dryer_started_at && !sess.dryer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(sess.dryer_started_at).getTime()) / 60000;
       if (elapsedMins < 60) return { type: 'Dryer', elapsedMins, start: new Date(sess.dryer_started_at) };
-      else {
-        handleAutoComplete(sess, 'dryer');
-      }
     }
     return null;
   };
@@ -149,9 +142,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     }
   };
 
-  const handleAutoComplete = (sess: any, type: 'washer' | 'dryer') => {
-    completeTask(type);
-  };
+
 
   const completeTask = async (type: 'washer' | 'dryer') => {
     const today = new Date().toISOString().split('T')[0];
