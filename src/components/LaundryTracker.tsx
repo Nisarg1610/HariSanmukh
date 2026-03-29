@@ -46,7 +46,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
   const isSomeoneElseUsingWasher = otherSessions.some(s => {
     if (!s.washer_started_at) return false;
     const elapsedMins = (currentTime.getTime() - new Date(s.washer_started_at).getTime()) / 60000;
-    return elapsedMins < 40 && !s.washer_completed_at;
+    return elapsedMins < 1 && !s.washer_completed_at;
   });
 
   const getRunningSession = (sess: any) => {
@@ -73,14 +73,14 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     if (!mySession) return;
     if (mySession.washer_started_at && !mySession.washer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(mySession.washer_started_at).getTime()) / 60000;
-      if (elapsedMins >= 40) {
+      if (elapsedMins >= 1) {
         completeTask('washer');
         notifyBoth('Washer has been done.');
       }
     }
     if (mySession.dryer_started_at && !mySession.dryer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(mySession.dryer_started_at).getTime()) / 60000;
-      if (elapsedMins >= 60) {
+      if (elapsedMins >= 2) {
         completeTask('dryer');
         notifySelf('Your laundry has been done.');
       }
@@ -150,7 +150,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          delayMins: type === 'washer' ? 40 : 60,
+          delayMins: type === 'washer' ? 1 : 2,
           msg: type === 'washer' ? 'Washer has been done!' : 'Your laundry has been done.',
           targetUserIds
         }),
@@ -190,7 +190,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
 
   // Render timer if running
   if (myRunning) {
-    const total = myRunning.type === 'Washer' ? 40 : 60;
+    const total = myRunning.type === 'Washer' ? 1 : 2;
     const left = Math.max(0, Math.ceil(total - myRunning.elapsedMins));
     return (
       <div className="mt-4 pt-3 border-t border-[var(--separator)]" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
@@ -205,7 +205,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     const otherSess = otherSessions.find(s => s.washer_started_at && !s.washer_completed_at);
     if (otherSess) {
       const elapsedMins = (currentTime.getTime() - new Date(otherSess.washer_started_at).getTime()) / 60000;
-      const left = Math.max(0, Math.ceil(40 - elapsedMins));
+      const left = Math.max(0, Math.ceil(1 - elapsedMins));
       return (
         <div className="mt-4 pt-3 border-t border-[var(--separator)]" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
           <p className="text-[12px] font-bold text-[var(--text-3)] mb-1">Washer in Use</p>
