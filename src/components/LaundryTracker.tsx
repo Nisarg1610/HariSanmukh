@@ -41,7 +41,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
 
   const mySession = sessions.find(s => s.member_id === memberId) || null;
   const otherSessions = sessions.filter(s => s.member_id !== memberId);
-  
+
   // Logic for the other person
   const isSomeoneElseUsingWasher = otherSessions.some(s => {
     if (!s.washer_started_at) return false;
@@ -53,11 +53,11 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     if (!sess) return null;
     if (sess.washer_started_at && !sess.washer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(sess.washer_started_at).getTime()) / 60000;
-      if (elapsedMins < 40) return { type: 'Washer', elapsedMins, start: new Date(sess.washer_started_at) };
+      if (elapsedMins < 1) return { type: 'Washer', elapsedMins, start: new Date(sess.washer_started_at) };
     }
     if (sess.dryer_started_at && !sess.dryer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(sess.dryer_started_at).getTime()) / 60000;
-      if (elapsedMins < 60) return { type: 'Dryer', elapsedMins, start: new Date(sess.dryer_started_at) };
+      if (elapsedMins < 2) return { type: 'Dryer', elapsedMins, start: new Date(sess.dryer_started_at) };
     }
     return null;
   };
@@ -91,7 +91,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     // Ideally we would hit /api/push-notify for both users.
     // For now we just call it for everyone in `assignedToday`
     try {
-      await Promise.all(assignedToday.map(user => 
+      await Promise.all(assignedToday.map(user =>
         fetch('/api/push-notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -100,9 +100,9 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
             title: 'Laundry Update',
             body: msg,
           }),
-        }).catch(() => {})
+        }).catch(() => { })
       ));
-    } catch {}
+    } catch { }
   };
 
   const notifySelf = async (msg: string) => {
@@ -119,7 +119,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
           }),
         });
       }
-    } catch {}
+    } catch { }
   };
 
   const handleStart = async (type: 'washer' | 'dryer') => {
