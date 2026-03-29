@@ -75,52 +75,15 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
       const elapsedMins = (currentTime.getTime() - new Date(mySession.washer_started_at).getTime()) / 60000;
       if (elapsedMins >= 1) {
         completeTask('washer');
-        notifyBoth('Washer has been done.');
       }
     }
     if (mySession.dryer_started_at && !mySession.dryer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(mySession.dryer_started_at).getTime()) / 60000;
       if (elapsedMins >= 2) {
         completeTask('dryer');
-        notifySelf('Your laundry has been done.');
       }
     }
   }, [currentTime, mySession]);
-
-  const notifyBoth = async (msg: string) => {
-    // Ideally we would hit /api/push-notify for both users.
-    // For now we just call it for everyone in `assignedToday`
-    try {
-      await Promise.all(assignedToday.map(user =>
-        fetch('/api/push-notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.household_members.linked_user_id || user.member_id,
-            title: 'Laundry Update',
-            body: msg,
-          }),
-        }).catch(() => { })
-      ));
-    } catch { }
-  };
-
-  const notifySelf = async (msg: string) => {
-    try {
-      const me = assignedToday.find(u => u.member_id === memberId);
-      if (me) {
-        await fetch('/api/push-notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: me.household_members.linked_user_id || me.member_id,
-            title: 'Laundry Update',
-            body: msg,
-          }),
-        });
-      }
-    } catch { }
-  };
 
   const handleStart = async (type: 'washer' | 'dryer') => {
     const today = new Date().toISOString().split('T')[0];
