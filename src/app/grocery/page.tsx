@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
 import { Bell, Copy, Check, Plus, Trash2, Wand2, X, ShoppingCart, ChevronDown, ChevronUp, Edit2, Info } from 'lucide-react';
@@ -70,6 +70,7 @@ export default function GroceryPage() {
   const [showEndModal, setShowEndModal] = useState(false);
   const [endNote, setEndNote] = useState('');
   const [endingGrocery, setEndingGrocery] = useState(false);
+  const channelRef = useRef<any>(null);
 
   const fetchItems = async (hId: string, tab: 'weekly' | 'monthly') => {
     const data = await getGroceryItems(hId, tab);
@@ -242,10 +243,66 @@ export default function GroceryPage() {
     }
   };
 
+  useEffect(() => {
+    if (!grocerySession || !householdId) return;
+    const roomName = `grocery_${householdId}_${activeTab}`;
+    const channel = supabase.channel(roomName, { config: { broadcast: { self: false } } });
+
+    channel
+      .on('broadcast', { event: 'toggle_item' }, ({ payload }) => {
+        setCategorizedItems(prev => prev.map(item => 
+          (item.name === payload.name && item.category === payload.category) 
+            ? { ...item, checked: payload.checked } 
+            : item
+        ));
+      })
+      .on('broadcast', { event: 'sync_request' }, () => {
+        setCategorizedItems(current => {
+           const checkedItems = current.filter(i => i.checked);
+           if (checkedItems.length > 0) {
+             channel.send({
+               type: 'broadcast',
+               event: 'sync_state',
+               payload: { checkedItems: checkedItems.map(i => ({ name: i.name, category: i.category })) }
+             });
+           }
+           return current;
+        });
+      })
+      .on('broadcast', { event: 'sync_state' }, ({ payload }) => {
+        setCategorizedItems(prev => prev.map(item => {
+           const isChecked = payload.checkedItems.some((ci: any) => ci.name === item.name && ci.category === item.category);
+           return isChecked || item.checked ? { ...item, checked: true } : item;
+        }));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.send({ type: 'broadcast', event: 'sync_request' });
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+    };
+  }, [grocerySession, householdId, activeTab]);
+
   const handleToggleItem = (idx: number) => {
+    const item = categorizedItems[idx];
+    const newChecked = !item.checked;
     setCategorizedItems(prev =>
-      prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item)
+      prev.map((it, i) => i === idx ? { ...it, checked: newChecked } : it)
     );
+
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'toggle_item',
+        payload: { name: item.name, category: item.category, checked: newChecked }
+      });
+    }
   };
 
   const handleToggleCategory = (category: string) => {

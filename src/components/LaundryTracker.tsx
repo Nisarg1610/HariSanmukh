@@ -103,6 +103,26 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
       const updated = await getTodayLaundrySessions(householdId);
       setSessions(updated);
 
+      // Immediate start notification for other assigned members
+      const meName = assignedToday.find(u => u.member_id === memberId)?.household_members?.first_name || 'Someone';
+      const otherTargetUserIds = assignedToday
+        .filter(u => u.member_id !== memberId)
+        .map(user => user.household_members?.linked_user_id || user.member_id);
+
+      if (otherTargetUserIds.length > 0) {
+        Promise.all(otherTargetUserIds.map(userId =>
+          fetch('/api/push-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              title: 'Laundry Tracking',
+              body: `${meName} Bhai started the ${type === 'washer' ? 'Washer' : 'Dryer'}.`,
+            })
+          }).catch(console.error)
+        ));
+      }
+
       // Schedule real-world background push notification
       const myLinkedId = assignedToday.find(u => u.member_id === memberId)?.household_members?.linked_user_id || memberId;
       const targetUserIds = type === 'washer'
