@@ -57,7 +57,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     }
     if (sess.dryer_started_at && !sess.dryer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(sess.dryer_started_at).getTime()) / 60000;
-      if (elapsedMins < 2) return { type: 'Dryer', elapsedMins, start: new Date(sess.dryer_started_at) };
+      if (elapsedMins < 1) return { type: 'Dryer', elapsedMins, start: new Date(sess.dryer_started_at) };
     }
     return null;
   };
@@ -79,7 +79,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     }
     if (mySession.dryer_started_at && !mySession.dryer_completed_at) {
       const elapsedMins = (currentTime.getTime() - new Date(mySession.dryer_started_at).getTime()) / 60000;
-      if (elapsedMins >= 2) {
+      if (elapsedMins >= 1) {
         completeTask('dryer');
       }
     }
