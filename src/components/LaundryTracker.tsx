@@ -10,8 +10,8 @@ interface LaundryTrackerProps {
   initialSessions: any[];
 }
 
-const WASHER_MINS = 1;
-const DRYER_MINS = 2;
+const WASHER_MINS = 45;
+const DRYER_MINS = 60;
 
 function getElapsedMins(startAt: string | null, now: Date): number {
   if (!startAt) return 0;
