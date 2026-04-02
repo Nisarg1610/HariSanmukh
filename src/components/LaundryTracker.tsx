@@ -180,11 +180,11 @@ export function LaundryTracker({
 
   const mySession = sessions.find((s) => s.member_id === memberId) ?? null;
 
-  // My personal DB progress — read directly, no timer math
+  // My personal DB progress — read directly from DB, no timer math
   const iDidWasher = !!mySession?.washer_completed_at;
   const iDidDryer = !!mySession?.dryer_completed_at;
 
-  // Global shared machine state (who is running what right now)
+  // Global shared machine state — who is running what right now
   const washerRunningSession =
     sessions.find((s) =>
       isRunning(s.washer_started_at, s.washer_completed_at, WASHER_MINS, currentTime)
@@ -196,14 +196,11 @@ export function LaundryTracker({
     ) ?? null;
 
   const washerIsRunningByMe = washerRunningSession?.member_id === memberId;
-  const washerIsRunningByOther =
-    !!washerRunningSession && washerRunningSession.member_id !== memberId;
   const dryerIsRunningByMe = dryerRunningSession?.member_id === memberId;
-  const dryerIsRunningByOther =
-    !!dryerRunningSession && dryerRunningSession.member_id !== memberId;
 
   // ── Render priority ─────────────────────────────────────────────────────────
-  // 0. All done — check DB first so returning users see this instantly
+
+  // 0. All done — DB has dryer_completed_at set, show instantly on any load
   if (iDidWasher && iDidDryer) {
     return <AllDone />;
   }
@@ -222,24 +219,22 @@ export function LaundryTracker({
 
   // 3. I've done my washer but not dryer yet
   if (iDidWasher && !iDidDryer) {
-    // Dryer is busy (someone else using it) → show wait timer
-    if (dryerIsRunningByOther) {
-      const left = getMinsLeft(dryerRunningSession!.dryer_started_at, DRYER_MINS, currentTime);
+    // Dryer busy by anyone (by this point it can only be someone else) → show wait timer
+    if (dryerRunningSession) {
+      const left = getMinsLeft(dryerRunningSession.dryer_started_at, DRYER_MINS, currentTime);
       return <WaitingBanner label="Dryer in use" minsLeft={left} />;
     }
     // Dryer is free → let me start it
-    return <ActionButton label="Start Dryer" onClick={() => handleStart('dryer')} variant="blue" />;
+    return (
+      <ActionButton label="Start Dryer" onClick={() => handleStart('dryer')} variant="blue" />
+    );
   }
 
   // 4. I haven't done my washer yet
   if (!iDidWasher) {
-    // Washer is busy (someone else using it) → show wait timer
-    if (washerIsRunningByOther) {
-      const left = getMinsLeft(
-        washerRunningSession!.washer_started_at,
-        WASHER_MINS,
-        currentTime
-      );
+    // Washer busy by anyone (by this point it can only be someone else) → show wait timer
+    if (washerRunningSession) {
+      const left = getMinsLeft(washerRunningSession.washer_started_at, WASHER_MINS, currentTime);
       return <WaitingBanner label="Washer in use" minsLeft={left} />;
     }
     // Washer is free → let me start it
@@ -287,7 +282,7 @@ export function LaundryTracker({
       (u) => u.household_members?.linked_user_id ?? u.member_id
     );
 
-    // Notify others I started
+    // Notify others that I started this machine
     if (otherUserIds.length > 0) {
       const machineName = type === 'washer' ? 'Washer' : 'Dryer';
       Promise.all(
@@ -306,7 +301,7 @@ export function LaundryTracker({
     }
 
     if (type === 'washer') {
-      // → Me: clothes are washed, move to dryer
+      // → Me: clothes washed, time to move to dryer
       fetch('/api/schedule-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
