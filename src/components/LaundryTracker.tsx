@@ -22,28 +22,118 @@ function getMinsLeft(startAt: string | null, durationMins: number, now: Date): n
   return Math.max(0, Math.ceil(durationMins - getElapsedMins(startAt, now)));
 }
 
-function isRunning(startAt: string | null, completedAt: string | null, durationMins: number, now: Date): boolean {
+function isRunning(
+  startAt: string | null,
+  completedAt: string | null,
+  durationMins: number,
+  now: Date
+): boolean {
   if (!startAt || completedAt) return false;
   return getElapsedMins(startAt, now) < durationMins;
 }
 
-export function LaundryTracker({ householdId, memberId, allLaundryDays, initialSessions }: LaundryTrackerProps) {
+function stopProp(e: React.MouseEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function AllDone() {
+  return (
+    <div className="mt-3 pt-3 border-t border-[var(--separator)]" onClick={stopProp}>
+      <p className="text-[13px] font-bold text-center" style={{ color: 'var(--text-4)' }}>
+        All Done! 🎉
+      </p>
+    </div>
+  );
+}
+
+function RunningTimer({
+  label,
+  minsLeft,
+  accent,
+}: {
+  label: string;
+  minsLeft: number;
+  accent: 'green' | 'blue';
+}) {
+  const color = accent === 'green' ? 'var(--accent)' : '#3b82f6';
+  return (
+    <div className="mt-4 pt-3 border-t border-[var(--separator)]" onClick={stopProp}>
+      <p className="text-[12px] font-bold mb-1" style={{ color }}>
+        {label}
+      </p>
+      <p className="text-[20px] font-extrabold text-[var(--text-1)]">
+        {minsLeft} min{minsLeft !== 1 ? 's' : ''} left
+      </p>
+    </div>
+  );
+}
+
+function WaitingBanner({ label, minsLeft }: { label: string; minsLeft: number }) {
+  return (
+    <div className="mt-4 pt-3 border-t border-[var(--separator)]" onClick={stopProp}>
+      <p className="text-[12px] font-bold text-[var(--text-3)] mb-1">{label}</p>
+      <p className="text-[16px] font-bold text-[var(--text-2)]">
+        {minsLeft} min{minsLeft !== 1 ? 's' : ''} left
+      </p>
+    </div>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  variant,
+}: {
+  label: string;
+  onClick: () => void;
+  variant: 'green' | 'blue';
+}) {
+  const styles =
+    variant === 'green'
+      ? { bg: 'var(--green-bg)', color: '#1a6340' }
+      : { bg: 'var(--accent-bg)', color: 'var(--accent)' };
+
+  return (
+    <div className="mt-3" onClick={stopProp}>
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full py-2.5 rounded-[12px] text-[13px] font-extrabold shadow-sm active:scale-95 transition-all"
+        style={{ backgroundColor: styles.bg, color: styles.color }}
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export function LaundryTracker({
+  householdId,
+  memberId,
+  allLaundryDays,
+  initialSessions,
+}: LaundryTrackerProps) {
   const [sessions, setSessions] = useState<any[]>(initialSessions);
   const [currentTime, setCurrentTime] = useState(new Date());
   const completingRef = useRef<Set<string>>(new Set());
 
   const isAfter6PM = currentTime.getHours() >= 18;
   const dayOfWeek = currentTime.toLocaleDateString('en-US', { weekday: 'long' });
-  const assignedToday = allLaundryDays.filter(a => a.day_of_week === dayOfWeek);
-  const amIAssignedToday = assignedToday.some(a => a.member_id === memberId);
+  const assignedToday = allLaundryDays.filter((a) => a.day_of_week === dayOfWeek);
+  const amIAssignedToday = assignedToday.some((a) => a.member_id === memberId);
 
-  // Clock tick
+  // Clock tick every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Poll sessions
+  // Poll sessions every 5s when active
   useEffect(() => {
     if (!amIAssignedToday || !isAfter6PM) return;
     const pollId = setInterval(async () => {
@@ -56,7 +146,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
   // Auto-complete when timer expires
   useEffect(() => {
     if (!amIAssignedToday || !isAfter6PM) return;
-    const mySession = sessions.find(s => s.member_id === memberId);
+    const mySession = sessions.find((s) => s.member_id === memberId);
     if (!mySession) return;
 
     if (
@@ -86,88 +176,73 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
 
   if (!isAfter6PM || !amIAssignedToday) return null;
 
-  const mySession = sessions.find(s => s.member_id === memberId) ?? null;
-  const otherSessions = sessions.filter(s => s.member_id !== memberId);
+  // ── Derived state ───────────────────────────────────────────────────────────
 
-  // ── Global machine state ──────────────────────────────────────────
-  // Is the washer currently running (by anyone)?
-  const washerRunningSession = sessions.find(s =>
-    isRunning(s.washer_started_at, s.washer_completed_at, WASHER_MINS, currentTime)
-  ) ?? null;
+  const mySession = sessions.find((s) => s.member_id === memberId) ?? null;
 
-  // Is the dryer currently running (by anyone)?
-  const dryerRunningSession = sessions.find(s =>
-    isRunning(s.dryer_started_at, s.dryer_completed_at, DRYER_MINS, currentTime)
-  ) ?? null;
-
-  const washerIsRunningByMe = washerRunningSession?.member_id === memberId;
-  const washerIsRunningByOther = !!washerRunningSession && washerRunningSession.member_id !== memberId;
-  const dryerIsRunningByMe = dryerRunningSession?.member_id === memberId;
-  const dryerIsRunningByOther = !!dryerRunningSession && dryerRunningSession.member_id !== memberId;
-
-  // ── My personal progress ──────────────────────────────────────────
+  // My personal DB progress — read directly, no timer math
   const iDidWasher = !!mySession?.washer_completed_at;
   const iDidDryer = !!mySession?.dryer_completed_at;
 
-  // ── What should I see? ────────────────────────────────────────────
-  // Priority order (top = highest priority):
-  // 1. My machine is running → show my timer
-  // 2. Dryer running by someone else AND I'm waiting for dryer → show dryer wait
-  // 3. Washer running by someone else AND I need the washer → show washer wait
-  // 4. All done
-  // 5. Need dryer (washer done, dryer not done, dryer not busy)
-  // 6. Need washer (washer not done, washer not busy)
+  // Global shared machine state (who is running what right now)
+  const washerRunningSession =
+    sessions.find((s) =>
+      isRunning(s.washer_started_at, s.washer_completed_at, WASHER_MINS, currentTime)
+    ) ?? null;
 
-  // 1. My washer is running
+  const dryerRunningSession =
+    sessions.find((s) =>
+      isRunning(s.dryer_started_at, s.dryer_completed_at, DRYER_MINS, currentTime)
+    ) ?? null;
+
+  const washerIsRunningByMe = washerRunningSession?.member_id === memberId;
+  const washerIsRunningByOther =
+    !!washerRunningSession && washerRunningSession.member_id !== memberId;
+  const dryerIsRunningByMe = dryerRunningSession?.member_id === memberId;
+  const dryerIsRunningByOther =
+    !!dryerRunningSession && dryerRunningSession.member_id !== memberId;
+
+  // ── Render priority ─────────────────────────────────────────────────────────
+  // 0. All done — check DB first so returning users see this instantly
+  if (iDidWasher && iDidDryer) {
+    return <AllDone />;
+  }
+
+  // 1. My washer is running → show my washer timer
   if (washerIsRunningByMe) {
     const left = getMinsLeft(mySession!.washer_started_at, WASHER_MINS, currentTime);
-    return (
-      <RunningTimer label="Washer running" minsLeft={left} accent="green" />
-    );
+    return <RunningTimer label="Washer running" minsLeft={left} accent="green" />;
   }
 
-  // 1b. My dryer is running
+  // 2. My dryer is running → show my dryer timer
   if (dryerIsRunningByMe) {
     const left = getMinsLeft(mySession!.dryer_started_at, DRYER_MINS, currentTime);
-    return (
-      <RunningTimer label="Dryer running" minsLeft={left} accent="blue" />
-    );
+    return <RunningTimer label="Dryer running" minsLeft={left} accent="blue" />;
   }
 
-  // All done
-  if (iDidWasher && iDidDryer) {
-    return (
-      <div className="mt-3 pt-3 border-t border-[var(--separator)]" onClick={stopProp}>
-        <p className="text-[13px] font-bold text-center" style={{ color: 'var(--text-4)' }}>All Done! 🎉</p>
-      </div>
-    );
-  }
-
-  // I still need the dryer (washer done, dryer not done)
+  // 3. I've done my washer but not dryer yet
   if (iDidWasher && !iDidDryer) {
-    // Dryer is busy by someone else → show their remaining time, block my button
+    // Dryer is busy (someone else using it) → show wait timer
     if (dryerIsRunningByOther) {
       const left = getMinsLeft(dryerRunningSession!.dryer_started_at, DRYER_MINS, currentTime);
-      return (
-        <WaitingBanner label="Dryer in use" minsLeft={left} />
-      );
+      return <WaitingBanner label="Dryer in use" minsLeft={left} />;
     }
-    // Dryer is free → show my Start Dryer button
-    return (
-      <ActionButton label="Start Dryer" onClick={() => handleStart('dryer')} variant="blue" />
-    );
+    // Dryer is free → let me start it
+    return <ActionButton label="Start Dryer" onClick={() => handleStart('dryer')} variant="blue" />;
   }
 
-  // I still need the washer
+  // 4. I haven't done my washer yet
   if (!iDidWasher) {
-    // Washer is busy by someone else → show their remaining time
+    // Washer is busy (someone else using it) → show wait timer
     if (washerIsRunningByOther) {
-      const left = getMinsLeft(washerRunningSession!.washer_started_at, WASHER_MINS, currentTime);
-      return (
-        <WaitingBanner label="Washer in use" minsLeft={left} />
+      const left = getMinsLeft(
+        washerRunningSession!.washer_started_at,
+        WASHER_MINS,
+        currentTime
       );
+      return <WaitingBanner label="Washer in use" minsLeft={left} />;
     }
-    // Washer is free → show Start Washer button
+    // Washer is free → let me start it
     return (
       <ActionButton label="Start Washer" onClick={() => handleStart('washer')} variant="green" />
     );
@@ -175,11 +250,11 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
 
   return null;
 
-  // ── Helpers ───────────────────────────────────────────────────────
+  // ── Action handlers ─────────────────────────────────────────────────────────
 
   async function handleStart(type: 'washer' | 'dryer') {
     const today = new Date().toISOString().split('T')[0];
-    const existing = { ...(sessions.find(s => s.member_id === memberId) ?? {}) };
+    const existing = { ...(sessions.find((s) => s.member_id === memberId) ?? {}) };
     delete existing.household_members;
 
     const newSess = {
@@ -198,42 +273,51 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
     const updated = await getTodayLaundrySessions(householdId);
     setSessions(updated);
 
-    const myName = assignedToday.find(u => u.member_id === memberId)?.household_members?.first_name ?? 'Someone';
-    const otherAssigned = assignedToday.filter(u => u.member_id !== memberId);
-    const otherUserIds = otherAssigned.map(u => u.household_members?.linked_user_id ?? u.member_id);
-    const myLinkedId = assignedToday.find(u => u.member_id === memberId)?.household_members?.linked_user_id ?? memberId;
+    const myName =
+      assignedToday.find((u) => u.member_id === memberId)?.household_members?.first_name ??
+      'Someone';
+    const otherAssigned = assignedToday.filter((u) => u.member_id !== memberId);
+    const otherUserIds = otherAssigned.map(
+      (u) => u.household_members?.linked_user_id ?? u.member_id
+    );
+    const myLinkedId =
+      assignedToday.find((u) => u.member_id === memberId)?.household_members?.linked_user_id ??
+      memberId;
+    const allLinkedIds = assignedToday.map(
+      (u) => u.household_members?.linked_user_id ?? u.member_id
+    );
 
-    // Notify others that I started
+    // Notify others I started
     if (otherUserIds.length > 0) {
       const machineName = type === 'washer' ? 'Washer' : 'Dryer';
-      Promise.all(otherUserIds.map(userId =>
-        fetch('/api/push-notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            title: 'Laundry Tracking',
-            body: `${myName} Bhai started the ${machineName}.`,
-          }),
-        }).catch(console.error)
-      ));
+      Promise.all(
+        otherUserIds.map((userId) =>
+          fetch('/api/push-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              title: 'Laundry Tracking',
+              body: `${myName} Bhai started the ${machineName}.`,
+            }),
+          }).catch(console.error)
+        )
+      );
     }
 
-    // Schedule completion notifications
     if (type === 'washer') {
-      // Notify me: clothes washed, time to move to dryer
-      // Notify others: washer is now free
-      const allLinkedIds = assignedToday.map(u => u.household_members?.linked_user_id ?? u.member_id);
+      // → Me: clothes are washed, move to dryer
       fetch('/api/schedule-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           delayMins: WASHER_MINS,
           targetUserIds: [myLinkedId],
-          msg: 'Your clothes are washed! Time to move them to the dryer.',
+          msg: 'Your clothes are washed! Move them to the dryer.',
         }),
       }).catch(console.error);
 
+      // → Others: washer is now free
       if (otherUserIds.length > 0) {
         fetch('/api/schedule-push', {
           method: 'POST',
@@ -246,8 +330,7 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
         }).catch(console.error);
       }
     } else {
-      // Dryer done: notify everyone — dryer is free
-      const allLinkedIds = assignedToday.map(u => u.household_members?.linked_user_id ?? u.member_id);
+      // Dryer done → notify everyone, dryer is free
       fetch('/api/schedule-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -270,7 +353,9 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
       household_id: householdId,
       member_id: memberId,
       date: today,
-      ...(type === 'washer' ? { washer_completed_at: new Date().toISOString() } : { dryer_completed_at: new Date().toISOString() }),
+      ...(type === 'washer'
+        ? { washer_completed_at: new Date().toISOString() }
+        : { dryer_completed_at: new Date().toISOString() }),
     };
 
     const res = await upsertLaundrySession(newSess);
@@ -279,50 +364,4 @@ export function LaundryTracker({ householdId, memberId, allLaundryDays, initialS
       setSessions(updated);
     }
   }
-}
-
-// ── Small sub-components ─────────────────────────────────────────────────────
-
-function stopProp(e: React.MouseEvent) {
-  e.preventDefault();
-  e.stopPropagation();
-}
-
-function RunningTimer({ label, minsLeft, accent }: { label: string; minsLeft: number; accent: 'green' | 'blue' }) {
-  const color = accent === 'green' ? 'var(--accent)' : '#3b82f6';
-  return (
-    <div className="mt-4 pt-3 border-t border-[var(--separator)]" onClick={stopProp}>
-      <p className="text-[12px] font-bold mb-1" style={{ color }}>{label}</p>
-      <p className="text-[20px] font-extrabold text-[var(--text-1)]">{minsLeft} min{minsLeft !== 1 ? 's' : ''} left</p>
-    </div>
-  );
-}
-
-function WaitingBanner({ label, minsLeft }: { label: string; minsLeft: number }) {
-  return (
-    <div className="mt-4 pt-3 border-t border-[var(--separator)]" onClick={stopProp}>
-      <p className="text-[12px] font-bold text-[var(--text-3)] mb-1">{label}</p>
-      <p className="text-[16px] font-bold text-[var(--text-2)]">{minsLeft} min{minsLeft !== 1 ? 's' : ''} left</p>
-    </div>
-  );
-}
-
-function ActionButton({ label, onClick, variant }: { label: string; onClick: () => void; variant: 'green' | 'blue' }) {
-  const styles =
-    variant === 'green'
-      ? { bg: 'var(--green-bg)', color: '#1a6340' }
-      : { bg: 'var(--accent-bg)', color: 'var(--accent)' };
-
-  return (
-    <div className="mt-3" onClick={stopProp}>
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full py-2.5 rounded-[12px] text-[13px] font-extrabold shadow-sm active:scale-95 transition-all"
-        style={{ backgroundColor: styles.bg, color: styles.color }}
-      >
-        {label}
-      </button>
-    </div>
-  );
 }
