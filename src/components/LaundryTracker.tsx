@@ -122,8 +122,11 @@ export function LaundryTracker({
   const [currentTime, setCurrentTime] = useState(new Date());
   const completingRef = useRef<Set<string>>(new Set());
 
-  const isAfter6PM = currentTime.getHours() >= 18;
   const dayOfWeek = currentTime.toLocaleDateString('en-US', { weekday: 'long' });
+  const hour = currentTime.getHours();
+  const isWeekend = dayOfWeek === 'Saturday' || dayOfWeek === 'Sunday';
+  const isActiveTime = isWeekend ? hour >= 6 : hour >= 18;
+
   const assignedToday = allLaundryDays.filter((a) => a.day_of_week === dayOfWeek);
   const amIAssignedToday = assignedToday.some((a) => a.member_id === memberId);
 
@@ -135,17 +138,17 @@ export function LaundryTracker({
 
   // Poll sessions every 5s when active
   useEffect(() => {
-    if (!amIAssignedToday || !isAfter6PM) return;
+    if (!amIAssignedToday || !isActiveTime) return;
     const pollId = setInterval(async () => {
       const data = await getTodayLaundrySessions(householdId);
       setSessions(data);
     }, 5000);
     return () => clearInterval(pollId);
-  }, [householdId, amIAssignedToday, isAfter6PM]);
+  }, [householdId, amIAssignedToday, isActiveTime]);
 
   // Auto-complete when timer expires
   useEffect(() => {
-    if (!amIAssignedToday || !isAfter6PM) return;
+    if (!amIAssignedToday || !isActiveTime) return;
     const mySession = sessions.find((s) => s.member_id === memberId);
     if (!mySession) return;
 
@@ -174,7 +177,7 @@ export function LaundryTracker({
     }
   }, [currentTime, sessions]);
 
-  if (!isAfter6PM || !amIAssignedToday) return null;
+  if (!isActiveTime || !amIAssignedToday) return null;
 
   // ── Derived state ───────────────────────────────────────────────────────────
 
