@@ -92,6 +92,17 @@ export async function markSevaComplete(assignmentId: string) {
   return true;
 }
 
+// ── NEW: toggle lock on a single assignment ───────────────────────────────────
+export async function toggleSevaLock(assignmentId: string, lock: boolean) {
+  const { error } = await supabase
+    .from('seva_assignments')
+    .update({ is_locked: lock })
+    .eq('id', assignmentId);
+
+  if (error) { console.error('toggleSevaLock error:', error); return false; }
+  return true;
+}
+
 export async function refreshSevaAssignments(householdId: string) {
   // 1. Get all sevas for this household
   const { data: sevasList } = await supabase
@@ -104,7 +115,7 @@ export async function refreshSevaAssignments(householdId: string) {
 
   const sevaIds = sevasList.map((s) => s.id);
 
-  // 2. Get active members ordered by created_at (stable order for round-robin)
+  // 2. Get active members
   const { data: activeMembers } = await supabase
     .from('household_members')
     .select('id')
@@ -114,8 +125,15 @@ export async function refreshSevaAssignments(householdId: string) {
 
   if (!activeMembers || activeMembers.length === 0) return true;
 
-  // 3. Find who was last assigned (to continue rotation from where we left off)
-  //    Look at the most recent assignment across all sevas in this household
+  // 3. Get ALL current assignments — we need to preserve locked ones
+  const { data: existingAssignments } = await supabase
+    .from('seva_assignments')
+    .select('id, seva_id, member_id, is_locked')
+    .in('seva_id', sevaIds);
+
+  const lockedAssignments = (existingAssignments ?? []).filter((a) => a.is_locked);
+
+  // 4. Find who was last assigned (for round-robin continuity)
   const { data: lastAssignment } = await supabase
     .from('seva_assignments')
     .select('member_id, assigned_at')
@@ -124,34 +142,46 @@ export async function refreshSevaAssignments(householdId: string) {
     .limit(1)
     .single();
 
-  // 4. Find the starting index for round-robin
   let startIndex = 0;
   if (lastAssignment) {
     const lastMemberIndex = activeMembers.findIndex(
       (m) => m.id === lastAssignment.member_id
     );
     if (lastMemberIndex !== -1) {
-      // Start from the next member after the last one who was assigned
       startIndex = (lastMemberIndex + 1) % activeMembers.length;
     }
   }
 
-  // 5. Delete existing assignments
-  await supabase
-    .from('seva_assignments')
-    .delete()
-    .in('seva_id', sevaIds);
+  // 5. Delete only UNLOCKED assignments
+  const unlockedIds = (existingAssignments ?? [])
+    .filter((a) => !a.is_locked)
+    .map((a) => a.id);
 
-  // 6. Build new assignments using round-robin from startIndex
+  if (unlockedIds.length > 0) {
+    await supabase
+      .from('seva_assignments')
+      .delete()
+      .in('id', unlockedIds);
+  }
+
+  // 6. Build new assignments for unlocked slots only
+  //    For each seva, locked slots are already filled — only fill remaining slots
   const newAssignments: { seva_id: string; member_id: string }[] = [];
   let memberIndex = startIndex;
 
   for (const seva of sevasList) {
-    const count = Math.min(seva.cap, activeMembers.length);
-    const assignedToThisSeva = new Set<string>(); // avoid duplicate per seva
+    // Members already locked into this seva
+    const lockedForThisSeva = lockedAssignments
+      .filter((a) => a.seva_id === seva.id)
+      .map((a) => a.member_id);
 
-    for (let i = 0; i < count; i++) {
-      // Skip if this member already assigned to this seva (can happen if cap > members)
+    // How many free slots remain after locked ones
+    const remainingSlots = Math.max(0, Math.min(seva.cap, activeMembers.length) - lockedForThisSeva.length);
+
+    const assignedToThisSeva = new Set<string>(lockedForThisSeva);
+
+    for (let i = 0; i < remainingSlots; i++) {
+      // Skip members already assigned to this seva (locked or just added)
       let attempts = 0;
       while (
         assignedToThisSeva.has(activeMembers[memberIndex % activeMembers.length].id) &&
@@ -161,14 +191,14 @@ export async function refreshSevaAssignments(householdId: string) {
         attempts++;
       }
 
-      const memberId = activeMembers[memberIndex % activeMembers.length].id;
-      assignedToThisSeva.add(memberId);
-      newAssignments.push({ seva_id: seva.id, member_id: memberId });
+      const mId = activeMembers[memberIndex % activeMembers.length].id;
+      assignedToThisSeva.add(mId);
+      newAssignments.push({ seva_id: seva.id, member_id: mId });
       memberIndex++;
     }
   }
 
-  // 7. Insert new assignments
+  // 7. Insert new (unlocked) assignments
   if (newAssignments.length > 0) {
     const { error } = await supabase
       .from('seva_assignments')
