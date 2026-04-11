@@ -36,6 +36,16 @@ export default function SevaPage() {
   const [copied, setCopied] = useState(false);
   const [togglingLockId, setTogglingLockId] = useState<string | null>(null);
 
+  // ── Quota calculation ──────────────────────────────────────────────────────
+  // Total caps already used by OTHER sevas (exclude current if editing)
+  const totalCapUsed = sevas
+    .filter((s) => s.id !== editingId)
+    .reduce((sum, s) => sum + (s.cap || 0), 0);
+
+  // How many slots are still free
+  const maxAllowedCap = Math.max(0, members.length - totalCapUsed);
+  // ──────────────────────────────────────────────────────────────────────────
+
   const fetchAll = async (hId: string) => {
     const [s, a, m, p] = await Promise.all([
       getSevas(hId),
@@ -103,6 +113,17 @@ export default function SevaPage() {
     e.preventDefault();
     setError(null);
     if (!form.name.trim()) { setError('Seva name is required'); return; }
+
+    // ── Quota guard ──────────────────────────────────────────────────────────
+    if (form.cap > maxAllowedCap) {
+      setError(
+        `Only ${maxAllowedCap} member slot${maxAllowedCap !== 1 ? 's' : ''} available. ` +
+        `Total active members: ${members.length}, already assigned: ${totalCapUsed}.`
+      );
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     try {
       setFormLoading(true);
       if (editingId) {
@@ -376,7 +397,6 @@ export default function SevaPage() {
                       <p className="font-semibold text-sm mb-2" style={{ color: 'var(--text-1)' }}>
                         {seva.name}
                       </p>
-                      {/* Assignment pills with lock button */}
                       <div className="flex flex-wrap gap-1.5">
                         {sa.length === 0 ? (
                           <span className="text-xs" style={{ color: 'var(--text-4)' }}>No one assigned</span>
@@ -399,15 +419,11 @@ export default function SevaPage() {
                                 border: a.is_locked ? '1px solid var(--yellow)' : 'none',
                               }}
                             >
-                              {/* Lock icon indicator */}
-                              {a.is_locked && (
-                                <Lock size={10} style={{ flexShrink: 0 }} />
-                              )}
+                              {a.is_locked && <Lock size={10} style={{ flexShrink: 0 }} />}
                               <span>
                                 {a.household_members?.first_name} Bhai
                                 {a.is_completed && ' ✓'}
                               </span>
-                              {/* Lock / Unlock toggle button */}
                               <button
                                 onClick={() => handleToggleLock(a.id, a.is_locked)}
                                 disabled={togglingLockId === a.id}
@@ -447,12 +463,42 @@ export default function SevaPage() {
               })
             )}
           </div>
-          {/* Legend */}
           <div className="flex items-center gap-3 mt-2 px-1">
             <div className="flex items-center gap-1">
               <Lock size={10} style={{ color: 'var(--yellow)' }} />
               <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>Locked — won't change on refresh</span>
             </div>
+          </div>
+
+          {/* ── Quota summary bar ── */}
+          <div
+            className="mt-4 px-4 py-3 rounded-[14px] flex items-center justify-between gap-3"
+            style={{ backgroundColor: 'var(--bg-card-2)', border: '1px solid var(--separator)' }}
+          >
+            <div className="flex flex-col gap-1 flex-1">
+              <div className="flex justify-between text-[11px] font-bold mb-1" style={{ color: 'var(--text-3)' }}>
+                <span>Slots used</span>
+                <span>{totalCapUsed} / {members.length}</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--separator)' }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: members.length > 0 ? `${(totalCapUsed / members.length) * 100}%` : '0%',
+                    backgroundColor: totalCapUsed >= members.length ? 'var(--red)' : 'var(--green)',
+                  }}
+                />
+              </div>
+            </div>
+            <span
+              className="text-[11px] font-extrabold px-2.5 py-1 rounded-[8px] flex-shrink-0"
+              style={{
+                backgroundColor: totalCapUsed >= members.length ? 'var(--red-bg)' : 'var(--green-bg)',
+                color: totalCapUsed >= members.length ? 'var(--red)' : 'var(--green)',
+              }}
+            >
+              {members.length - totalCapUsed} free
+            </span>
           </div>
         </section>
 
@@ -528,20 +574,50 @@ export default function SevaPage() {
                   className="w-full bg-[var(--bg-card-2)] border border-[var(--separator)] rounded-[14px] px-4 py-3.5 text-[14px] font-medium outline-none focus:border-[var(--accent)] transition-colors"
                   style={{ color: 'var(--text-1)' }}
                 />
+
+                {/* ── Cap input with quota awareness ── */}
                 <div>
-                  <label className="block text-[11px] font-bold mb-2 uppercase tracking-wide px-1" style={{ color: 'var(--text-3)' }}>
-                    Max members ({members.length} total)
-                  </label>
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>
+                      Members for this seva
+                    </label>
+                    <span
+                      className="text-[11px] font-extrabold px-2 py-0.5 rounded-[6px]"
+                      style={{
+                        backgroundColor: maxAllowedCap === 0 ? 'var(--red-bg)' : 'var(--green-bg)',
+                        color: maxAllowedCap === 0 ? 'var(--red)' : 'var(--green)',
+                      }}
+                    >
+                      {maxAllowedCap} slot{maxAllowedCap !== 1 ? 's' : ''} available
+                    </span>
+                  </div>
                   <input
                     type="number"
                     value={form.cap}
-                    onChange={(e) => setForm({ ...form, cap: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = Math.min(parseInt(e.target.value) || 0, maxAllowedCap);
+                      setForm({ ...form, cap: val });
+                    }}
                     min={0}
-                    max={members.length || 0}
-                    className="w-full bg-[var(--bg-card-2)] border border-[var(--separator)] rounded-[14px] px-4 py-3.5 text-[14px] font-semibold outline-none focus:border-[var(--accent)] transition-colors"
+                    max={maxAllowedCap}
+                    disabled={maxAllowedCap === 0}
+                    className="w-full bg-[var(--bg-card-2)] border border-[var(--separator)] rounded-[14px] px-4 py-3.5 text-[14px] font-semibold outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ color: 'var(--text-1)' }}
                   />
+                  {/* Quota hint */}
+                  <div className="mt-2 px-1">
+                    {maxAllowedCap === 0 ? (
+                      <p className="text-[11px] font-bold" style={{ color: 'var(--red)' }}>
+                        ⚠ All {members.length} members are already assigned across other sevas.
+                      </p>
+                    ) : (
+                      <p className="text-[11px]" style={{ color: 'var(--text-4)' }}>
+                        {totalCapUsed} of {members.length} members assigned to other sevas. Max you can set: {maxAllowedCap}.
+                      </p>
+                    )}
+                  </div>
                 </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -594,7 +670,11 @@ export default function SevaPage() {
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button
-                      onClick={() => { setEditingId(seva.id); setForm({ name: seva.name, description: seva.description || '', cap: seva.cap }); setShowForm(true); }}
+                      onClick={() => {
+                        setEditingId(seva.id);
+                        setForm({ name: seva.name, description: seva.description || '', cap: seva.cap });
+                        setShowForm(true);
+                      }}
                       className="p-2.5 rounded-xl transition-colors bg-[var(--bg-card-2)] hover:bg-[var(--accent-bg)] border border-[var(--separator)] hover:border-transparent"
                       style={{ color: 'var(--text-2)' }}
                     >
