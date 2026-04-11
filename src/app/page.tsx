@@ -19,6 +19,7 @@ import { ProfilePanel } from '@/components/ProfilePanel';
 import { SplashScreen } from '@/components/SplashScreen';
 import { LaundryTracker } from '@/components/LaundryTracker';
 import { getTodayLaundrySessions } from '@/utils/laundry';
+import { SwipeToComplete } from '@/components/SwipeToComplete';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_ATTEMPTS       = 3;
@@ -1057,18 +1058,9 @@ const handleLogout = async () => {
             </div>
 
             {firstPendingSeva?.id ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleMarkSevaDone();
-                }}
-                className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-extrabold text-white transition-all shadow-md active:scale-95"
-                style={{ background: 'linear-gradient(135deg, var(--green), #248256)' }}
-              >
-                Seva Done ✓
-              </button>
+              <SwipeToComplete onSwipeComplete={() => {
+  handleMarkSevaDone();
+}} />
             ) : (
               <div
                 className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-bold text-center border-2 border-dashed"

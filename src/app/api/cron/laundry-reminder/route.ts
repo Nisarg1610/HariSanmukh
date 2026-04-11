@@ -16,7 +16,10 @@ webpush.setVapidDetails(
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 async function getSubscriptionsForToday() {
-  const today = DAYS[new Date().getDay()];
+const today = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  timeZone: 'America/Toronto',
+}).format(new Date()); // "Monday", "Tuesday", etc.
 
   // Get members assigned to laundry today
   const { data: assignments } = await supabase
