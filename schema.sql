@@ -65,6 +65,20 @@ CREATE TABLE public.laundry_assignments (
   CONSTRAINT laundry_assignments_household_id_fkey FOREIGN KEY (household_id) REFERENCES public.households(id),
   CONSTRAINT laundry_assignments_member_id_fkey FOREIGN KEY (member_id) REFERENCES public.household_members(id)
 );
+CREATE TABLE public.laundry_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  household_id uuid NOT NULL,
+  date date NOT NULL DEFAULT CURRENT_DATE,
+  member_id uuid NOT NULL,
+  washer_started_at timestamp with time zone,
+  washer_completed_at timestamp with time zone,
+  dryer_started_at timestamp with time zone,
+  dryer_completed_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT laundry_sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT laundry_sessions_household_id_fkey FOREIGN KEY (household_id) REFERENCES public.households(id),
+  CONSTRAINT laundry_sessions_member_id_fkey FOREIGN KEY (member_id) REFERENCES public.household_members(id)
+);
 CREATE TABLE public.passkeys (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid,
@@ -93,6 +107,7 @@ CREATE TABLE public.seva_assignments (
   is_completed boolean NOT NULL DEFAULT false,
   assigned_at timestamp with time zone DEFAULT now(),
   completed_at timestamp with time zone,
+  is_locked boolean DEFAULT false,
   CONSTRAINT seva_assignments_pkey PRIMARY KEY (id),
   CONSTRAINT seva_assignments_seva_id_fkey FOREIGN KEY (seva_id) REFERENCES public.sevas(id),
   CONSTRAINT seva_assignments_member_id_fkey FOREIGN KEY (member_id) REFERENCES public.household_members(id)
