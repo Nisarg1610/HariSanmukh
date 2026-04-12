@@ -12,28 +12,37 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
       messages: [{
+        role: 'system',
+        content: `You are a multilingual grocery list parser (English, Hindi, Gujarati).
+        
+### Rules:
+1. Identify the item even if it is transliterated (e.g., "Dhana", "Bataka", "Aloo").
+2. Translate the item to a standard English name first.
+3. Categorize the item into ONLY: [Vegetables, Fruits, Dairy, Spices, Grains & Pulses, Snacks, Household].
+4. If an item is ambiguous (like Dhana), default to "Vegetables" if it sounds like a fresh herb or "Spices" if it sounds like a dry seed.
+
+### Examples for Training:
+- Input: "500g Dhana" -> Output: {"name": "Coriander", "category": "Vegetables", "quantity": "500g"}
+- Input: "1kg Bataka" -> Output: {"name": "Potato", "category": "Vegetables", "quantity": "1kg"}
+- Input: "2L Dudh" -> Output: {"name": "Milk", "category": "Dairy", "quantity": "2L"}
+- Input: "Chana Dal" -> Output: {"name": "Split Chickpeas", "category": "Grains & Pulses", "quantity": ""}
+
+Return ONLY a raw JSON array. No markdown, no explanations.`
+      },
+      {
         role: 'user',
-        content: `You are a grocery list parser. Extract all grocery items from the input and return ONLY a valid JSON array with no markdown, no code blocks, no explanation, no extra text whatsoever. Just the raw JSON array starting with [ and ending with ].
-
-Each item must have:
-- "name": the item name in clean English
-- "quantity": the quantity/amount as a string, empty string if not mentioned
-
-Rules:
-- Ignore category headers, emojis, bullet points, dashes
-- Clean up item names (remove extra spaces, special chars)
-- Keep quantities as-is (e.g. "1 bag", "6 nang", "2 judhi", "4 pck")
-- Return ONLY the JSON array, nothing else
-
-Input:
-${text}`,
+        content: `Input: ${text}`
       }],
       max_tokens: 1000,
-      temperature: 0,
+      temperature: 0, // Crucial for consistency
+      response_format: { type: "json_object" } 
     }),
   });
 
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content ?? '';
-  return NextResponse.json({ content });
+  
+  // Note: Some models return a JSON object wrapping the array. 
+  // You may need to parse and return content.items if you change the schema.
+  return NextResponse.json({ content: JSON.parse(content) });
 }
