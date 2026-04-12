@@ -1128,7 +1128,7 @@ const handleLogout = async () => {
                 style={{ backgroundColor: 'var(--accent-bg)' }}
                 aria-hidden="true"
               >
-                <span className="text-lg">🔗</span>
+                <span className="text-lg">🙏</span>
               </div>
             </div>
           </Link>
@@ -1270,7 +1270,7 @@ const handleLogout = async () => {
         <div className="card rounded-[28px] shadow-sm overflow-hidden border border-[var(--separator)] pb-3 mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
           {garbageDateGroups.length === 0 ? (
             <div className="p-10 text-center text-[14px] font-medium" style={{ color: 'var(--text-4)' }}>
-              <span className="text-4xl block mb-3 opacity-60">ðŸ—‘ï¸</span>
+              <span className="text-4xl block mb-3 opacity-60">🗑️</span>
               No upcoming collections this month.
             </div>
           ) : (
