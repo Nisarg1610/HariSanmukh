@@ -1,7 +1,7 @@
 const fs = require('fs');
 const files = ['src/app/page.tsx', 'src/app/layout.tsx', 'src/components/SplashScreen.tsx', 'src/components/AppHeader.tsx'];
 const replacements = {
-  'ðŸ™ ': '🙏',
+  'ðŸ™': '🙏',
   'ðŸ‘‹': '👋',
   'ðŸ”—': '🔗',
   'ðŸ“–': '📖',
