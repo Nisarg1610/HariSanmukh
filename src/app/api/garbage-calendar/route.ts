@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
-const RECYCLE_CALENDAR_ID = '5sfp0o5al962uod59qlfp7sssmtrgehm@import.calendar.google.com';
-const GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.google.com';
+const DEFAULT_RECYCLE_CALENDAR_ID = '5sfp0o5al962uod59qlfp7sssmtrgehm@import.calendar.google.com';
+const DEFAULT_GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.google.com';
 
 async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycle', apiKey: string) {
   const now = new Date();
@@ -26,13 +27,31 @@ async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycl
   }));
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const householdId = searchParams.get('householdId');
     const apiKey = process.env.GOOGLE_CALENDAR_API_KEY!;
 
+    let recycleId = DEFAULT_RECYCLE_CALENDAR_ID;
+    let garbageId = DEFAULT_GARBAGE_CALENDAR_ID;
+
+    if (householdId) {
+       const { data: config } = await supabase
+         .from('house_configs')
+         .select('garbage_calendar_id, recycle_calendar_id')
+         .eq('household_id', householdId)
+         .maybeSingle();
+         
+       if (config) {
+          if (config.garbage_calendar_id) garbageId = config.garbage_calendar_id;
+          if (config.recycle_calendar_id) recycleId = config.recycle_calendar_id;
+       }
+    }
+
     const [garbageEvents, recycleEvents] = await Promise.all([
-      fetchCalendarEvents(GARBAGE_CALENDAR_ID, 'garbage', apiKey),
-      fetchCalendarEvents(RECYCLE_CALENDAR_ID, 'recycle', apiKey),
+      fetchCalendarEvents(garbageId, 'garbage', apiKey),
+      fetchCalendarEvents(recycleId, 'recycle', apiKey),
     ]);
 
     const events = [...garbageEvents, ...recycleEvents].sort(

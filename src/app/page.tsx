@@ -21,15 +21,15 @@ import { LaundryTracker } from '@/components/LaundryTracker';
 import { getTodayLaundrySessions } from '@/utils/laundry';
 import { SwipeToComplete } from '@/components/SwipeToComplete';
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_ATTEMPTS       = 3;
 const LOADING_TIMEOUT_MS = 10_000;
 const SIGNIN_TIMEOUT_MS  = 5_000;
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ────────────────────────────────────────────────────────────────────
 type PromptKind = 'passkey' | 'notification' | null;
 
-// â”€â”€â”€ Platform-aware biometric label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Platform-aware biometric label ──────────────────────────────────────────
 function getBiometricLabel(): string {
   if (typeof navigator === 'undefined') return 'Sign in with passkey';
   const ua = navigator.userAgent;
@@ -65,11 +65,12 @@ export default function Home() {
   const [houseCodeInput, setHouseCodeInput]         = useState('');
   const [houseCodeError, setHouseCodeError]         = useState('');
   const [submittingCode, setSubmittingCode]         = useState(false);
+  const [houseName, setHouseName]                   = useState<string>('Hariprabodham');
 const [dailyContent, setDailyContent] = useState<{
   siksha: any;
   swamini: any;
 } | null>(null);
-  // â”€â”€ Refs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Refs ──────────────────────────────────────────────────────────────────────
   const dbUserRef              = useRef<any>(null);
   const setupInProgressRef     = useRef(false);
   const passkeyRegistrationRef = useRef(false);
@@ -85,7 +86,7 @@ const [dailyContent, setDailyContent] = useState<{
 
 
   
-  // â”€â”€â”€ Prompt queue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Prompt queue ─────────────────────────────────────────────────────────────
   const enqueuePrompt = useCallback((kind: PromptKind) => {
     if (!kind) return;
     queuedPromptsRef.current.push(kind);
@@ -104,7 +105,7 @@ const [dailyContent, setDailyContent] = useState<{
     }, 400);
   }, []);
 
-  // â”€â”€â”€ Notification helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Notification helpers ─────────────────────────────────────────────────────
   const supportsNotifications = useCallback((): boolean =>
     typeof window !== 'undefined' &&
     'Notification' in window &&
@@ -116,7 +117,7 @@ const [dailyContent, setDailyContent] = useState<{
     if (Notification.permission !== 'granted') enqueuePrompt('notification');
   }, [supportsNotifications, enqueuePrompt]);
 
-  // â”€â”€â”€ setupProfile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── setupProfile ─────────────────────────────────────────────────────────────
   const setupProfile = useCallback(async (authUser: any, targetHouseName?: string): Promise<any | null> => {
     if (setupInProgressRef.current) return null;
     setupInProgressRef.current = true;
@@ -257,6 +258,18 @@ const [dailyContent, setDailyContent] = useState<{
     }
 
     try {
+      const { data: household } = await supabase
+        .from('households')
+        .select('name')
+        .eq('id', hId)
+        .maybeSingle();
+      if (household?.name) {
+        setHouseName(household.name);
+        try { localStorage.setItem('hs_my_house_name', household.name); } catch(e) {}
+      }
+    } catch (e) {}
+
+    try {
       const contentRes = await fetch('/api/daily-content');
       nextContent = await contentRes.json();
       setDailyContent(nextContent);
@@ -265,7 +278,7 @@ const [dailyContent, setDailyContent] = useState<{
     }
 
     try {
-      const calRes = await fetch('/api/garbage-calendar');
+      const calRes = await fetch(`/api/garbage-calendar?householdId=${hId}`);
       if (!calRes.ok) throw new Error(`Calendar API ${calRes.status}`);
       const calData = await calRes.json();
 
@@ -297,7 +310,7 @@ const [dailyContent, setDailyContent] = useState<{
     } catch(e) {}
   }, []);
 
-  // â”€â”€â”€ tryRegisterPasskey â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── tryRegisterPasskey ───────────────────────────────────────────────────────
   const tryRegisterPasskey = useCallback(async (userId: string) => {
     if (!browserSupportsWebAuthn()) return;
     if (passkeyRegistrationRef.current) return;
@@ -320,7 +333,7 @@ const [dailyContent, setDailyContent] = useState<{
     }, 2500);
   }, [enqueuePrompt]);
 
-  // â”€â”€â”€ handleSetupPasskey â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── handleSetupPasskey ───────────────────────────────────────────────────────
   const handleSetupPasskey = async () => {
     if (!dbUser || !user) return;
     if (passkeyRegistrationRef.current) return;
@@ -348,7 +361,7 @@ const [dailyContent, setDailyContent] = useState<{
     }
   };
 
-  // â”€â”€â”€ sendWelcomeNotification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── sendWelcomeNotification ──────────────────────────────────────────────────
   // Correct sequence: requestPermission â†’ subscribe â†’ wait for session cookie â†’ POST â†’ mark sent
   const sendWelcomeNotification = useCallback(async (newDbUser: any) => {
     try {
@@ -393,7 +406,7 @@ const [dailyContent, setDailyContent] = useState<{
     }
   }, [supportsNotifications]);
 
-  // â”€â”€â”€ loadUser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── loadUser ────────────────────────────────────────────────────────────────
   const loadUser = useCallback(async (authUser: any) => {
     if (abortedRef.current) return;
     setError(null);
@@ -483,11 +496,16 @@ const [dailyContent, setDailyContent] = useState<{
 
   useEffect(() => { loadUserRef.current = loadUser; }, [loadUser]);
 
-  // â”€â”€â”€ Main auth useEffect â€” stable [] deps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Main auth useEffect â€” stable [] deps ────────────────────────────────────
   useEffect(() => {
     abortedRef.current = false;
 
     const init = async () => {
+      try {
+        const cachedName = localStorage.getItem('hs_my_house_name');
+        if (cachedName) setHouseName(cachedName);
+      } catch (e) {}
+
       const initStart = Date.now();
       const enforceSplash = () => {
         const elapsed = Date.now() - initStart;
@@ -603,7 +621,7 @@ const [dailyContent, setDailyContent] = useState<{
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Handlers ────────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     if (navigatingRef.current) return;
     try {
@@ -734,7 +752,7 @@ const handleLogout = async () => {
     window.location.reload();
   };
 
-  // â”€â”€â”€ Garbage date groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Garbage date groups ──────────────────────────────────────────────────────
   // NEW: no .slice() â€” show the FULL upcoming month worth of dates.
   // Dates are grouped by day (multiple event types on same day merge into one row).
   // garbageDates is already filtered to today-onwards in fetchDashboardData.
@@ -797,18 +815,18 @@ const handleLogout = async () => {
     }
   }, [firstPendingSeva, user]);
 
-  // â”€â”€â”€ Render: loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
-    return <SplashScreen/>;
+    return <SplashScreen heading={houseName} />;
   }
 
-  // â”€â”€â”€ Render: timeout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Render: timeout ──────────────────────────────────────────────────────────
   if (loadingTimedOut) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-6"
         style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-12 h-12 rounded-2xl overflow-hidden opacity-50">
-          <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
+          <img src="/icon-256.png" alt={houseName} className="w-full h-full object-cover" />
         </div>
         <p className="text-base font-semibold text-center" style={{ color: 'var(--text-1)' }}>
           Connection timed out
@@ -825,7 +843,7 @@ const handleLogout = async () => {
     );
   }
 
-  // â”€â”€â”€ Render: login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Render: login ────────────────────────────────────────────────────────────
   if (!user) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4"
@@ -966,7 +984,7 @@ const handleLogout = async () => {
     );
   }
 
-  // â”€â”€â”€ Render: dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Render: dashboard ────────────────────────────────────────────────────────
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
 
@@ -975,9 +993,9 @@ const handleLogout = async () => {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden">
-              <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
+              <img src="/icon-256.png" alt={houseName} className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>Hariprabodham</h1>
+            <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>{houseName}</h1>
           </div>
           <button onClick={() => setProfileOpen(true)}
             aria-label="Open profile menu"
@@ -1033,7 +1051,7 @@ const handleLogout = async () => {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>
-                ðŸ”” Enable Notifications
+                🔔 Enable Notifications
               </p>
               <p className="text-xs" style={{ color: 'var(--text-3)' }}>
                 Get reminders for seva, laundry &amp; garbage
@@ -1078,7 +1096,7 @@ const handleLogout = async () => {
             className="text-base font-semibold mb-3"
             style={{ color: 'rgba(255,255,255,0.8)' }}
           >
-            {displayName} Bhai ðŸ‘‹
+            {displayName} Bhai 👋
           </h2>
 
           {/* WiFi Info */}
@@ -1110,7 +1128,7 @@ const handleLogout = async () => {
                 style={{ backgroundColor: 'var(--accent-bg)' }}
                 aria-hidden="true"
               >
-                <span className="text-lg">ðŸ”—</span>
+                <span className="text-lg">🔗</span>
               </div>
             </div>
           </Link>
@@ -1140,7 +1158,7 @@ const handleLogout = async () => {
                 style={{ backgroundColor: 'var(--yellow-bg)' }}
                 aria-hidden="true"
               >
-                <span className="text-lg">ðŸ“–</span>
+                <span className="text-lg">📖</span>
               </div>
             </div>
           </Link>
@@ -1202,7 +1220,7 @@ const handleLogout = async () => {
           >
             <div>
               <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-inner" style={{ backgroundColor: 'var(--accent-bg)' }}>
-                <span className="text-lg text-[var(--accent)]">ðŸ‘•</span>
+                <span className="text-lg text-[var(--accent)]">👕</span>
               </div>
               <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--accent)' }}>My Laundry</p>
               <p className="text-[20px] font-extrabold leading-tight truncate pb-1" style={{ color: 'var(--text-1)' }}>
