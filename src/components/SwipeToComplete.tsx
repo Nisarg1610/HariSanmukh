@@ -86,7 +86,7 @@ export function SwipeToComplete({ onSwipeComplete }: SwipeButtonProps) {
       {/* Label */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{ opacity: 1 - progress * 1.8 }}>
-        <span className="text-[13px] font-extrabold text-white/85 tracking-wide">Mark done → </span>
+        <span className="text-left text-[13px] font-extrabold text-white/85 tracking-wide">Mark done → </span>
       </div>
 
       {/* Thumb */}
