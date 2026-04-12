@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -22,9 +22,9 @@ import { getTodayLaundrySessions } from '@/utils/laundry';
 import { SwipeToComplete } from '@/components/SwipeToComplete';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const MAX_ATTEMPTS       = 3;
+const MAX_ATTEMPTS = 3;
 const LOADING_TIMEOUT_MS = 10_000;
-const SIGNIN_TIMEOUT_MS  = 5_000;
+const SIGNIN_TIMEOUT_MS = 5_000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PromptKind = 'passkey' | 'notification' | null;
@@ -33,59 +33,59 @@ type PromptKind = 'passkey' | 'notification' | null;
 function getBiometricLabel(): string {
   if (typeof navigator === 'undefined') return 'Sign in with passkey';
   const ua = navigator.userAgent;
-  if (/android/i.test(ua))         return 'Sign in with fingerprint';
-  if (/win/i.test(ua))             return 'Sign in with Windows Hello';
+  if (/android/i.test(ua)) return 'Sign in with fingerprint';
+  if (/win/i.test(ua)) return 'Sign in with Windows Hello';
   if (/mac|iphone|ipad/i.test(ua)) return 'Continue with Face ID';
   return 'Sign in with passkey';
 }
 
 export default function Home() {
-  const [user, setUser]                             = useState<any>(null);
-  const [dbUser, setDbUser]                         = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [dbUser, setDbUser] = useState<any>(null);
   // NEW: display name always comes from household_members, not users table.
   // Admin can edit it there and this always reflects the latest value.
-  const [displayName, setDisplayName]               = useState<string>('');
-  const [loading, setLoading]                       = useState(true);
-  const [loadingTimedOut, setLoadingTimedOut]       = useState(false);
-  const [signingIn, setSigningIn]                   = useState(false);
-  const [error, setError]                           = useState<string | null>(null);
-  const [mySevas, setMySevas]                       = useState<any[]>([]);
-  const [myLaundryDays, setMyLaundryDays]           = useState<string[]>([]);
-  const [allLaundryDays, setAllLaundryDays]         = useState<any[]>([]);
-  const [todaySessions, setTodaySessions]           = useState<any[]>([]);
-  const [memberId, setMemberId]                     = useState<string | null>(null);
-  const [garbageDates, setGarbageDates]             = useState<any[]>([]);
+  const [displayName, setDisplayName] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mySevas, setMySevas] = useState<any[]>([]);
+  const [myLaundryDays, setMyLaundryDays] = useState<string[]>([]);
+  const [allLaundryDays, setAllLaundryDays] = useState<any[]>([]);
+  const [todaySessions, setTodaySessions] = useState<any[]>([]);
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [garbageDates, setGarbageDates] = useState<any[]>([]);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricLoading, setBiometricLoading]     = useState(false);
-  const [biometricAttempts, setBiometricAttempts]   = useState(0);
-  const [activePrompt, setActivePrompt]             = useState<PromptKind>(null);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricAttempts, setBiometricAttempts] = useState(0);
+  const [activePrompt, setActivePrompt] = useState<PromptKind>(null);
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
-  const [profileOpen, setProfileOpen]               = useState(false);
-  const [needsHouseCode, setNeedsHouseCode]         = useState(false);
-  const [houseCodeInput, setHouseCodeInput]         = useState('');
-  const [houseCodeError, setHouseCodeError]         = useState('');
-  const [submittingCode, setSubmittingCode]         = useState(false);
-  const [houseName, setHouseName]                   = useState<string>('Hariprabodham');
-const [dailyContent, setDailyContent] = useState<{
-  siksha: any;
-  swamini: any;
-} | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [needsHouseCode, setNeedsHouseCode] = useState(false);
+  const [houseCodeInput, setHouseCodeInput] = useState('');
+  const [houseCodeError, setHouseCodeError] = useState('');
+  const [submittingCode, setSubmittingCode] = useState(false);
+  const [houseName, setHouseName] = useState<string>('Hariprabodham');
+  const [dailyContent, setDailyContent] = useState<{
+    siksha: any;
+    swamini: any;
+  } | null>(null);
   // ── Refs ──────────────────────────────────────────────────────────────────────
-  const dbUserRef              = useRef<any>(null);
-  const setupInProgressRef     = useRef(false);
+  const dbUserRef = useRef<any>(null);
+  const setupInProgressRef = useRef(false);
   const passkeyRegistrationRef = useRef(false);
-  const signinTimerRef         = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const passkeyPromptTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dismissTimerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortedRef             = useRef(false);
-  const navigatingRef          = useRef(false);
-  const queuedPromptsRef       = useRef<PromptKind[]>([]);
-  const loadUserRef            = useRef<((authUser: any) => Promise<void>) | null>(null);
+  const signinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passkeyPromptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortedRef = useRef(false);
+  const navigatingRef = useRef(false);
+  const queuedPromptsRef = useRef<PromptKind[]>([]);
+  const loadUserRef = useRef<((authUser: any) => Promise<void>) | null>(null);
 
   useEffect(() => { dbUserRef.current = dbUser; }, [dbUser]);
 
 
-  
+
   // ─── Prompt queue ─────────────────────────────────────────────────────────────
   const enqueuePrompt = useCallback((kind: PromptKind) => {
     if (!kind) return;
@@ -110,7 +110,7 @@ const [dailyContent, setDailyContent] = useState<{
     typeof window !== 'undefined' &&
     'Notification' in window &&
     'serviceWorker' in navigator
-  , []);
+    , []);
 
   const maybeEnqueueNotificationPrompt = useCallback(() => {
     if (!supportsNotifications()) return;
@@ -128,7 +128,7 @@ const [dailyContent, setDailyContent] = useState<{
       // Derive first name from Google profile, fall back to sanitised email prefix
       const rawName: string =
         authUser.user_metadata?.full_name?.split(' ')[0] ||
-        authUser.user_metadata?.name?.split(' ')[0]      ||
+        authUser.user_metadata?.name?.split(' ')[0] ||
         authUser.email.split('@')[0];
       const firstName = rawName.split(/[^a-zA-Z]/)[0] || rawName;
 
@@ -178,7 +178,7 @@ const [dailyContent, setDailyContent] = useState<{
         const { data: existingMember } = await supabase
           .from('household_members').select('*')
           .eq('email', authUser.email.toLowerCase()).maybeSingle();
-        
+
         if (existingMember) {
           householdId = existingMember.household_id;
           await supabase.from('household_members')
@@ -265,9 +265,9 @@ const [dailyContent, setDailyContent] = useState<{
         .maybeSingle();
       if (household?.name) {
         setHouseName(household.name);
-        try { localStorage.setItem('hs_my_house_name', household.name); } catch(e) {}
+        try { localStorage.setItem('hs_my_house_name', household.name); } catch (e) { }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const contentRes = await fetch('/api/daily-content');
@@ -307,7 +307,7 @@ const [dailyContent, setDailyContent] = useState<{
         garbageDates: nextGarbage,
         dailyContent: nextContent
       }));
-    } catch(e) {}
+    } catch (e) { }
   }, []);
 
   // ─── tryRegisterPasskey ───────────────────────────────────────────────────────
@@ -504,7 +504,7 @@ const [dailyContent, setDailyContent] = useState<{
       try {
         const cachedName = localStorage.getItem('hs_my_house_name');
         if (cachedName) setHouseName(cachedName);
-      } catch (e) {}
+      } catch (e) { }
 
       const initStart = Date.now();
       const enforceSplash = () => {
@@ -559,10 +559,10 @@ const [dailyContent, setDailyContent] = useState<{
               }
             }
           }
-        } catch(e) {}
+        } catch (e) { }
 
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!fastUnlock) {
           clearTimeout(loadingTimer);
           if (!abortedRef.current && session?.user) {
@@ -616,8 +616,8 @@ const [dailyContent, setDailyContent] = useState<{
       abortedRef.current = true;
       subscription.unsubscribe();
       if (passkeyPromptTimerRef.current) clearTimeout(passkeyPromptTimerRef.current);
-      if (dismissTimerRef.current)       clearTimeout(dismissTimerRef.current);
-      if (signinTimerRef.current)        clearTimeout(signinTimerRef.current);
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+      if (signinTimerRef.current) clearTimeout(signinTimerRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -711,39 +711,39 @@ const [dailyContent, setDailyContent] = useState<{
     }
   };
 
-const handleLogout = async () => {
-  setProfileOpen(false);
+  const handleLogout = async () => {
+    setProfileOpen(false);
 
-  // 1. Sign out from Supabase â€” clears the sb-* session cookies
-  await supabase.auth.signOut();
+    // 1. Sign out from Supabase â€” clears the sb-* session cookies
+    await supabase.auth.signOut();
 
-  // 2. Clear all app-specific localStorage keys
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && (
-      key.startsWith('hs_passkey_') ||
-      key.startsWith('hs_theme') ||
-      key.startsWith('sb-')          // Supabase auth tokens stored by the JS client
-    )) {
-      keysToRemove.push(key);
+    // 2. Clear all app-specific localStorage keys
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('hs_passkey_') ||
+        key.startsWith('hs_theme') ||
+        key.startsWith('sb-')          // Supabase auth tokens stored by the JS client
+      )) {
+        keysToRemove.push(key);
+      }
     }
-  }
-  keysToRemove.forEach(k => localStorage.removeItem(k));
+    keysToRemove.forEach(k => localStorage.removeItem(k));
 
-  // 3. Clear sessionStorage entirely
-  sessionStorage.clear();
+    // 3. Clear sessionStorage entirely
+    sessionStorage.clear();
 
-  // 4. Clear all cookies for this domain
-  document.cookie.split(';').forEach(cookie => {
-    const name = cookie.split('=')[0].trim();
-    // Expire on root path and any sub-paths Supabase might have set
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${location.hostname}`;
-  });
+    // 4. Clear all cookies for this domain
+    document.cookie.split(';').forEach(cookie => {
+      const name = cookie.split('=')[0].trim();
+      // Expire on root path and any sub-paths Supabase might have set
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${location.hostname}`;
+    });
 
-  // State reset is handled by the SIGNED_OUT listener in the auth useEffect
-};
+    // State reset is handled by the SIGNED_OUT listener in the auth useEffect
+  };
 
   const handleRetryInit = () => {
     abortedRef.current = false;
@@ -756,26 +756,26 @@ const handleLogout = async () => {
   // NEW: no .slice() â€” show the FULL upcoming month worth of dates.
   // Dates are grouped by day (multiple event types on same day merge into one row).
   // garbageDates is already filtered to today-onwards in fetchDashboardData.
- const garbageDateGroups = useMemo(() => {
-  const grouped = garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
-    if (!acc[event.date]) acc[event.date] = [];
-    acc[event.date].push(event);
-    return acc;
-  }, {});
-  const todayStr = new Date().toDateString();
-  const todayTs  = new Date().setHours(0, 0, 0, 0);
-  return Object.entries(grouped)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, events]) => {
-      const d  = new Date(date + 'T00:00:00');
-      const ts = d.setHours(0, 0, 0, 0);
-      const status: 'past' | 'today' | 'upcoming' =
-        d.toDateString() === todayStr ? 'today'
-        : ts < todayTs               ? 'past'
-        :                              'upcoming';
-      return { date, events: events as any[], status };
-    });
-}, [garbageDates]);
+  const garbageDateGroups = useMemo(() => {
+    const grouped = garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
+      if (!acc[event.date]) acc[event.date] = [];
+      acc[event.date].push(event);
+      return acc;
+    }, {});
+    const todayStr = new Date().toDateString();
+    const todayTs = new Date().setHours(0, 0, 0, 0);
+    return Object.entries(grouped)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, events]) => {
+        const d = new Date(date + 'T00:00:00');
+        const ts = d.setHours(0, 0, 0, 0);
+        const status: 'past' | 'today' | 'upcoming' =
+          d.toDateString() === todayStr ? 'today'
+            : ts < todayTs ? 'past'
+              : 'upcoming';
+        return { date, events: events as any[], status };
+      });
+  }, [garbageDates]);
 
   const firstPendingSeva = useMemo(
     () => (mySevas ?? []).find((a: any) => !a.is_completed) ?? null,
@@ -806,7 +806,7 @@ const handleLogout = async () => {
             data.mySevas = next;
             localStorage.setItem(cacheKey, JSON.stringify(data));
           }
-        } catch(e) {}
+        } catch (e) { }
 
         return next;
       });
@@ -917,10 +917,10 @@ const handleLogout = async () => {
                 border: '0.5px solid var(--border-color)',
               }}>
               <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
               {signingIn ? 'Redirecting...' : 'Sign in with Google'}
             </button>
@@ -955,10 +955,10 @@ const handleLogout = async () => {
                 <p className="text-sm text-center" style={{ color: 'var(--red)' }}>{houseCodeError}</p>
               </div>
             )}
-            
-            <input 
-              type="text" 
-              value={houseCodeInput} 
+
+            <input
+              type="text"
+              value={houseCodeInput}
               onChange={e => setHouseCodeInput(e.target.value.replace(/[^0-9]/g, '').slice(0, 5))}
               placeholder="12345"
               disabled={submittingCode}
@@ -1174,15 +1174,15 @@ const handleLogout = async () => {
           <Link
             href="/seva"
             className="flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md h-[210px] relative"
-            style={{ 
+            style={{
               backgroundColor: firstPendingSeva?.id ? 'var(--green-bg)' : 'var(--bg-card)',
-              border: firstPendingSeva?.id ? '2px solid rgba(45, 158, 107, 0.4)' : '1px solid var(--separator)' 
+              border: firstPendingSeva?.id ? '2px solid rgba(45, 158, 107, 0.4)' : '1px solid var(--separator)'
             }}
           >
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: firstPendingSeva?.id ? 'white' : 'var(--bg-card-2)' }}>
-                  <span className="text-lg">ðŸ™</span>
+                  <span className="text-lg">🙏</span>
                 </div>
                 {firstPendingSeva?.id && (
                   <span className="flex h-3 w-3 relative">
@@ -1199,8 +1199,8 @@ const handleLogout = async () => {
 
             {firstPendingSeva?.id ? (
               <SwipeToComplete onSwipeComplete={() => {
-  handleMarkSevaDone();
-}} />
+                handleMarkSevaDone();
+              }} />
             ) : (
               <div
                 className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-bold text-center border-2 border-dashed"
@@ -1281,53 +1281,53 @@ const handleLogout = async () => {
                 const futureGroups = garbageDateGroups.filter(g => g.status !== 'past');
                 const visibleGarbageGroups = [...pastGroups.slice(-1), ...futureGroups.slice(0, 2)];
                 return visibleGarbageGroups.map(({ date, events, status }, idx, arr) => {
-                const dateObj  = new Date(date + 'T00:00:00');
-                const isPast   = status === 'past';
-                const isToday  = status === 'today';
-                const isNextUp = status === 'upcoming' && !arr.slice(0, idx).some(g => g.status === 'upcoming');
-                const isImportant = isToday || isNextUp;
+                  const dateObj = new Date(date + 'T00:00:00');
+                  const isPast = status === 'past';
+                  const isToday = status === 'today';
+                  const isNextUp = status === 'upcoming' && !arr.slice(0, idx).some(g => g.status === 'upcoming');
+                  const isImportant = isToday || isNextUp;
 
-                return (
-                  <div key={date} className="relative z-10 flex items-start gap-4 px-5 py-4 transition-colors hover:bg-black/5" style={{ opacity: isPast ? 0.45 : 1 }}>
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 transition-all"
-                      style={{ 
-                        backgroundColor: isToday ? 'var(--green)' : isNextUp ? 'var(--yellow)' : 'var(--bg-card)', 
-                        border: isImportant ? 'none' : '2px solid var(--border-strong)',
-                        transform: isImportant ? 'scale(1.1)' : 'scale(1)'
-                      }}
-                    >
-                      <span className="text-[15px] font-extrabold" style={{ color: isImportant ? 'white' : 'var(--text-1)' }}>
-                        {dateObj.getDate()}
-                      </span>
-                    </div>
+                  return (
+                    <div key={date} className="relative z-10 flex items-start gap-4 px-5 py-4 transition-colors hover:bg-black/5" style={{ opacity: isPast ? 0.45 : 1 }}>
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 transition-all"
+                        style={{
+                          backgroundColor: isToday ? 'var(--green)' : isNextUp ? 'var(--yellow)' : 'var(--bg-card)',
+                          border: isImportant ? 'none' : '2px solid var(--border-strong)',
+                          transform: isImportant ? 'scale(1.1)' : 'scale(1)'
+                        }}
+                      >
+                        <span className="text-[15px] font-extrabold" style={{ color: isImportant ? 'white' : 'var(--text-1)' }}>
+                          {dateObj.getDate()}
+                        </span>
+                      </div>
 
-                    <div className="flex-1 min-w-0 pt-0.5 pb-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="font-extrabold text-[16px] leading-tight" style={{ color: isImportant ? 'var(--text-1)' : 'var(--text-2)' }}>
-                          {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
+                      <div className="flex-1 min-w-0 pt-0.5 pb-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-extrabold text-[16px] leading-tight" style={{ color: isImportant ? 'var(--text-1)' : 'var(--text-2)' }}>
+                            {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
+                          </p>
+                          {isToday && (
+                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm text-white" style={{ backgroundColor: 'var(--green)' }}>Today</span>
+                          )}
+                          {isNextUp && !isToday && (
+                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm" style={{ backgroundColor: 'var(--yellow-bg)', color: 'var(--yellow)' }}>Next UP</span>
+                          )}
+                        </div>
+                        <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
+                          {dateObj.toLocaleDateString('en-US', { month: 'long' })}{dateObj.getFullYear() !== new Date().getFullYear() && ` ${dateObj.getFullYear()}`}
                         </p>
-                        {isToday && (
-                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm text-white" style={{ backgroundColor: 'var(--green)' }}>Today</span>
-                        )}
-                        {isNextUp && !isToday && (
-                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm" style={{ backgroundColor: 'var(--yellow-bg)', color: 'var(--yellow)' }}>Next UP</span>
-                        )}
-                      </div>
-                      <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
-                        {dateObj.toLocaleDateString('en-US', { month: 'long' })}{dateObj.getFullYear() !== new Date().getFullYear() && ` ${dateObj.getFullYear()}`}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {events.map((event: any, i: number) => (
-                          <span key={i} className="text-[12px] font-bold px-2.5 py-1 rounded-[10px] bg-[var(--bg-card-2)] border border-[var(--separator)] truncate max-w-full shadow-sm" style={{ color: isPast ? 'var(--text-4)' : 'var(--text-1)' }}>
-                            {event.title}
-                          </span>
-                        ))}
+                        <div className="flex flex-wrap gap-1.5">
+                          {events.map((event: any, i: number) => (
+                            <span key={i} className="text-[12px] font-bold px-2.5 py-1 rounded-[10px] bg-[var(--bg-card-2)] border border-[var(--separator)] truncate max-w-full shadow-sm" style={{ color: isPast ? 'var(--text-4)' : 'var(--text-1)' }}>
+                              {event.title}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              });
+                  );
+                });
               })()}
             </div>
           )}
@@ -1338,14 +1338,14 @@ const handleLogout = async () => {
       <BottomNav isAdmin={dbUser?.role === 'admin'} />
       {/* NEW: pass displayName to ProfilePanel so it also shows the correct name */}
       <ProfilePanel
-  user={user}
-  dbUser={dbUser}
-  displayName={displayName} 
-  isOpen={profileOpen}
-  onClose={() => setProfileOpen(false)}
-  onLogout={handleLogout}
-  onSwitchAccount={handleLogout}
-/>
+        user={user}
+        dbUser={dbUser}
+        displayName={displayName}
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        onLogout={handleLogout}
+        onSwitchAccount={handleLogout}
+      />
     </main>
   );
 }
