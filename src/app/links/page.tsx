@@ -4,26 +4,44 @@ import { BottomNav } from '@/components/BottomNav';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
 
-const HOUSE_CONFIGS: Record<string, { wifiName: string, wifiPass: string, lock: string }> = {
+// House fallback configurations just in case DB is missing
+const FALLBACK_CONFIGS: Record<string, { wifiName: string, wifiPass: string, lock: string }> = {
   'HariSanmukh': { wifiName: 'Gunatit', wifiPass: 'Dasnadas@369', lock: '••••' },
-  'HariSharan': { wifiName: 'Swaminarayan', wifiPass: 'Hari@123', lock: '••••' },
-  'HariNaman': { wifiName: 'Yogi', wifiPass: 'Bapa@369', lock: '••••' },
+  'HariSharan':  { wifiName: 'Swaminarayan', wifiPass: 'Hari@123', lock: '••••' },
+  'HariNaman':   { wifiName: 'Yogi', wifiPass: 'Bapa@369', lock: '••••' },
   'HariChintan': { wifiName: 'Pramukh', wifiPass: 'Swami@123', lock: '••••' },
   'SuhradVihar': { wifiName: 'Mahant', wifiPass: 'Swami@369', lock: '••••' },
 };
 
 export default function LinksPage() {
-  const [houseConfig, setHouseConfig] = useState(HOUSE_CONFIGS['HariSanmukh']);
+  const [houseConfig, setHouseConfig] = useState(FALLBACK_CONFIGS['HariSanmukh']);
 
   useEffect(() => {
     const fetchHouse = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
       const { data: dbUser } = await supabase.from('users').select('household_id').eq('id', session.user.id).maybeSingle();
+      
       if (dbUser?.household_id) {
-        const { data: house } = await supabase.from('households').select('name').eq('id', dbUser.household_id).maybeSingle();
-        if (house?.name && HOUSE_CONFIGS[house.name]) {
-          setHouseConfig(HOUSE_CONFIGS[house.name]);
+        // Step 1: Check database house_configs table explicitly
+        const { data: remoteConfig } = await supabase
+          .from('house_configs')
+          .select('wifi_name, wifi_pass, house_lock')
+          .eq('household_id', dbUser.household_id)
+          .maybeSingle();
+
+        if (remoteConfig && remoteConfig.wifi_name && remoteConfig.wifi_pass) {
+           setHouseConfig({
+             wifiName: remoteConfig.wifi_name,
+             wifiPass: remoteConfig.wifi_pass,
+             lock: remoteConfig.house_lock || '••••'
+           });
+        } else {
+          // Step 2: Fallback to local dictionary utilizing the house name
+          const { data: house } = await supabase.from('households').select('name').eq('id', dbUser.household_id).maybeSingle();
+          if (house?.name && FALLBACK_CONFIGS[house.name]) {
+            setHouseConfig(FALLBACK_CONFIGS[house.name]);
+          }
         }
       }
     };
