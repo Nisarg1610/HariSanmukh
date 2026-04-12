@@ -1089,7 +1089,7 @@ const handleLogout = async () => {
           style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
         >
           <p className="text-2xl font-bold mb-1 tracking-wide">
-            ðŸ™ Jay Swaminarayan ðŸ™
+            🙏 Jay Swaminarayan 🙏
           </p>
 
           <h2
