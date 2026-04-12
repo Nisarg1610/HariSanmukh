@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 import React from 'react';
 import styles from './SplashScreen.module.css';
 type SplashMode = 'loading' | 'timeout';
 export function SplashScreen({
   mode = 'loading',
-  heading = 'HariSanmukh',
+  heading = 'Hariprabodham',
   subheading = 'Loading your dashboard',
   children,
 }: {

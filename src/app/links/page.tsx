@@ -1,9 +1,34 @@
 'use client';
 
 import { BottomNav } from '@/components/BottomNav';
-import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
+
+const HOUSE_CONFIGS: Record<string, { wifiName: string, wifiPass: string, lock: string }> = {
+  'HariSanmukh': { wifiName: 'Gunatit', wifiPass: 'Dasnadas@369', lock: '••••' },
+  'HariSharan': { wifiName: 'Swaminarayan', wifiPass: 'Hari@123', lock: '••••' },
+  'HariNaman': { wifiName: 'Yogi', wifiPass: 'Bapa@369', lock: '••••' },
+  'HariChintan': { wifiName: 'Pramukh', wifiPass: 'Swami@123', lock: '••••' },
+  'SuhradVihar': { wifiName: 'Mahant', wifiPass: 'Swami@369', lock: '••••' },
+};
 
 export default function LinksPage() {
+  const [houseConfig, setHouseConfig] = useState(HOUSE_CONFIGS['HariSanmukh']);
+
+  useEffect(() => {
+    const fetchHouse = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const { data: dbUser } = await supabase.from('users').select('household_id').eq('id', session.user.id).maybeSingle();
+      if (dbUser?.household_id) {
+        const { data: house } = await supabase.from('households').select('name').eq('id', dbUser.household_id).maybeSingle();
+        if (house?.name && HOUSE_CONFIGS[house.name]) {
+          setHouseConfig(HOUSE_CONFIGS[house.name]);
+        }
+      }
+    };
+    fetchHouse();
+  }, []);
   return (
     <main
       className="min-h-screen pb-28"
@@ -51,8 +76,8 @@ export default function LinksPage() {
               style={{ backgroundColor: 'var(--bg-card-2)', border: '0.5px solid var(--border-color)' }}
             >
               <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-3)' }}>Wi-Fi</p>
-              <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>Gunatit</p>
-              <p className="text-[14px] font-medium mt-1" style={{ color: 'var(--text-2)' }}>Pass: Dasnadas@369</p>
+              <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>{houseConfig.wifiName}</p>
+              <p className="text-[14px] font-medium mt-1" style={{ color: 'var(--text-2)' }}>Pass: {houseConfig.wifiPass}</p>
             </div>
             
             <div
@@ -61,7 +86,7 @@ export default function LinksPage() {
             >
               <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-3)' }}>House Lock</p>
               <p className="font-extrabold text-[16px]" style={{ color: 'var(--text-1)' }}>Front Door</p>
-              <p className="text-[20px] font-mono font-medium mt-1 tracking-widest" style={{ color: 'var(--text-2)' }}>••••</p>
+              <p className="text-[20px] font-mono font-medium mt-1 tracking-widest" style={{ color: 'var(--text-2)' }}>{houseConfig.lock}</p>
             </div>
           </div>
         </div>

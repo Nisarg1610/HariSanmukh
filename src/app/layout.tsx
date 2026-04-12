@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import { OAuthCallback } from '@/components/OAuthCallback';
 import './globals.css';
 import { Figtree } from "next/font/google";
@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
-const APP_NAME = 'HariSanmukh';
+const APP_NAME = 'Hariprabodham';
 const APP_DESCRIPTION = 'Manage ghar-mandir more nicely and effectively.';
 
 export const metadata: Metadata = {
@@ -50,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", figtree.variable)}>
       <head>
-          {/* ✅ Must be first — prevents dark mode flash */}
+          {/* âœ… Must be first â€” prevents dark mode flash */}
         <script dangerouslySetInnerHTML={{
           __html: `
             try {

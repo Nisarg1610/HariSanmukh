@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { ProfilePanel } from '@/components/ProfilePanel';
@@ -35,10 +35,10 @@ export function AppHeader({ user, dbUser, displayName, onLogout }: AppHeaderProp
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden">
-              <img src="/icon-192.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+              <img src="/icon-192.png" alt="Hariprabodham" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>
-              HariSanmukh
+              Hariprabodham
             </h1>
           </div>
 

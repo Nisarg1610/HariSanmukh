@@ -21,15 +21,15 @@ import { LaundryTracker } from '@/components/LaundryTracker';
 import { getTodayLaundrySessions } from '@/utils/laundry';
 import { SwipeToComplete } from '@/components/SwipeToComplete';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MAX_ATTEMPTS       = 3;
 const LOADING_TIMEOUT_MS = 10_000;
 const SIGNIN_TIMEOUT_MS  = 5_000;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type PromptKind = 'passkey' | 'notification' | null;
 
-// ─── Platform-aware biometric label ──────────────────────────────────────────
+// â”€â”€â”€ Platform-aware biometric label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getBiometricLabel(): string {
   if (typeof navigator === 'undefined') return 'Sign in with passkey';
   const ua = navigator.userAgent;
@@ -61,11 +61,15 @@ export default function Home() {
   const [activePrompt, setActivePrompt]             = useState<PromptKind>(null);
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
   const [profileOpen, setProfileOpen]               = useState(false);
+  const [needsHouseCode, setNeedsHouseCode]         = useState(false);
+  const [houseCodeInput, setHouseCodeInput]         = useState('');
+  const [houseCodeError, setHouseCodeError]         = useState('');
+  const [submittingCode, setSubmittingCode]         = useState(false);
 const [dailyContent, setDailyContent] = useState<{
   siksha: any;
   swamini: any;
 } | null>(null);
-  // ── Refs ──────────────────────────────────────────────────────────────────────
+  // â”€â”€ Refs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const dbUserRef              = useRef<any>(null);
   const setupInProgressRef     = useRef(false);
   const passkeyRegistrationRef = useRef(false);
@@ -81,7 +85,7 @@ const [dailyContent, setDailyContent] = useState<{
 
 
   
-  // ─── Prompt queue ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Prompt queue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const enqueuePrompt = useCallback((kind: PromptKind) => {
     if (!kind) return;
     queuedPromptsRef.current.push(kind);
@@ -100,7 +104,7 @@ const [dailyContent, setDailyContent] = useState<{
     }, 400);
   }, []);
 
-  // ─── Notification helpers ─────────────────────────────────────────────────────
+  // â”€â”€â”€ Notification helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const supportsNotifications = useCallback((): boolean =>
     typeof window !== 'undefined' &&
     'Notification' in window &&
@@ -112,20 +116,13 @@ const [dailyContent, setDailyContent] = useState<{
     if (Notification.permission !== 'granted') enqueuePrompt('notification');
   }, [supportsNotifications, enqueuePrompt]);
 
-  // ─── setupProfile ─────────────────────────────────────────────────────────────
-  const setupProfile = useCallback(async (authUser: any): Promise<any | null> => {
+  // â”€â”€â”€ setupProfile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const setupProfile = useCallback(async (authUser: any, targetHouseName?: string): Promise<any | null> => {
     if (setupInProgressRef.current) return null;
     setupInProgressRef.current = true;
 
     try {
       setError(null);
-
-      const { data: anyHousehold } = await supabase
-        .from('households').select('id').limit(1).maybeSingle();
-
-      const { data: existingMember } = await supabase
-        .from('household_members').select('*')
-        .eq('email', authUser.email.toLowerCase()).maybeSingle();
 
       // Derive first name from Google profile, fall back to sanitised email prefix
       const rawName: string =
@@ -137,34 +134,58 @@ const [dailyContent, setDailyContent] = useState<{
       let householdId = '';
       let role: 'admin' | 'user' = 'user';
 
-      if (!anyHousehold) {
-        const { data: household, error: hErr } = await supabase
+      if (targetHouseName) {
+        // Find existing household by name
+        const { data: existingHousehold } = await supabase
           .from('households')
-          .insert({ name: 'Main Household', created_by: authUser.id })
-          .select().single();
-        if (hErr || !household) throw hErr ?? new Error('Household creation failed');
-        householdId = household.id;
-        role = 'admin';
-        await supabase.from('household_members').insert({
-          household_id: householdId, first_name: firstName, last_name: 'Bhai',
-          email: authUser.email.toLowerCase(), status: 'active', linked_user_id: authUser.id,
-        });
-      } else if (existingMember) {
-        householdId = existingMember.household_id;
-        await supabase.from('household_members')
-          .update({ linked_user_id: authUser.id })
-          .eq('email', authUser.email.toLowerCase());
+          .select('id')
+          .eq('name', targetHouseName)
+          .maybeSingle();
+
+        if (existingHousehold) {
+          householdId = existingHousehold.id;
+        } else {
+          // Create the house if it doesn't exist
+          const { data: household, error: hErr } = await supabase
+            .from('households')
+            .insert({ name: targetHouseName, created_by: authUser.id })
+            .select().single();
+          if (hErr || !household) throw hErr ?? new Error('Household creation failed');
+          householdId = household.id;
+          role = 'admin'; // First person to create it becomes admin by default
+        }
+
+        // Now find or create member in this household
+        const { data: existingMember } = await supabase
+          .from('household_members').select('*')
+          .eq('email', authUser.email.toLowerCase())
+          .eq('household_id', householdId)
+          .maybeSingle();
+
+        if (existingMember) {
+          await supabase.from('household_members')
+            .update({ linked_user_id: authUser.id })
+            .eq('id', existingMember.id);
+        } else {
+          await supabase.from('household_members').insert({
+            household_id: householdId, first_name: firstName, last_name: 'Bhai',
+            email: authUser.email.toLowerCase(), status: 'active', linked_user_id: authUser.id,
+          });
+        }
       } else {
-        console.warn('setupProfile: user not pre-invited; assigning to first household found');
-        const { data: household } = await supabase
-          .from('households').select('id').limit(1).maybeSingle();
-        if (!household) throw new Error('No household found');
-        householdId = household.id;
-        const { error: memberErr } = await supabase.from('household_members').insert({
-          household_id: householdId, first_name: firstName, last_name: 'Bhai',
-          email: authUser.email.toLowerCase(), status: 'active', linked_user_id: authUser.id,
-        });
-        if (memberErr) throw memberErr;
+        // Fallback for pre-invited people without a targetHouseName
+        const { data: existingMember } = await supabase
+          .from('household_members').select('*')
+          .eq('email', authUser.email.toLowerCase()).maybeSingle();
+        
+        if (existingMember) {
+          householdId = existingMember.household_id;
+          await supabase.from('household_members')
+            .update({ linked_user_id: authUser.id })
+            .eq('id', existingMember.id);
+        } else {
+          throw new Error('HOUSE_CODE_REQUIRED');
+        }
       }
 
       if (!householdId) throw new Error('householdId was never assigned');
@@ -276,7 +297,7 @@ const [dailyContent, setDailyContent] = useState<{
     } catch(e) {}
   }, []);
 
-  // ─── tryRegisterPasskey ───────────────────────────────────────────────────────
+  // â”€â”€â”€ tryRegisterPasskey â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const tryRegisterPasskey = useCallback(async (userId: string) => {
     if (!browserSupportsWebAuthn()) return;
     if (passkeyRegistrationRef.current) return;
@@ -299,7 +320,7 @@ const [dailyContent, setDailyContent] = useState<{
     }, 2500);
   }, [enqueuePrompt]);
 
-  // ─── handleSetupPasskey ───────────────────────────────────────────────────────
+  // â”€â”€â”€ handleSetupPasskey â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleSetupPasskey = async () => {
     if (!dbUser || !user) return;
     if (passkeyRegistrationRef.current) return;
@@ -327,8 +348,8 @@ const [dailyContent, setDailyContent] = useState<{
     }
   };
 
-  // ─── sendWelcomeNotification ──────────────────────────────────────────────────
-  // Correct sequence: requestPermission → subscribe → wait for session cookie → POST → mark sent
+  // â”€â”€â”€ sendWelcomeNotification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Correct sequence: requestPermission â†’ subscribe â†’ wait for session cookie â†’ POST â†’ mark sent
   const sendWelcomeNotification = useCallback(async (newDbUser: any) => {
     try {
       if (!supportsNotifications()) return;
@@ -352,8 +373,8 @@ const [dailyContent, setDailyContent] = useState<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: newDbUser.id,
-          title: 'Welcome to HariSanmukh!',
-          body: '🙏 Jay Swaminarayan 🙏  You\'re all set. Wait for admin to assign seva and laundry. 😊',
+          title: 'Welcome to Hariprabodham!',
+          body: 'ðŸ™ Jay Swaminarayan ðŸ™  You\'re all set. Wait for admin to assign seva and laundry. ðŸ˜Š',
         }),
       });
 
@@ -372,7 +393,7 @@ const [dailyContent, setDailyContent] = useState<{
     }
   }, [supportsNotifications]);
 
-  // ─── loadUser ────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ loadUser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const loadUser = useCallback(async (authUser: any) => {
     if (abortedRef.current) return;
     setError(null);
@@ -382,7 +403,7 @@ const [dailyContent, setDailyContent] = useState<{
 
     if (abortedRef.current) return;
 
-    if (data) {
+    if (data && data.household_id) {
       setUser(authUser);
       setDbUser(data);
       dbUserRef.current = data;
@@ -394,18 +415,23 @@ const [dailyContent, setDailyContent] = useState<{
       maybeEnqueueNotificationPrompt();
     } else if (!setupInProgressRef.current) {
       setUser(authUser);
-      const newDbUser = await setupProfile(authUser);
 
-      if (abortedRef.current) return;
+      // Check if user is already a pre-invited member somewhere
+      const { data: existingMember } = await supabase
+        .from('household_members').select('*')
+        .eq('email', authUser.email.toLowerCase()).maybeSingle();
 
-      if (newDbUser) {
-        await fetchDashboardData(newDbUser.household_id, authUser.email!);
-
-        if (!newDbUser.welcome_sent) {
-          await sendWelcomeNotification(newDbUser);
+      if (existingMember) {
+        const newDbUser = await setupProfile(authUser);
+        if (abortedRef.current) return;
+        if (newDbUser) {
+          await fetchDashboardData(newDbUser.household_id, authUser.email!);
+          if (!newDbUser.welcome_sent) await sendWelcomeNotification(newDbUser);
+          await tryRegisterPasskey(newDbUser.id);
         }
-
-        await tryRegisterPasskey(newDbUser.id);
+      } else {
+        // User needs a house code
+        setNeedsHouseCode(true);
       }
     }
   }, [
@@ -413,9 +439,51 @@ const [dailyContent, setDailyContent] = useState<{
     sendWelcomeNotification, maybeEnqueueNotificationPrompt,
   ]);
 
+  const handleHouseCodeSubmit = async () => {
+    if (!houseCodeInput || houseCodeInput.length !== 5) {
+      setHouseCodeError('Please enter a 5-digit code.');
+      return;
+    }
+    setSubmittingCode(true);
+    setHouseCodeError('');
+
+    const HOUSE_CODES: Record<string, string> = {
+      '11111': 'HariSanmukh',
+      '22222': 'HariSharan',
+      '33333': 'HariNaman',
+      '44444': 'HariChintan',
+      '55555': 'SuhradVihar',
+    };
+
+    const houseName = HOUSE_CODES[houseCodeInput];
+    if (!houseName) {
+      setHouseCodeError('Invalid house code. Please try again.');
+      setSubmittingCode(false);
+      return;
+    }
+
+    try {
+      const newDbUser = await setupProfile(user, houseName);
+      if (newDbUser) {
+        setNeedsHouseCode(false);
+        await fetchDashboardData(newDbUser.household_id, user.email!);
+        if (!newDbUser.welcome_sent) {
+          await sendWelcomeNotification(newDbUser);
+        }
+        await tryRegisterPasskey(newDbUser.id);
+      } else {
+        setHouseCodeError('Failed to join house. Please try again.');
+      }
+    } catch (e: any) {
+      setHouseCodeError(e.message ?? 'An error occurred.');
+    } finally {
+      setSubmittingCode(false);
+    }
+  };
+
   useEffect(() => { loadUserRef.current = loadUser; }, [loadUser]);
 
-  // ─── Main auth useEffect — stable [] deps ────────────────────────────────────
+  // â”€â”€â”€ Main auth useEffect â€” stable [] deps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     abortedRef.current = false;
 
@@ -535,7 +603,7 @@ const [dailyContent, setDailyContent] = useState<{
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleGoogleLogin = async () => {
     if (navigatingRef.current) return;
     try {
@@ -628,7 +696,7 @@ const [dailyContent, setDailyContent] = useState<{
 const handleLogout = async () => {
   setProfileOpen(false);
 
-  // 1. Sign out from Supabase — clears the sb-* session cookies
+  // 1. Sign out from Supabase â€” clears the sb-* session cookies
   await supabase.auth.signOut();
 
   // 2. Clear all app-specific localStorage keys
@@ -666,8 +734,8 @@ const handleLogout = async () => {
     window.location.reload();
   };
 
-  // ─── Garbage date groups ──────────────────────────────────────────────────────
-  // NEW: no .slice() — show the FULL upcoming month worth of dates.
+  // â”€â”€â”€ Garbage date groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // NEW: no .slice() â€” show the FULL upcoming month worth of dates.
   // Dates are grouped by day (multiple event types on same day merge into one row).
   // garbageDates is already filtered to today-onwards in fetchDashboardData.
  const garbageDateGroups = useMemo(() => {
@@ -729,18 +797,18 @@ const handleLogout = async () => {
     }
   }, [firstPendingSeva, user]);
 
-  // ─── Render: loading ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Render: loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (loading) {
     return <SplashScreen/>;
   }
 
-  // ─── Render: timeout ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Render: timeout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (loadingTimedOut) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-6"
         style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-12 h-12 rounded-2xl overflow-hidden opacity-50">
-          <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+          <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
         </div>
         <p className="text-base font-semibold text-center" style={{ color: 'var(--text-1)' }}>
           Connection timed out
@@ -757,7 +825,7 @@ const handleLogout = async () => {
     );
   }
 
-  // ─── Render: login ────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Render: login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!user) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4"
@@ -769,10 +837,10 @@ const handleLogout = async () => {
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
             <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-4">
-              <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+              <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
-              HariSanmukh
+              Hariprabodham
             </h1>
             <p className="text-sm" style={{ color: 'var(--text-3)' }}>
               Manage ghar-mandir nicely and effectively
@@ -844,7 +912,61 @@ const handleLogout = async () => {
     );
   }
 
-  // ─── Render: dashboard ────────────────────────────────────────────────────────
+  if (needsHouseCode) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4"
+        style={{
+          backgroundColor: 'var(--bg)',
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}>
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
+              Join a House
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--text-3)' }}>
+              Enter the 5-digit code for your house
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {houseCodeError && (
+              <div className="p-3 rounded-xl"
+                style={{ background: 'var(--red-bg)', border: '0.5px solid var(--red)' }}>
+                <p className="text-sm text-center" style={{ color: 'var(--red)' }}>{houseCodeError}</p>
+              </div>
+            )}
+            
+            <input 
+              type="text" 
+              value={houseCodeInput} 
+              onChange={e => setHouseCodeInput(e.target.value.replace(/[^0-9]/g, '').slice(0, 5))}
+              placeholder="12345"
+              disabled={submittingCode}
+              pattern="\d*"
+              inputMode="numeric"
+              className="w-full text-center text-3xl tracking-[1em] py-4 rounded-2xl outline-none transition-all focus:ring-2"
+              style={{ background: 'var(--bg-card-2)', color: 'var(--text-1)', border: '1px solid var(--border-color)', letterSpacing: '0.5em' }}
+            />
+
+            <button onClick={handleHouseCodeSubmit} disabled={submittingCode || houseCodeInput.length !== 5}
+              className="w-full font-semibold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+              style={{ background: 'var(--accent)', color: 'white' }}>
+              {submittingCode ? 'Joining...' : 'Join House'}
+            </button>
+            <button onClick={() => { supabase.auth.signOut(); setNeedsHouseCode(false); setUser(null); }}
+              className="w-full py-3 text-sm flex items-center justify-center transition-all"
+              style={{ color: 'var(--text-3)' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // â”€â”€â”€ Render: dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
 
@@ -853,9 +975,9 @@ const handleLogout = async () => {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden">
-              <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+              <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>HariSanmukh</h1>
+            <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>Hariprabodham</h1>
           </div>
           <button onClick={() => setProfileOpen(true)}
             aria-label="Open profile menu"
@@ -911,7 +1033,7 @@ const handleLogout = async () => {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--accent-text)' }}>
-                🔔 Enable Notifications
+                ðŸ”” Enable Notifications
               </p>
               <p className="text-xs" style={{ color: 'var(--text-3)' }}>
                 Get reminders for seva, laundry &amp; garbage
@@ -943,20 +1065,20 @@ const handleLogout = async () => {
 
       <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
-        {/* Greeting — NEW: uses displayName from household_members */}
+        {/* Greeting â€” NEW: uses displayName from household_members */}
         <div
           className="rounded-3xl p-6 text-white"
           style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
         >
           <p className="text-2xl font-bold mb-1 tracking-wide">
-            🙏 Jay Swaminarayan 🙏
+            ðŸ™ Jay Swaminarayan ðŸ™
           </p>
 
           <h2
             className="text-base font-semibold mb-3"
             style={{ color: 'rgba(255,255,255,0.8)' }}
           >
-            {displayName} Bhai 👋
+            {displayName} Bhai ðŸ‘‹
           </h2>
 
           {/* WiFi Info */}
@@ -988,7 +1110,7 @@ const handleLogout = async () => {
                 style={{ backgroundColor: 'var(--accent-bg)' }}
                 aria-hidden="true"
               >
-                <span className="text-lg">🔗</span>
+                <span className="text-lg">ðŸ”—</span>
               </div>
             </div>
           </Link>
@@ -1018,7 +1140,7 @@ const handleLogout = async () => {
                 style={{ backgroundColor: 'var(--yellow-bg)' }}
                 aria-hidden="true"
               >
-                <span className="text-lg">📖</span>
+                <span className="text-lg">ðŸ“–</span>
               </div>
             </div>
           </Link>
@@ -1042,7 +1164,7 @@ const handleLogout = async () => {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: firstPendingSeva?.id ? 'white' : 'var(--bg-card-2)' }}>
-                  <span className="text-lg">🙏</span>
+                  <span className="text-lg">ðŸ™</span>
                 </div>
                 {firstPendingSeva?.id && (
                   <span className="flex h-3 w-3 relative">
@@ -1080,7 +1202,7 @@ const handleLogout = async () => {
           >
             <div>
               <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-inner" style={{ backgroundColor: 'var(--accent-bg)' }}>
-                <span className="text-lg text-[var(--accent)]">👕</span>
+                <span className="text-lg text-[var(--accent)]">ðŸ‘•</span>
               </div>
               <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--accent)' }}>My Laundry</p>
               <p className="text-[20px] font-extrabold leading-tight truncate pb-1" style={{ color: 'var(--text-1)' }}>
@@ -1130,7 +1252,7 @@ const handleLogout = async () => {
         <div className="card rounded-[28px] shadow-sm overflow-hidden border border-[var(--separator)] pb-3 mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
           {garbageDateGroups.length === 0 ? (
             <div className="p-10 text-center text-[14px] font-medium" style={{ color: 'var(--text-4)' }}>
-              <span className="text-4xl block mb-3 opacity-60">🗑️</span>
+              <span className="text-4xl block mb-3 opacity-60">ðŸ—‘ï¸</span>
               No upcoming collections this month.
             </div>
           ) : (
