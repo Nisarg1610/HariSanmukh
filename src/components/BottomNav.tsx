@@ -12,24 +12,21 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/', label: 'Dashboard', icon: Home },
+    { href: '/', label: 'Home', icon: Home },
     { href: '/grocery', label: 'Grocery', icon: ShoppingCart },
-    { href: '/calendar', label: 'Calendar', icon: Calendar},
+    { href: '/calendar', label: 'Calendar', icon: Calendar },
     ...(isAdmin ? [{ href: '/members', label: 'Members', icon: Users }] : []),
   ];
 
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4"
-    >
+    <div className="fixed bottom-0 left-0 right-0 z-40">
       <nav
-        className="flex items-center gap-1 px-3 py-2 rounded-full"
+        className="flex items-end justify-around px-2"
         style={{
           background: 'var(--bg-card)',
-          backdropFilter: 'blur(30px)',
-          WebkitBackdropFilter: 'blur(30px)',
-          border: '0.5px solid var(--border-strong)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          borderTop: '0.5px solid var(--border-color)',
+          paddingTop: '10px',
+          paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
         }}
       >
         {navItems.map((item) => {
@@ -40,27 +37,34 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center justify-center gap-1 transition-all duration-200"
-              style={{
-                padding: '8px 14px',
-                borderRadius: '999px',
-                minWidth: '60px',
-                backgroundColor: isActive ? 'var(--accent-bg)' : 'transparent',
-                border: isActive
-                  ? '0.5px solid var(--border-color)'
-                  : '0.5px solid transparent',
-              }}
+              className="flex flex-col items-center gap-1.5 relative"
+              style={{ minWidth: '56px', paddingTop: '6px' }}
             >
+              {isActive && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '32px',
+                    height: '3px',
+                    borderRadius: '2px',
+                    background: 'var(--text-1)',
+                  }}
+                />
+              )}
               <Icon
-                size={22}
-                strokeWidth={isActive ? 2.5 : 1.8}
-                style={{ color: isActive ? 'var(--accent)' : 'var(--text-3)' }}
+                size={24}
+                strokeWidth={isActive ? 0 : 1.8}
+                fill={isActive ? 'var(--text-1)' : 'none'}
+                stroke={isActive ? 'none' : 'var(--text-3)'}
               />
               <span
                 style={{
-                  fontSize: '10px',
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? 'var(--accent)' : 'var(--text-3)',
+                  fontSize: '11px',
+                  fontWeight: isActive ? 500 : 400,
+                  color: isActive ? 'var(--text-1)' : 'var(--text-3)',
                   letterSpacing: '0.01em',
                 }}
               >
