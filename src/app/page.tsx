@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -924,6 +924,12 @@ export default function Home() {
               </svg>
               {signingIn ? 'Redirecting...' : 'Sign in with Google'}
             </button>
+
+            <div className="pt-6 text-center">
+              <Link href="/privacy-policy" className="text-xs hover:underline" style={{ color: 'var(--text-3)' }}>
+                Privacy Policy
+              </Link>
+            </div>
           </div>
         </div>
       </main>
