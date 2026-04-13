@@ -1,4 +1,4 @@
-﻿import type { Metadata, Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { OAuthCallback } from '@/components/OAuthCallback';
 import './globals.css';
 import { Figtree } from "next/font/google";
@@ -50,7 +50,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", figtree.variable)}>
       <head>
-          {/* âœ… Must be first â€” prevents dark mode flash */}
+        <meta name="google-site-verification" content="oGaOfaHOyMud2bG1c2B8ak1Dem1swcs-G0kXGGT5Q_E" />
+          {/* ✅ Must be first — prevents dark mode flash */}
         <script dangerouslySetInnerHTML={{
           __html: `
             try {
