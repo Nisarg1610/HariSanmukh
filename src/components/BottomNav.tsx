@@ -53,9 +53,8 @@ export function BottomNav({ isAdmin }: BottomNavProps) {
               )}
               <Icon
                 size={24}
-                strokeWidth={isActive ? 0 : 1.8}
-                fill={isActive ? 'var(--accent)' : 'none'}
-                stroke={isActive ? 'none' : 'var(--text-3)'}
+                strokeWidth={isActive ? 2.2 : 1.8}
+                stroke={isActive ? 'var(--accent)' : 'var(--text-3)'}
               />
             </Link>
           );
