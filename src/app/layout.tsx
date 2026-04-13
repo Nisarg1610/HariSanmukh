@@ -1,12 +1,12 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import { OAuthCallback } from '@/components/OAuthCallback';
 import './globals.css';
 import { Figtree } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
+const figtree = Figtree({ subsets: ['latin'], variable: '--font-sans' });
 
-const APP_NAME = 'Hariprabodham';
+const APP_NAME = 'HariPrabodham';
 const APP_DESCRIPTION = 'Manage ghar-mandir more nicely and effectively.';
 
 export const metadata: Metadata = {
@@ -51,7 +51,7 @@ export default function RootLayout({
     <html lang="en" className={cn("font-sans", figtree.variable)}>
       <head>
         <meta name="google-site-verification" content="oGaOfaHOyMud2bG1c2B8ak1Dem1swcs-G0kXGGT5Q_E" />
-          {/* ✅ Must be first — prevents dark mode flash */}
+        {/* ✅ Must be first — prevents dark mode flash */}
         <script dangerouslySetInnerHTML={{
           __html: `
             try {
@@ -65,7 +65,7 @@ export default function RootLayout({
               }
             } catch(e) {}
           `
-        }}/>
+        }} />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -76,13 +76,13 @@ export default function RootLayout({
         <link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <script dangerouslySetInnerHTML={{
-  __html: `
+          __html: `
     const theme = localStorage.getItem('hs_theme');
     if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     }
   `
-}} />
+        }} />
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

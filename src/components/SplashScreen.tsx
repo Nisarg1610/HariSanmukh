@@ -4,7 +4,7 @@ import styles from './SplashScreen.module.css';
 type SplashMode = 'loading' | 'timeout';
 export function SplashScreen({
   mode = 'loading',
-  heading = 'Hariprabodham',
+  heading = 'HariPrabodham',
   subheading = 'Loading your dashboard',
   children,
 }: {
