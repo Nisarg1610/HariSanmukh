@@ -84,7 +84,6 @@ export function SwipeToComplete({ onSwipeComplete }: SwipeButtonProps) {
         style={{ width: pos + THUMB_SIZE + PADDING, backgroundColor: 'rgba(255,255,255,0.12)' }} />
 
       {/* Label */}
-      {/* Label */}
       <div
         className="absolute inset-0 flex items-center justify-end pr-5 pointer-events-none"
         style={{ opacity: 1 - progress * 1.8 }}

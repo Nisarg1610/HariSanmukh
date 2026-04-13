@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -858,7 +858,7 @@ export default function Home() {
               <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
-              Hariprabodham
+              HariPrabodham
             </h1>
             <p className="text-sm" style={{ color: 'var(--text-3)' }}>
               Manage ghar-mandir nicely and effectively
