@@ -1428,9 +1428,9 @@ export default function Home() {
           GARBAGE TIMELINE (unchanged content, updated styling)
       ══════════════════════════════════════════════════════════════ */}
         <section className="pb-5">
-          <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center justify-between mb-5 px-1">
             <p className="text-lg font-extrabold" style={{ color: 'var(--text-1)' }}>
-              Garbage Timeline 🗑️
+              Collection Roadmap 🗺️
             </p>
             <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
               See all
@@ -1442,33 +1442,69 @@ export default function Home() {
               No upcoming collections this month.
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {garbageDateGroups
-                .filter(g => g.status !== 'past')
-                .slice(0, 3)
-                .map(({ date, events, status }) => {
-                  const dateObj = new Date(date + 'T00:00:00');
-                  return (
-                    <div
-                      key={date}
-                      className="rounded-2xl p-4"
-                      style={{
-                        backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card)',
-                        border: `1px solid ${status === 'today' ? 'var(--green)' : 'var(--separator)'}`,
-                      }}
-                    >
-                      <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
-                        {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
-                      </p>
-                      <p className="text-base font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
-                        {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </p>
-                      <p className="text-xs font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
-                        {events.map((e) => e.title).join(', ')}
-                      </p>
-                    </div>
-                  );
-                })}
+            <div className="relative ml-2">
+              {/* The Vertical Road Line */}
+              <div
+                className="absolute left-4 top-0 bottom-0 w-0.5"
+                style={{ backgroundColor: 'var(--separator)', opacity: 0.5 }}
+              />
+
+              <div className="flex flex-col gap-6">
+                {garbageDateGroups
+                  .filter(g => g.status !== 'past')
+                  .slice(0, 3)
+                  .map(({ date, events, status }, index) => {
+                    const dateObj = new Date(date + 'T00:00:00');
+                    const isToday = status === 'today';
+
+                    return (
+                      <div key={date} className="relative flex items-start pl-10">
+                        {/* The "Stop" on the map */}
+                        <div
+                          className="absolute left-2.5 top-1.5 w-3.5 h-3.5 rounded-full border-2 z-10"
+                          style={{
+                            backgroundColor: isToday ? 'var(--green)' : 'var(--bg-card)',
+                            borderColor: isToday ? 'var(--green)' : 'var(--text-4)'
+                          }}
+                        />
+
+                        {/* Content Card */}
+                        <div
+                          className="flex-1 rounded-2xl p-4 shadow-sm"
+                          style={{
+                            backgroundColor: isToday ? 'var(--green-bg)' : 'var(--bg-card)',
+                            border: `1px solid ${isToday ? 'var(--green)' : 'var(--separator)'}`,
+                          }}
+                        >
+                          <div className="flex justify-between items-baseline">
+                            <p className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
+                              {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                            <p className="text-xs font-bold" style={{ color: 'var(--text-3)' }}>
+                              {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                            </p>
+                          </div>
+
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {events.map((e, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
+                                style={{
+                                  backgroundColor: 'rgba(0,0,0,0.05)',
+                                  color: 'var(--text-2)',
+                                  border: '1px solid var(--separator)'
+                                }}
+                              >
+                                {e.title}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           )}
         </section>
