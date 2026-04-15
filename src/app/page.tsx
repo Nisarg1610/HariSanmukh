@@ -1167,7 +1167,7 @@ export default function Home() {
                   <p className="text-sm font-extrabold" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-2)' }}>
                     🙏 My Seva
                   </p>
-                  <p className="text-base font-black mt-1 line-clamp-2" style={{ color: 'var(--text-1)' }}>
+                  <p className="text-base font-black mt-2 line-clamp-2" style={{ color: 'var(--text-1)' }}>
                     {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No active seva'}
                   </p>
                 </div>
@@ -1196,7 +1196,7 @@ export default function Home() {
                   <p className="text-sm font-extrabold" style={{ color: 'var(--accent)' }}>
                     👕 My Laundry
                   </p>
-                  <p className="text-base font-black mt-1 truncate" style={{ color: 'var(--text-1)' }}>
+                  <p className="text-base font-black mt-2 truncate" style={{ color: 'var(--text-1)' }}>
                     {myLaundryDays?.[0] || 'No schedule'}
                   </p>
                 </div>
