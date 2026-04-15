@@ -1087,188 +1087,123 @@ export default function Home() {
       )}
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
-
-        <div
-          className="rounded-3xl p-5 text-white shadow-sm"
-          style={{ background: 'linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%)' }}
-        >
-          <p className="text-xl font-extrabold mb-1">
+        <section className="px-1">
+          <p className="text-2xl font-black tracking-tight" style={{ color: 'var(--text-1)' }}>
             🙏 Jay Swaminarayan 🙏
           </p>
-          <p className="text-sm font-semibold text-white/85">{displayName} Bhai 👋</p>
-        </div>
+          <p className="text-sm font-semibold mt-1" style={{ color: 'var(--text-3)' }}>
+            {displayName} Bhai
+          </p>
+        </section>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            href="/links"
-            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 116 }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-widest"
-                  style={{ color: 'var(--text-3)' }}>
-                  General Info
-                </p>
-                <p className="text-base font-extrabold mt-1.5" style={{ color: 'var(--text-1)' }}>
-                  Aarti &amp; Pooja
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  Quick access
-                </p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--accent-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">🙏</span>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/swadhyay"
-            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 116 }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-widest"
-                  style={{ color: 'var(--text-3)' }}>
-                  Swadhyay
-                </p>
-                <p className="text-base font-extrabold mt-1.5 truncate" style={{ color: 'var(--text-1)' }}>
-                  {dailyContent?.siksha?.shloka_number
-                    ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
-                    : 'Swadhyay of the Day'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  Tap to read
-                </p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--yellow-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">📖</span>
-              </div>
-            </div>
-          </Link>
-        </div>
-        <div className="flex items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
-            <h3 className="text-[14px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>
-              This week you have
-            </h3>
+        <section className="-mx-1 px-1 overflow-x-auto">
+          <div className="flex gap-2 min-w-max">
+            <Link
+              href="/links"
+              className="px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border"
+              style={{ color: 'var(--text-1)', borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}
+            >
+              🙏 General Info
+            </Link>
+            <Link
+              href="/swadhyay"
+              className="px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border"
+              style={{ color: 'var(--text-1)', borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}
+            >
+              📖 {dailyContent?.siksha?.shloka_number ? `Sikshapatri #${dailyContent.siksha.shloka_number}` : 'Swadhyay'}
+            </Link>
+            <Link
+              href="/calendar"
+              className="px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border"
+              style={{ color: 'var(--accent)', borderColor: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }}
+            >
+              📅 Full Calendar
+            </Link>
           </div>
-          <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
-            Full Calendar
-          </Link>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <Link
-            href="/seva"
-            className="md:col-span-2 flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md min-h-[210px] relative"
-            style={{
-              backgroundColor: firstPendingSeva?.id ? 'var(--green-bg)' : 'var(--bg-card)',
-              border: firstPendingSeva?.id ? '2px solid rgba(45, 158, 107, 0.4)' : '1px solid var(--separator)'
-            }}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: firstPendingSeva?.id ? 'white' : 'var(--bg-card-2)' }}>
-                    <span className="text-lg">🙏</span>
-                  </div>
-                  <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-3)' }}>
-                    My Seva
+        <section className="px-1">
+          <h3 className="text-[13px] uppercase tracking-[0.15em] font-extrabold" style={{ color: 'var(--text-3)' }}>
+            This week you have
+          </h3>
+        </section>
+
+        <section className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}>
+          <div className="px-4 py-4 border-b" style={{ borderColor: 'var(--separator)' }}>
+            <Link href="/seva" className="block">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-2)' }}>
+                    🙏 My Seva
+                  </p>
+                  <p className="text-base font-black mt-1 line-clamp-2" style={{ color: 'var(--text-1)' }}>
+                    {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No active seva'}
                   </p>
                 </div>
-                {firstPendingSeva?.id && (
-                  <span className="flex h-3 w-3 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                  </span>
-                )}
+                <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: firstPendingSeva?.id ? 'var(--green-bg)' : 'var(--bg-card-2)', color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-3)' }}>
+                  {firstPendingSeva?.id ? 'Pending' : 'Done'}
+                </span>
               </div>
-              <p className="text-[16px] font-extrabold leading-snug line-clamp-2" style={{ color: firstPendingSeva?.id ? '#1A6340' : 'var(--text-1)' }}>
-                {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No active seva'}
-              </p>
-            </div>
-
+            </Link>
             {firstPendingSeva?.id ? (
-              <SwipeToComplete onSwipeComplete={() => {
-                handleMarkSevaDone();
-              }} />
+              <div className="mt-3">
+                <SwipeToComplete onSwipeComplete={() => {
+                  handleMarkSevaDone();
+                }} />
+              </div>
             ) : (
-              <div
-                className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-bold text-center border-2 border-dashed"
-                style={{ backgroundColor: 'transparent', color: 'var(--text-4)', borderColor: 'var(--separator)' }}
-              >
-                Caught up!
-              </div>
-            )}
-          </Link>
-
-          <Link
-            href="/laundry"
-            className="md:col-span-2 flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md min-h-[210px]"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: 'var(--accent-bg)' }}>
-                  <span className="text-lg text-[var(--accent)]">👕</span>
-                </div>
-                <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
-                  My Laundry
-                </p>
-              </div>
-              <p className="text-[20px] font-extrabold leading-tight truncate pb-1" style={{ color: 'var(--text-1)' }}>
-                {myLaundryDays?.[0] || 'No schedule'}
+              <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-4)' }}>
+                Caught up! 🎉
               </p>
-            </div>
+            )}
+          </div>
 
-            <div className="mt-auto">
-              {dbUser?.household_id && memberId && (
-                <LaundryTracker
-                  householdId={dbUser.household_id}
-                  memberId={memberId}
-                  allLaundryDays={allLaundryDays}
-                  initialSessions={todaySessions}
-                />
-              )}
-              {!(new Date().getHours() >= 18 && allLaundryDays.filter(a => a.day_of_week === new Date().toLocaleDateString('en-US', { weekday: 'long' })).some(a => a.member_id === memberId)) && (
-                (myLaundryDays?.length ?? 0) > 1 ? (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {myLaundryDays.slice(1, 3).map((day) => (
-                      <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold line-clamp-1 shadow-sm leading-none"
-                        style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
-                        {day.substring(0, 3).toUpperCase()}
-                      </span>
-                    ))}
-                    {myLaundryDays.length > 3 && (
-                      <span className="px-2 py-1.5 rounded-[10px] text-[11px] font-bold leading-none"
-                        style={{ backgroundColor: 'rgba(0,0,0,0.03)', color: 'var(--text-3)' }}>
-                        +{myLaundryDays.length - 3}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-[13px] font-medium mt-2" style={{ color: 'var(--text-3)' }}>Wash on your assigned day.</p>
-                )
-              )}
-            </div>
-          </Link>
-        </div>
+          <div className="px-4 py-4">
+            <Link href="/laundry" className="block">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold" style={{ color: 'var(--accent)' }}>
+                    👕 My Laundry
+                  </p>
+                  <p className="text-base font-black mt-1 truncate" style={{ color: 'var(--text-1)' }}>
+                    {myLaundryDays?.[0] || 'No schedule'}
+                  </p>
+                </div>
+                <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
+                  Today
+                </span>
+              </div>
+            </Link>
 
-        <div className="card rounded-[24px] border border-[var(--separator)] p-4 mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[12px] uppercase font-bold tracking-widest" style={{ color: 'var(--text-3)' }}>
+            {dbUser?.household_id && memberId && (
+              <LaundryTracker
+                householdId={dbUser.household_id}
+                memberId={memberId}
+                allLaundryDays={allLaundryDays}
+                initialSessions={todaySessions}
+              />
+            )}
+
+            {!(new Date().getHours() >= 18 && allLaundryDays.filter(a => a.day_of_week === new Date().toLocaleDateString('en-US', { weekday: 'long' })).some(a => a.member_id === memberId)) && (
+              (myLaundryDays?.length ?? 0) > 1 ? (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {myLaundryDays.slice(1, 4).map((day) => (
+                    <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold leading-none"
+                      style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
+                      {day.substring(0, 3).toUpperCase()}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[13px] font-medium mt-2" style={{ color: 'var(--text-3)' }}>Wash on your assigned day.</p>
+              )
+            )}
+          </div>
+        </section>
+
+        <section className="pb-5">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <p className="text-[13px] uppercase tracking-[0.15em] font-extrabold" style={{ color: 'var(--text-3)' }}>
               Garbage Timeline
             </p>
             <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
@@ -1276,41 +1211,42 @@ export default function Home() {
             </Link>
           </div>
           {garbageDateGroups.length === 0 ? (
-            <p className="text-[13px] font-medium py-2" style={{ color: 'var(--text-4)' }}>
+            <p className="text-[13px] font-medium px-1" style={{ color: 'var(--text-4)' }}>
               No upcoming collections this month.
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {garbageDateGroups
-                .filter(g => g.status !== 'past')
-                .slice(0, 3)
-                .map(({ date, events, status }) => {
-                  const dateObj = new Date(date + 'T00:00:00');
-                  return (
-                    <div
-                      key={date}
-                      className="rounded-xl p-3 border"
-                      style={{
-                        borderColor: status === 'today' ? 'var(--green)' : 'var(--separator)',
-                        backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card-2)',
-                      }}
-                    >
-                      <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
-                        {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
-                      </p>
-                      <p className="text-[15px] font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
-                        {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </p>
-                      <p className="text-[11px] font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
-                        {events.map((e: any) => e.title).join(', ')}
-                      </p>
-                    </div>
-                  );
-                })}
+            <div className="-mx-1 px-1 overflow-x-auto">
+              <div className="flex gap-2 min-w-max">
+                {garbageDateGroups
+                  .filter(g => g.status !== 'past')
+                  .slice(0, 6)
+                  .map(({ date, events, status }) => {
+                    const dateObj = new Date(date + 'T00:00:00');
+                    return (
+                      <div
+                        key={date}
+                        className="w-[150px] rounded-2xl p-3 border"
+                        style={{
+                          borderColor: status === 'today' ? 'var(--green)' : 'var(--separator)',
+                          backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card)',
+                        }}
+                      >
+                        <p className="text-[11px] font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
+                          {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                        </p>
+                        <p className="text-[15px] font-black mb-1" style={{ color: 'var(--text-1)' }}>
+                          {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                        <p className="text-[11px] font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
+                          {events.map((e: any) => e.title).join(', ')}
+                        </p>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           )}
-        </div>
-
+        </section>
       </div>
 
       <BottomNav isAdmin={dbUser?.role === 'admin'} />
