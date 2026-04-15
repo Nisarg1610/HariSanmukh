@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -990,9 +990,17 @@ export default function Home() {
   }
 
   // ─── Render: dashboard ────────────────────────────────────────────────────────
+  // ─── HomePage.jsx ────────────────────────────────────────────────────────────
+  // Drop-in replacement for your existing homepage return block.
+  // Matches the vibrant gradient hero + colorful quick-access cards +
+  // clean white "This Week You Have" cards from the design screenshots.
+  // All existing logic hooks (handleMarkSevaDone, myLaundryDays, etc.) are kept.
+  // ─────────────────────────────────────────────────────────────────────────────
+
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
 
+      {/* ── Header ── */}
       <header className="glass-nav sticky top-0 z-30"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -1012,7 +1020,6 @@ export default function Home() {
             ) : (
               <div className="w-full h-full flex items-center justify-center"
                 style={{ backgroundColor: 'var(--accent)' }}>
-                {/* NEW: avatar initial also from displayName */}
                 <span className="text-white text-sm font-bold">
                   {displayName?.charAt(0).toUpperCase()}
                 </span>
@@ -1022,7 +1029,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Prompt banners */}
+      {/* ── Prompt banners (unchanged) ── */}
       {activePrompt === 'passkey' && (
         <div className="px-4 py-3" style={{ backgroundColor: 'var(--accent)' }}>
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
@@ -1087,201 +1094,301 @@ export default function Home() {
       )}
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+        {/* ══════════════════════════════════════════════════════════════
+          HERO GREETING CARD
+          Pink → purple → orange gradient, pill badge, big greeting
+      ══════════════════════════════════════════════════════════════ */}
         <section
-          className="rounded-3xl p-5 text-white shadow-sm"
-          style={{ background: 'linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%)' }}
+          className="rounded-3xl p-6 text-white shadow-lg relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #f472b6 0%, #a855f7 45%, #fb923c 100%)',
+            minHeight: 140,
+          }}
         >
-          <p className="text-xl font-extrabold mb-1">🙏 Jay Swaminarayan 🙏</p>
-          <p className="text-sm font-semibold text-white/85">{displayName} Bhai 👋</p>
+          {/* Decorative soft circle blobs */}
+          <div style={{
+            position: 'absolute', top: -30, right: -20,
+            width: 130, height: 130, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.10)', pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: -40, right: 40,
+            width: 100, height: 100, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
+          }} />
+
+          {/* Good [Time of day] pill */}
+          <div className="inline-flex items-center gap-1.5 mb-3"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.22)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 99,
+              padding: '4px 14px',
+            }}>
+            <span style={{ fontSize: 14 }}>✨</span>
+            <span className="text-sm font-semibold text-white">
+              {(() => {
+                const h = new Date().getHours();
+                if (h < 12) return 'Good Morning';
+                if (h < 17) return 'Good Afternoon';
+                return 'Good Evening';
+              })()}
+            </span>
+          </div>
+
+          <p className="text-2xl font-extrabold leading-tight">
+            🙏 Jay Swaminarayan!
+          </p>
+          <p className="text-sm font-medium mt-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            Welcome back, {displayName} 👋
+          </p>
         </section>
 
+        {/* ══════════════════════════════════════════════════════════════
+          QUICK ACCESS CARDS — Aarti & Pooja + Swadhyay
+          Purple card  |  Orange card
+      ══════════════════════════════════════════════════════════════ */}
         <section className="grid grid-cols-2 gap-3">
+          {/* Aarti & Pooja — purple */}
           <Link
             href="/links"
-            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 116 }}
+            className="block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(140deg, #7c3aed 0%, #a855f7 100%)',
+              minHeight: 130,
+            }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
-                  General Info
-                </p>
-                <p className="text-base font-extrabold mt-1.5" style={{ color: 'var(--text-1)' }}>
-                  Aarti &amp; Pooja
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  Quick access
-                </p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--accent-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">🙏</span>
-              </div>
+            {/* decorative circle */}
+            <div style={{
+              position: 'absolute', bottom: -20, right: -20,
+              width: 80, height: 80, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.12)', pointerEvents: 'none',
+            }} />
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+              style={{ backgroundColor: 'rgba(255,255,255,0.20)' }}>
+              <span style={{ fontSize: 24 }}>🙏</span>
             </div>
+            <p className="text-base font-extrabold text-white leading-tight">
+              Aarti &amp; Pooja
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              Daily prayers
+            </p>
           </Link>
 
+          {/* Swadhyay — orange */}
           <Link
             href="/swadhyay"
-            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 116 }}
+            className="block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(140deg, #f97316 0%, #fb923c 100%)',
+              minHeight: 130,
+            }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
-                  Swadhyay
-                </p>
-                <p className="text-base font-extrabold mt-1.5 truncate" style={{ color: 'var(--text-1)' }}>
-                  {dailyContent?.siksha?.shloka_number
-                    ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
-                    : 'Swadhyay of the Day'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
-                  Tap to read
-                </p>
-              </div>
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'var(--yellow-bg)' }}
-                aria-hidden="true"
-              >
-                <span className="text-lg">📖</span>
-              </div>
+            <div style={{
+              position: 'absolute', bottom: -20, right: -20,
+              width: 80, height: 80, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.12)', pointerEvents: 'none',
+            }} />
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+              style={{ backgroundColor: 'rgba(255,255,255,0.20)' }}>
+              <span style={{ fontSize: 24 }}>📖</span>
             </div>
+            <p className="text-base font-extrabold text-white leading-tight">
+              Swadhyay
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              {dailyContent?.siksha?.shloka_number
+                ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
+                : 'Sikshapatri reading'}
+            </p>
           </Link>
         </section>
 
-        <section className="px-1">
-          <h3 className="text-[13px] uppercase tracking-[0.15em] font-extrabold" style={{ color: 'var(--text-3)' }}>
-            This week you have
+        {/* ══════════════════════════════════════════════════════════════
+          THIS WEEK YOU HAVE
+      ══════════════════════════════════════════════════════════════ */}
+        <section className="px-1 pt-1">
+          <h3 className="text-lg font-extrabold" style={{ color: 'var(--text-1)' }}>
+            This Week You Have <span style={{ fontSize: 18 }}>⭐</span>
           </h3>
         </section>
 
-        <section className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}>
-          <div className="px-4 py-4 border-b" style={{ borderColor: 'var(--separator)' }}>
-            <Link href="/seva" className="block">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-2)' }}>
-                    🙏 My Seva
-                  </p>
-                  <p className="text-base font-black mt-2 line-clamp-2" style={{ color: 'var(--text-1)' }}>
-                    {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No active seva'}
-                  </p>
+        {/* ── My Seva card ── */}
+        <section
+          className="rounded-3xl p-5 shadow-sm"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
+        >
+          <Link href="/seva" className="block">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {/* Purple icon circle */}
+                <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
+                  <span style={{ fontSize: 20 }}>✨</span>
                 </div>
-                <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: firstPendingSeva?.id ? 'var(--green-bg)' : 'var(--bg-card-2)', color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-3)' }}>
-                  {firstPendingSeva?.id ? 'Pending' : 'Done'}
+                <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
+                  My Seva 🙏
                 </span>
               </div>
-            </Link>
+
+              {/* Done / Pending badge */}
+              {firstPendingSeva?.id ? (
+                <span className="text-xs font-bold px-3 py-1 rounded-full"
+                  style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
+                  Pending
+                </span>
+              ) : (
+                <span className="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
+                  style={{ backgroundColor: '#e8f7f1', color: '#2d9e6b' }}>
+                  Done ✓
+                </span>
+              )}
+            </div>
+          </Link>
+
+          {/* Inner content box */}
+          <div className="rounded-2xl px-4 py-4"
+            style={{ backgroundColor: 'var(--bg-card-2)', border: '1px solid var(--separator)' }}>
             {firstPendingSeva?.id ? (
-              <div className="mt-3">
-                <SwipeToComplete onSwipeComplete={() => {
-                  handleMarkSevaDone();
-                }} />
-              </div>
+              <>
+                <p className="text-sm font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
+                  {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name}
+                </p>
+                <div className="mt-3">
+                  <SwipeToComplete onSwipeComplete={handleMarkSevaDone} />
+                </div>
+              </>
             ) : (
-              <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-4)' }}>
-                Caught up! 🎉
-              </p>
+              <>
+                <p className="text-sm font-semibold text-center" style={{ color: 'var(--text-3)' }}>
+                  No active seva
+                </p>
+                <p className="text-xs text-center mt-0.5" style={{ color: 'var(--text-4)' }}>
+                  You're all caught up! 🎉
+                </p>
+              </>
             )}
           </div>
+        </section>
 
-          <div className="px-4 py-4">
-            <Link href="/laundry" className="block">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold" style={{ color: 'var(--accent)' }}>
-                    👕 My Laundry
-                  </p>
-                  <p className="text-base font-black mt-2 truncate" style={{ color: 'var(--text-1)' }}>
-                    {myLaundryDays?.[0] || 'No schedule'}
-                  </p>
+        {/* ── My Laundry card ── */}
+        <section
+          className="rounded-3xl p-5 shadow-sm"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
+        >
+          <Link href="/laundry" className="block">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                {/* Pink/red icon circle */}
+                <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #f43f5e, #fb7185)' }}>
+                  <span style={{ fontSize: 20 }}>👕</span>
                 </div>
-                <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
-                  Today
+                <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
+                  My Laundry 👕
                 </span>
               </div>
-            </Link>
 
-            {dbUser?.household_id && memberId && (
+              {/* Today badge */}
+              <span className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ backgroundColor: '#fff3e0', color: '#f97316' }}>
+                Today
+              </span>
+            </div>
+          </Link>
+
+          {/* Inner content box */}
+          <div className="rounded-2xl px-4 py-4"
+            style={{ backgroundColor: '#fff8f5', border: '1px solid rgba(249,115,22,0.12)' }}>
+            <p className="text-sm font-extrabold" style={{ color: 'var(--text-1)' }}>
+              {myLaundryDays?.[0] || 'No schedule'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+              Don't forget — it's your laundry day!
+            </p>
+          </div>
+
+          {/* Laundry tracker component */}
+          {dbUser?.household_id && memberId && (
+            <div className="mt-3">
               <LaundryTracker
                 householdId={dbUser.household_id}
                 memberId={memberId}
                 allLaundryDays={allLaundryDays}
                 initialSessions={todaySessions}
               />
-            )}
+            </div>
+          )}
 
-            {!(new Date().getHours() >= 18 && allLaundryDays.filter(a => a.day_of_week === new Date().toLocaleDateString('en-US', { weekday: 'long' })).some(a => a.member_id === memberId)) && (
-              (myLaundryDays?.length ?? 0) > 1 ? (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {myLaundryDays.slice(1, 4).map((day) => (
-                    <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold leading-none"
-                      style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
-                      {day.substring(0, 3).toUpperCase()}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[13px] font-medium mt-2" style={{ color: 'var(--text-3)' }}>Wash on your assigned day.</p>
-              )
-            )}
-          </div>
+          {/* Extra laundry days chips */}
+          {(myLaundryDays?.length ?? 0) > 1 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {myLaundryDays.slice(1, 4).map((day) => (
+                <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold leading-none"
+                  style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
+                  {day.substring(0, 3).toUpperCase()}
+                </span>
+              ))}
+            </div>
+          )}
         </section>
 
+        {/* ══════════════════════════════════════════════════════════════
+          GARBAGE TIMELINE (unchanged content, updated styling)
+      ══════════════════════════════════════════════════════════════ */}
         <section className="pb-5">
-          <div className="flex items-center justify-between mb-2 px-1">
-            <p className="text-[13px] uppercase tracking-[0.15em] font-extrabold" style={{ color: 'var(--text-3)' }}>
-              Garbage Timeline
+          <div className="flex items-center justify-between mb-3 px-1">
+            <p className="text-lg font-extrabold" style={{ color: 'var(--text-1)' }}>
+              Garbage Timeline 🗑️
             </p>
             <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
               See all
             </Link>
           </div>
+
           {garbageDateGroups.length === 0 ? (
-            <p className="text-[13px] font-medium px-1" style={{ color: 'var(--text-4)' }}>
+            <p className="text-sm font-medium px-1" style={{ color: 'var(--text-4)' }}>
               No upcoming collections this month.
             </p>
           ) : (
-            <div className="card rounded-[24px] border border-[var(--separator)] p-4" style={{ backgroundColor: 'var(--bg-card)' }}>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {garbageDateGroups
-                  .filter(g => g.status !== 'past')
-                  .slice(0, 3)
-                  .map(({ date, events, status }) => {
-                    const dateObj = new Date(date + 'T00:00:00');
-                    return (
-                      <div
-                        key={date}
-                        className="rounded-xl p-3 border"
-                        style={{
-                          borderColor: status === 'today' ? 'var(--green)' : 'var(--separator)',
-                          backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card-2)',
-                        }}
-                      >
-                        <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
-                          {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
-                        </p>
-                        <p className="text-[15px] font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
-                          {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-[11px] font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
-                          {events.map((e: any) => e.title).join(', ')}
-                        </p>
-                      </div>
-                    );
-                  })}
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {garbageDateGroups
+                .filter(g => g.status !== 'past')
+                .slice(0, 3)
+                .map(({ date, events, status }) => {
+                  const dateObj = new Date(date + 'T00:00:00');
+                  return (
+                    <div
+                      key={date}
+                      className="rounded-2xl p-4"
+                      style={{
+                        backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card)',
+                        border: `1px solid ${status === 'today' ? 'var(--green)' : 'var(--separator)'}`,
+                      }}
+                    >
+                      <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
+                        {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                      </p>
+                      <p className="text-base font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
+                        {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-xs font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
+                        {events.map((e) => e.title).join(', ')}
+                      </p>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </section>
+
       </div>
 
       <BottomNav isAdmin={dbUser?.role === 'admin'} />
-      {/* NEW: pass displayName to ProfilePanel so it also shows the correct name */}
       <ProfilePanel
         user={user}
         dbUser={dbUser}
