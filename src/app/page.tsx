@@ -1092,11 +1092,10 @@ export default function Home() {
           className="rounded-3xl p-5 text-white shadow-sm"
           style={{ background: 'linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%)' }}
         >
-          <p className="text-[12px] uppercase tracking-widest font-semibold text-white/80 mb-1">
-            Hari Dashboard
+          <p className="text-xl font-extrabold mb-1">
+            🙏 Jay Swaminarayan 🙏
           </p>
-          <h2 className="text-xl font-extrabold mb-1">🙏 Jay Swaminarayan, {displayName} Bhai</h2>
-          <p className="text-sm text-white/85">Everything for today in one place.</p>
+          <p className="text-sm font-semibold text-white/85">{displayName} Bhai 👋</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1162,7 +1161,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
             <h3 className="text-[14px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>
-              Today&apos;s Priorities
+              This week you have
             </h3>
           </div>
           <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
@@ -1181,8 +1180,13 @@ export default function Home() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: firstPendingSeva?.id ? 'white' : 'var(--bg-card-2)' }}>
-                  <span className="text-lg">🙏</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: firstPendingSeva?.id ? 'white' : 'var(--bg-card-2)' }}>
+                    <span className="text-lg">🙏</span>
+                  </div>
+                  <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-3)' }}>
+                    My Seva
+                  </p>
                 </div>
                 {firstPendingSeva?.id && (
                   <span className="flex h-3 w-3 relative">
@@ -1191,21 +1195,15 @@ export default function Home() {
                   </span>
                 )}
               </div>
-              <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: firstPendingSeva?.id ? 'var(--green)' : 'var(--text-3)' }}>My Seva</p>
               <p className="text-[16px] font-extrabold leading-snug line-clamp-2" style={{ color: firstPendingSeva?.id ? '#1A6340' : 'var(--text-1)' }}>
                 {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name || 'No active seva'}
               </p>
             </div>
 
             {firstPendingSeva?.id ? (
-              <>
-                <p className="text-[11px] font-bold mt-2 mb-1" style={{ color: '#1A6340' }}>
-                  Swipe to mark seva done
-                </p>
-                <SwipeToComplete onSwipeComplete={() => {
-                  handleMarkSevaDone();
-                }} />
-              </>
+              <SwipeToComplete onSwipeComplete={() => {
+                handleMarkSevaDone();
+              }} />
             ) : (
               <div
                 className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-bold text-center border-2 border-dashed"
@@ -1222,10 +1220,14 @@ export default function Home() {
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
           >
             <div>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3 shadow-inner" style={{ backgroundColor: 'var(--accent-bg)' }}>
-                <span className="text-lg text-[var(--accent)]">👕</span>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                  <span className="text-lg text-[var(--accent)]">👕</span>
+                </div>
+                <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
+                  My Laundry
+                </p>
               </div>
-              <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--accent)' }}>My Laundry</p>
               <p className="text-[20px] font-extrabold leading-tight truncate pb-1" style={{ color: 'var(--text-1)' }}>
                 {myLaundryDays?.[0] || 'No schedule'}
               </p>
@@ -1261,52 +1263,6 @@ export default function Home() {
                 )
               )}
             </div>
-          </Link>
-          <Link
-            href="/calendar"
-            className="md:col-span-1 card rounded-[24px] p-4 border border-[var(--separator)] shadow-sm transition-transform active:scale-[0.99] block"
-            style={{ backgroundColor: 'var(--bg-card)' }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
-                Garbage
-              </p>
-              <span className="text-lg">🗑️</span>
-            </div>
-            {garbageDateGroups.length === 0 ? (
-              <p className="text-[13px] font-semibold" style={{ color: 'var(--text-3)' }}>
-                No upcoming pickup
-              </p>
-            ) : (
-              (() => {
-                const future = garbageDateGroups.find(g => g.status !== 'past') ?? garbageDateGroups[garbageDateGroups.length - 1];
-                const dateObj = new Date(future.date + 'T00:00:00');
-                return (
-                  <div>
-                    <p className="text-[26px] font-black leading-none mb-1" style={{ color: 'var(--text-1)' }}>
-                      {dateObj.getDate()}
-                    </p>
-                    <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
-                      {dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}
-                    </p>
-                    <div className="space-y-1">
-                      {future.events.slice(0, 2).map((event: any, i: number) => (
-                        <p
-                          key={i}
-                          className="text-[11px] font-bold px-2 py-1 rounded-lg truncate"
-                          style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}
-                        >
-                          {event.title}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()
-            )}
-            <p className="text-[11px] font-bold mt-3" style={{ color: 'var(--accent)' }}>
-              Open full schedule →
-            </p>
           </Link>
         </div>
 
