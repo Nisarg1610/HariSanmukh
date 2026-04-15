@@ -1087,39 +1087,70 @@ export default function Home() {
       )}
 
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
-        <section className="px-1">
-          <p className="text-2xl font-black tracking-tight" style={{ color: 'var(--text-1)' }}>
-            🙏 Jay Swaminarayan 🙏
-          </p>
-          <p className="text-sm font-semibold mt-1" style={{ color: 'var(--text-3)' }}>
-            {displayName} Bhai
-          </p>
+        <section
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%)' }}
+        >
+          <p className="text-xl font-extrabold mb-1">🙏 Jay Swaminarayan 🙏</p>
+          <p className="text-sm font-semibold text-white/85">{displayName} Bhai 👋</p>
         </section>
 
-        <section className="-mx-1 px-1 overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
-            <Link
-              href="/links"
-              className="px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border"
-              style={{ color: 'var(--text-1)', borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}
-            >
-              🙏 General Info
-            </Link>
-            <Link
-              href="/swadhyay"
-              className="px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border"
-              style={{ color: 'var(--text-1)', borderColor: 'var(--separator)', backgroundColor: 'var(--bg-card)' }}
-            >
-              📖 {dailyContent?.siksha?.shloka_number ? `Sikshapatri #${dailyContent.siksha.shloka_number}` : 'Swadhyay'}
-            </Link>
-            <Link
-              href="/calendar"
-              className="px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border"
-              style={{ color: 'var(--accent)', borderColor: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }}
-            >
-              📅 Full Calendar
-            </Link>
-          </div>
+        <section className="grid grid-cols-2 gap-3">
+          <Link
+            href="/links"
+            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 116 }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
+                  General Info
+                </p>
+                <p className="text-base font-extrabold mt-1.5" style={{ color: 'var(--text-1)' }}>
+                  Aarti &amp; Pooja
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
+                  Quick access
+                </p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--accent-bg)' }}
+                aria-hidden="true"
+              >
+                <span className="text-lg">🙏</span>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/swadhyay"
+            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 116 }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
+                  Swadhyay
+                </p>
+                <p className="text-base font-extrabold mt-1.5 truncate" style={{ color: 'var(--text-1)' }}>
+                  {dailyContent?.siksha?.shloka_number
+                    ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
+                    : 'Swadhyay of the Day'}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
+                  Tap to read
+                </p>
+              </div>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--yellow-bg)' }}
+                aria-hidden="true"
+              >
+                <span className="text-lg">📖</span>
+              </div>
+            </div>
+          </Link>
         </section>
 
         <section className="px-1">
@@ -1215,26 +1246,26 @@ export default function Home() {
               No upcoming collections this month.
             </p>
           ) : (
-            <div className="-mx-1 px-1 overflow-x-auto">
-              <div className="flex gap-2 min-w-max">
+            <div className="card rounded-[24px] border border-[var(--separator)] p-4" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {garbageDateGroups
                   .filter(g => g.status !== 'past')
-                  .slice(0, 6)
+                  .slice(0, 3)
                   .map(({ date, events, status }) => {
                     const dateObj = new Date(date + 'T00:00:00');
                     return (
                       <div
                         key={date}
-                        className="w-[150px] rounded-2xl p-3 border"
+                        className="rounded-xl p-3 border"
                         style={{
                           borderColor: status === 'today' ? 'var(--green)' : 'var(--separator)',
-                          backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card)',
+                          backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card-2)',
                         }}
                       >
-                        <p className="text-[11px] font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
+                        <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
                           {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
                         </p>
-                        <p className="text-[15px] font-black mb-1" style={{ color: 'var(--text-1)' }}>
+                        <p className="text-[15px] font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
                           {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                         <p className="text-[11px] font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
