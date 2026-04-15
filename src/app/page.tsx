@@ -997,6 +997,18 @@ export default function Home() {
   // All existing logic hooks (handleMarkSevaDone, myLaundryDays, etc.) are kept.
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // ─── HomePage.jsx ────────────────────────────────────────────────────────────
+  // Drop-in replacement for your existing homepage return block.
+  // Matches the vibrant gradient hero + colorful quick-access cards +
+  // clean white "This Week You Have" cards from the design screenshots.
+  // Full dark mode support via isDark flag reading html.dark class.
+  // All existing logic hooks (handleMarkSevaDone, myLaundryDays, etc.) are kept.
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Detect dark mode — reads the same `html.dark` class your globals.css uses
+  const isDark = typeof document !== 'undefined'
+    && document.documentElement.classList.contains('dark');
+
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
 
@@ -1097,37 +1109,60 @@ export default function Home() {
 
         {/* ══════════════════════════════════════════════════════════════
           HERO GREETING CARD
-          Pink → purple → orange gradient, pill badge, big greeting
+          Light: pink → purple → orange vibrant gradient
+          Dark:  deep navy with radial purple + teal glow blobs
       ══════════════════════════════════════════════════════════════ */}
         <section
-          className="rounded-3xl p-6 text-white shadow-lg relative overflow-hidden"
+          className="rounded-3xl p-6 shadow-lg relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, #f472b6 0%, #a855f7 45%, #fb923c 100%)',
+            background: isDark
+              ? 'linear-gradient(135deg, #1a0a2e 0%, #0f1a2e 55%, #1a1008 100%)'
+              : 'linear-gradient(135deg, #f472b6 0%, #a855f7 45%, #fb923c 100%)',
+            border: isDark ? '1px solid rgba(120,180,160,0.12)' : 'none',
             minHeight: 140,
           }}
         >
-          {/* Decorative soft circle blobs */}
-          <div style={{
-            position: 'absolute', top: -30, right: -20,
-            width: 130, height: 130, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.10)', pointerEvents: 'none',
-          }} />
-          <div style={{
-            position: 'absolute', bottom: -40, right: 40,
-            width: 100, height: 100, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
-          }} />
+          {/* Light mode: soft white blobs */}
+          {!isDark && <>
+            <div style={{
+              position: 'absolute', top: -30, right: -20,
+              width: 130, height: 130, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.10)', pointerEvents: 'none',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: -40, right: 40,
+              width: 100, height: 100, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.07)', pointerEvents: 'none',
+            }} />
+          </>}
+
+          {/* Dark mode: radial colour glows */}
+          {isDark && <>
+            <div style={{
+              position: 'absolute', top: -40, right: -30,
+              width: 180, height: 180, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: -50, left: 10,
+              width: 140, height: 140, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(77,184,150,0.12) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+          </>}
 
           {/* Good [Time of day] pill */}
           <div className="inline-flex items-center gap-1.5 mb-3"
             style={{
-              backgroundColor: 'rgba(255,255,255,0.22)',
+              backgroundColor: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.22)',
+              border: isDark ? '1px solid rgba(167,139,250,0.30)' : 'none',
               backdropFilter: 'blur(8px)',
               borderRadius: 99,
               padding: '4px 14px',
             }}>
             <span style={{ fontSize: 14 }}>✨</span>
-            <span className="text-sm font-semibold text-white">
+            <span className="text-sm font-semibold" style={{ color: isDark ? '#c4b5fd' : '#fff' }}>
               {(() => {
                 const h = new Date().getHours();
                 if (h < 12) return 'Good Morning';
@@ -1137,70 +1172,98 @@ export default function Home() {
             </span>
           </div>
 
-          <p className="text-2xl font-extrabold leading-tight">
+          <p className="text-2xl font-extrabold leading-tight"
+            style={{ color: isDark ? '#e8dfc8' : '#fff' }}>
             🙏 Jay Swaminarayan!
           </p>
-          <p className="text-sm font-medium mt-1" style={{ color: 'rgba(255,255,255,0.85)' }}>
+          <p className="text-sm font-medium mt-1"
+            style={{ color: isDark ? '#7a7568' : 'rgba(255,255,255,0.85)' }}>
             Welcome back, {displayName} 👋
           </p>
         </section>
 
         {/* ══════════════════════════════════════════════════════════════
           QUICK ACCESS CARDS — Aarti & Pooja + Swadhyay
-          Purple card  |  Orange card
+          Light: vivid purple | vivid orange
+          Dark:  deep violet with purple border | deep teal with teal border
       ══════════════════════════════════════════════════════════════ */}
         <section className="grid grid-cols-2 gap-3">
-          {/* Aarti & Pooja — purple */}
+          {/* Aarti & Pooja */}
           <Link
             href="/links"
             className="block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden"
             style={{
-              background: 'linear-gradient(140deg, #7c3aed 0%, #a855f7 100%)',
+              background: isDark
+                ? 'linear-gradient(140deg, #1e0a4a 0%, #2d1264 100%)'
+                : 'linear-gradient(140deg, #7c3aed 0%, #a855f7 100%)',
+              border: isDark ? '1px solid rgba(139,92,246,0.25)' : 'none',
               minHeight: 130,
             }}
           >
-            {/* decorative circle */}
             <div style={{
-              position: 'absolute', bottom: -20, right: -20,
+              position: 'absolute', top: -18, right: -18,
               width: 80, height: 80, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.12)', pointerEvents: 'none',
+              background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: -24, left: -10,
+              width: 60, height: 60, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
             }} />
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-              style={{ backgroundColor: 'rgba(255,255,255,0.20)' }}>
+              style={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.20)',
+                border: isDark ? '1px solid rgba(139,92,246,0.30)' : 'none',
+              }}>
               <span style={{ fontSize: 24 }}>🙏</span>
             </div>
-            <p className="text-base font-extrabold text-white leading-tight">
+            <p className="text-base font-extrabold leading-tight"
+              style={{ color: isDark ? '#c4b5fd' : '#fff' }}>
               Aarti &amp; Pooja
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            <p className="text-xs mt-0.5"
+              style={{ color: isDark ? 'rgba(196,181,253,0.55)' : 'rgba(255,255,255,0.75)' }}>
               Daily prayers
             </p>
           </Link>
 
-          {/* Swadhyay — orange */}
+          {/* Swadhyay */}
           <Link
             href="/swadhyay"
             className="block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden"
             style={{
-              background: 'linear-gradient(140deg, #f97316 0%, #fb923c 100%)',
+              background: isDark
+                ? 'linear-gradient(140deg, #071a14 0%, #0c2820 100%)'
+                : 'linear-gradient(140deg, #f97316 0%, #fb923c 100%)',
+              border: isDark ? '1px solid rgba(77,184,150,0.22)' : 'none',
               minHeight: 130,
             }}
           >
             <div style={{
-              position: 'absolute', bottom: -20, right: -20,
+              position: 'absolute', top: -18, right: -18,
               width: 80, height: 80, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.12)', pointerEvents: 'none',
+              background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: -24, left: -10,
+              width: 60, height: 60, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
             }} />
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-              style={{ backgroundColor: 'rgba(255,255,255,0.20)' }}>
+              style={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.20)',
+                border: isDark ? '1px solid rgba(77,184,150,0.28)' : 'none',
+              }}>
               <span style={{ fontSize: 24 }}>📖</span>
             </div>
-            <p className="text-base font-extrabold text-white leading-tight">
+            <p className="text-base font-extrabold leading-tight"
+              style={{ color: isDark ? '#7dd4b8' : '#fff' }}>
               Swadhyay
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            <p className="text-xs mt-0.5"
+              style={{ color: isDark ? 'rgba(125,212,184,0.55)' : 'rgba(255,255,255,0.75)' }}>
               {dailyContent?.siksha?.shloka_number
                 ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
                 : 'Sikshapatri reading'}
@@ -1220,14 +1283,21 @@ export default function Home() {
         {/* ── My Seva card ── */}
         <section
           className="rounded-3xl p-5 shadow-sm"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            border: isDark ? '1px solid rgba(120,180,160,0.10)' : '1px solid var(--separator)',
+          }}
         >
           <Link href="/seva" className="block">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                {/* Purple icon circle */}
                 <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
+                  style={{
+                    background: isDark
+                      ? 'linear-gradient(135deg, #2d1264, #4c1d95)'
+                      : 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                    border: isDark ? '1px solid rgba(139,92,246,0.30)' : 'none',
+                  }}>
                   <span style={{ fontSize: 20 }}>✨</span>
                 </div>
                 <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
@@ -1235,7 +1305,6 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Done / Pending badge */}
               {firstPendingSeva?.id ? (
                 <span className="text-xs font-bold px-3 py-1 rounded-full"
                   style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
@@ -1243,16 +1312,22 @@ export default function Home() {
                 </span>
               ) : (
                 <span className="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
-                  style={{ backgroundColor: '#e8f7f1', color: '#2d9e6b' }}>
+                  style={{
+                    backgroundColor: isDark ? '#0a1e1a' : '#e8f7f1',
+                    color: isDark ? '#4db896' : '#2d9e6b',
+                    border: isDark ? '1px solid rgba(77,184,150,0.25)' : 'none',
+                  }}>
                   Done ✓
                 </span>
               )}
             </div>
           </Link>
 
-          {/* Inner content box */}
           <div className="rounded-2xl px-4 py-4"
-            style={{ backgroundColor: 'var(--bg-card-2)', border: '1px solid var(--separator)' }}>
+            style={{
+              backgroundColor: isDark ? '#161b24' : 'var(--bg-card-2)',
+              border: isDark ? '1px solid rgba(120,180,160,0.08)' : '1px solid var(--separator)',
+            }}>
             {firstPendingSeva?.id ? (
               <>
                 <p className="text-sm font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
@@ -1278,14 +1353,21 @@ export default function Home() {
         {/* ── My Laundry card ── */}
         <section
           className="rounded-3xl p-5 shadow-sm"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            border: isDark ? '1px solid rgba(120,180,160,0.10)' : '1px solid var(--separator)',
+          }}
         >
           <Link href="/laundry" className="block">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                {/* Pink/red icon circle */}
                 <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #f43f5e, #fb7185)' }}>
+                  style={{
+                    background: isDark
+                      ? 'linear-gradient(135deg, #071a14, #0c2820)'
+                      : 'linear-gradient(135deg, #f43f5e, #fb7185)',
+                    border: isDark ? '1px solid rgba(77,184,150,0.30)' : 'none',
+                  }}>
                   <span style={{ fontSize: 20 }}>👕</span>
                 </div>
                 <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
@@ -1293,17 +1375,24 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Today badge */}
               <span className="text-xs font-bold px-3 py-1 rounded-full"
-                style={{ backgroundColor: '#fff3e0', color: '#f97316' }}>
+                style={{
+                  backgroundColor: isDark ? '#201808' : '#fff3e0',
+                  color: isDark ? '#e8b84b' : '#f97316',
+                  border: isDark ? '1px solid rgba(232,184,75,0.22)' : 'none',
+                }}>
                 Today
               </span>
             </div>
           </Link>
 
-          {/* Inner content box */}
           <div className="rounded-2xl px-4 py-4"
-            style={{ backgroundColor: '#fff8f5', border: '1px solid rgba(249,115,22,0.12)' }}>
+            style={{
+              backgroundColor: isDark ? '#1a130a' : '#fff8f5',
+              border: isDark
+                ? '1px solid rgba(232,184,75,0.10)'
+                : '1px solid rgba(249,115,22,0.12)',
+            }}>
             <p className="text-sm font-extrabold" style={{ color: 'var(--text-1)' }}>
               {myLaundryDays?.[0] || 'No schedule'}
             </p>
@@ -1312,7 +1401,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Laundry tracker component */}
           {dbUser?.household_id && memberId && (
             <div className="mt-3">
               <LaundryTracker
@@ -1324,7 +1412,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Extra laundry days chips */}
           {(myLaundryDays?.length ?? 0) > 1 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {myLaundryDays.slice(1, 4).map((day) => (
