@@ -1086,50 +1086,40 @@ export default function Home() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
 
-        {/* Greeting â€” NEW: uses displayName from household_members */}
         <div
-          className="rounded-3xl p-4 text-white"
-          style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)' }}
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%)' }}
         >
-          <p className="text-xl font-bold mb-1 tracking-wide">
-            🙏 Jay Swaminarayan 🙏
+          <p className="text-[12px] uppercase tracking-widest font-semibold text-white/80 mb-1">
+            Hari Dashboard
           </p>
-
-          <h2
-            className="text-sm font-semibold"
-            style={{ color: 'rgba(255,255,255,0.8)' }}
-          >
-            {displayName} Bhai 👋
-          </h2>
-
-          {/* WiFi Info */}
-
+          <h2 className="text-xl font-extrabold mb-1">🙏 Jay Swaminarayan, {displayName} Bhai</h2>
+          <p className="text-sm text-white/85">Everything for today in one place.</p>
         </div>
 
-        {/* General + Swadhyay tiles */}
         <div className="grid grid-cols-2 gap-3">
           <Link
             href="/links"
-            className="card p-3 rounded-2xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 112 }}
+            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 116 }}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest"
+                <p className="text-[11px] font-semibold uppercase tracking-widest"
                   style={{ color: 'var(--text-3)' }}>
                   General Info
                 </p>
-                <p className="text-base font-bold mt-1.5" style={{ color: 'var(--text-1)' }}>
+                <p className="text-base font-extrabold mt-1.5" style={{ color: 'var(--text-1)' }}>
                   Aarti &amp; Pooja
                 </p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-4)' }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
                   Quick access
                 </p>
               </div>
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: 'var(--accent-bg)' }}
                 aria-hidden="true"
               >
@@ -1140,26 +1130,26 @@ export default function Home() {
 
           <Link
             href="/swadhyay"
-            className="card p-3 rounded-2xl block transition-transform active:scale-[0.99]"
-            style={{ minHeight: 112 }}
+            className="card p-4 rounded-2xl block transition-transform active:scale-[0.99]"
+            style={{ minHeight: 116 }}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest"
+                <p className="text-[11px] font-semibold uppercase tracking-widest"
                   style={{ color: 'var(--text-3)' }}>
                   Swadhyay
                 </p>
-                <p className="text-base font-bold mt-1.5 truncate" style={{ color: 'var(--text-1)' }}>
+                <p className="text-base font-extrabold mt-1.5 truncate" style={{ color: 'var(--text-1)' }}>
                   {dailyContent?.siksha?.shloka_number
                     ? `Sikshapatri #${dailyContent.siksha.shloka_number}`
                     : 'Swadhyay of the Day'}
                 </p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-4)' }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-4)' }}>
                   Tap to read
                 </p>
               </div>
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: 'var(--yellow-bg)' }}
                 aria-hidden="true"
               >
@@ -1168,17 +1158,22 @@ export default function Home() {
             </div>
           </Link>
         </div>
-        <div className="flex items-center gap-2 mt-8 mb-2 px-2">
-          <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
-          <h3 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>This week you have</h3>
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
+            <h3 className="text-[14px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>
+              Today&apos;s Priorities
+            </h3>
+          </div>
+          <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
+            Full Calendar
+          </Link>
         </div>
 
-        {/* Responsibility Widgets */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Seva tile */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <Link
             href="/seva"
-            className="flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md h-[210px] relative"
+            className="md:col-span-2 flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md min-h-[210px] relative"
             style={{
               backgroundColor: firstPendingSeva?.id ? 'var(--green-bg)' : 'var(--bg-card)',
               border: firstPendingSeva?.id ? '2px solid rgba(45, 158, 107, 0.4)' : '1px solid var(--separator)'
@@ -1204,7 +1199,7 @@ export default function Home() {
 
             {firstPendingSeva?.id ? (
               <>
-                <p className="text-[11px] font-bold mt-3 mb-1" style={{ color: '#1A6340' }}>
+                <p className="text-[11px] font-bold mt-2 mb-1" style={{ color: '#1A6340' }}>
                   Swipe to mark seva done
                 </p>
                 <SwipeToComplete onSwipeComplete={() => {
@@ -1221,11 +1216,9 @@ export default function Home() {
             )}
           </Link>
 
-          {/* Laundry tile */}
-          {/* Laundry tile */}
           <Link
             href="/laundry"
-            className="flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md h-[210px]"
+            className="md:col-span-2 flex flex-col justify-between card p-5 rounded-[24px] transition-transform active:scale-[0.98] shadow-sm hover:shadow-md min-h-[210px]"
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--separator)' }}
           >
             <div>
@@ -1269,81 +1262,95 @@ export default function Home() {
               )}
             </div>
           </Link>
-        </div>
-
-        {/* Garbage Collection */}
-        <div className="flex items-center justify-between gap-2 mt-8 mb-2 px-2">
-          <div className="flex items-center gap-2">
-          <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--yellow)' }} />
-          <h3 className="text-[15px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Garbage Schedule</h3>
-          </div>
-          <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
-            View all
+          <Link
+            href="/calendar"
+            className="md:col-span-1 card rounded-[24px] p-4 border border-[var(--separator)] shadow-sm transition-transform active:scale-[0.99] block"
+            style={{ backgroundColor: 'var(--bg-card)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
+                Garbage
+              </p>
+              <span className="text-lg">🗑️</span>
+            </div>
+            {garbageDateGroups.length === 0 ? (
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--text-3)' }}>
+                No upcoming pickup
+              </p>
+            ) : (
+              (() => {
+                const future = garbageDateGroups.find(g => g.status !== 'past') ?? garbageDateGroups[garbageDateGroups.length - 1];
+                const dateObj = new Date(future.date + 'T00:00:00');
+                return (
+                  <div>
+                    <p className="text-[26px] font-black leading-none mb-1" style={{ color: 'var(--text-1)' }}>
+                      {dateObj.getDate()}
+                    </p>
+                    <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
+                      {dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short' })}
+                    </p>
+                    <div className="space-y-1">
+                      {future.events.slice(0, 2).map((event: any, i: number) => (
+                        <p
+                          key={i}
+                          className="text-[11px] font-bold px-2 py-1 rounded-lg truncate"
+                          style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}
+                        >
+                          {event.title}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+            <p className="text-[11px] font-bold mt-3" style={{ color: 'var(--accent)' }}>
+              Open full schedule →
+            </p>
           </Link>
         </div>
 
-        <div className="card rounded-[28px] shadow-sm overflow-hidden border border-[var(--separator)] pb-3 mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
+        <div className="card rounded-[24px] border border-[var(--separator)] p-4 mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[12px] uppercase font-bold tracking-widest" style={{ color: 'var(--text-3)' }}>
+              Garbage Timeline
+            </p>
+            <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
+              See all
+            </Link>
+          </div>
           {garbageDateGroups.length === 0 ? (
-            <div className="p-10 text-center text-[14px] font-medium" style={{ color: 'var(--text-4)' }}>
-              <span className="text-4xl block mb-3 opacity-60">🗑️</span>
+            <p className="text-[13px] font-medium py-2" style={{ color: 'var(--text-4)' }}>
               No upcoming collections this month.
-            </div>
+            </p>
           ) : (
-            <div className="flex flex-col relative pt-2">
-              <div className="absolute left-[39px] top-6 bottom-6 w-[2px] bg-[var(--separator)] z-0 rounded-full" />
-              {(() => {
-                const pastGroups = garbageDateGroups.filter(g => g.status === 'past');
-                const futureGroups = garbageDateGroups.filter(g => g.status !== 'past');
-                const visibleGarbageGroups = [...pastGroups.slice(-1), ...futureGroups.slice(0, 2)];
-                return visibleGarbageGroups.map(({ date, events, status }, idx, arr) => {
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {garbageDateGroups
+                .filter(g => g.status !== 'past')
+                .slice(0, 3)
+                .map(({ date, events, status }) => {
                   const dateObj = new Date(date + 'T00:00:00');
-                  const isPast = status === 'past';
-                  const isToday = status === 'today';
-                  const isNextUp = status === 'upcoming' && !arr.slice(0, idx).some(g => g.status === 'upcoming');
-                  const isImportant = isToday || isNextUp;
-
                   return (
-                    <div key={date} className="relative z-10 flex items-start gap-4 px-5 py-4 transition-colors hover:bg-black/5" style={{ opacity: isPast ? 0.45 : 1 }}>
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 transition-all"
-                        style={{
-                          backgroundColor: isToday ? 'var(--green)' : isNextUp ? 'var(--yellow)' : 'var(--bg-card)',
-                          border: isImportant ? 'none' : '2px solid var(--border-strong)',
-                          transform: isImportant ? 'scale(1.1)' : 'scale(1)'
-                        }}
-                      >
-                        <span className="text-[15px] font-extrabold" style={{ color: isImportant ? 'white' : 'var(--text-1)' }}>
-                          {dateObj.getDate()}
-                        </span>
-                      </div>
-
-                      <div className="flex-1 min-w-0 pt-0.5 pb-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="font-extrabold text-[16px] leading-tight" style={{ color: isImportant ? 'var(--text-1)' : 'var(--text-2)' }}>
-                            {dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
-                          </p>
-                          {isToday && (
-                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm text-white" style={{ backgroundColor: 'var(--green)' }}>Today</span>
-                          )}
-                          {isNextUp && !isToday && (
-                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm" style={{ backgroundColor: 'var(--yellow-bg)', color: 'var(--yellow)' }}>Next UP</span>
-                          )}
-                        </div>
-                        <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--text-3)' }}>
-                          {dateObj.toLocaleDateString('en-US', { month: 'long' })}{dateObj.getFullYear() !== new Date().getFullYear() && ` ${dateObj.getFullYear()}`}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {events.map((event: any, i: number) => (
-                            <span key={i} className="text-[12px] font-bold px-2.5 py-1 rounded-[10px] bg-[var(--bg-card-2)] border border-[var(--separator)] truncate max-w-full shadow-sm" style={{ color: isPast ? 'var(--text-4)' : 'var(--text-1)' }}>
-                              {event.title}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                    <div
+                      key={date}
+                      className="rounded-xl p-3 border"
+                      style={{
+                        borderColor: status === 'today' ? 'var(--green)' : 'var(--separator)',
+                        backgroundColor: status === 'today' ? 'var(--green-bg)' : 'var(--bg-card-2)',
+                      }}
+                    >
+                      <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--text-3)' }}>
+                        {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                      </p>
+                      <p className="text-[15px] font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
+                        {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                      <p className="text-[11px] font-semibold line-clamp-2" style={{ color: 'var(--text-2)' }}>
+                        {events.map((e: any) => e.title).join(', ')}
+                      </p>
                     </div>
                   );
-                });
-              })()}
+                })}
             </div>
           )}
         </div>
