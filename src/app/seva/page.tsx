@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { BottomNav } from '@/components/BottomNav';
-import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2, Lock, Unlock } from 'lucide-react';
+import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2, Lock, Unlock, ChevronLeft } from 'lucide-react';
 import {
   getSevas, getSevaAssignments, getPendingSevas,
   createSeva, updateSeva, deleteSeva,
@@ -11,9 +10,10 @@ import {
 } from '@/utils/seva';
 import { getHouseholdMembers } from '@/utils/members';
 import { sendSevaNotification } from '@/utils/pushNotifications';
-import { AppHeader } from '@/components/AppHeader';
+import { useRouter } from 'next/navigation';
 
 export default function SevaPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [householdId, setHouseholdId] = useState('');
   const [userRole, setUserRole] = useState('user');
@@ -211,8 +211,20 @@ export default function SevaPage() {
         className="min-h-screen pb-28"
         style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
       >
+        <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-1)' }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
+          </div>
+        </header>
         <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
-          <h1 className="text-3xl font-extrabold mb-6" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
 
           {error && (
             <div className="p-4 rounded-[20px] shadow-sm flex gap-3 items-center" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
@@ -308,7 +320,6 @@ export default function SevaPage() {
             </div>
           )}
         </div>
-        <BottomNav isAdmin={false} />
       </main>
     );
   }
@@ -319,6 +330,19 @@ export default function SevaPage() {
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
+      <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-1)' }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
+        </div>
+      </header>
       <div className="max-w-xl mx-auto px-4 py-8 space-y-8">
 
         {/* Header */}
@@ -694,7 +718,6 @@ export default function SevaPage() {
         </section>
 
       </div>
-      <BottomNav isAdmin={true} />
     </main>
   );
 }

@@ -89,7 +89,7 @@ export function SwipeToComplete({ onSwipeComplete }: SwipeButtonProps) {
         style={{ opacity: 1 - progress * 1.8 }}
       >
         <span className="text-right text-[13px] font-extrabold text-white/85 tracking-wide">
-          Mark Done →
+          Swipe →
         </span>
       </div>
       {/* Thumb */}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -367,12 +367,9 @@ export default function Home() {
     try {
       if (!supportsNotifications()) return;
 
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
+      const permission = Notification.permission;
       if (permission !== 'granted') {
-        console.info('sendWelcomeNotification: permission denied');
+        console.info('sendWelcomeNotification: permission not granted yet');
         return;
       }
 
@@ -441,6 +438,7 @@ export default function Home() {
           await fetchDashboardData(newDbUser.household_id, authUser.email!);
           if (!newDbUser.welcome_sent) await sendWelcomeNotification(newDbUser);
           await tryRegisterPasskey(newDbUser.id);
+          maybeEnqueueNotificationPrompt();
         }
       } else {
         // User needs a house code
@@ -484,6 +482,7 @@ export default function Home() {
           await sendWelcomeNotification(newDbUser);
         }
         await tryRegisterPasskey(newDbUser.id);
+        maybeEnqueueNotificationPrompt();
       } else {
         setHouseCodeError('Failed to join house. Please try again.');
       }
@@ -1087,7 +1086,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 
         {/* Greeting â€” NEW: uses displayName from household_members */}
         <div
@@ -1110,7 +1109,7 @@ export default function Home() {
         </div>
 
         {/* General + Swadhyay tiles */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Link
             href="/links"
             className="card p-4 rounded-3xl block transition-transform active:scale-[0.99]"
@@ -1175,7 +1174,7 @@ export default function Home() {
         </div>
 
         {/* Responsibility Widgets */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Seva tile */}
           <Link
             href="/seva"
@@ -1204,9 +1203,14 @@ export default function Home() {
             </div>
 
             {firstPendingSeva?.id ? (
-              <SwipeToComplete onSwipeComplete={() => {
-                handleMarkSevaDone();
-              }} />
+              <>
+                <p className="text-[11px] font-bold mt-3 mb-1" style={{ color: '#1A6340' }}>
+                  Swipe to mark seva done
+                </p>
+                <SwipeToComplete onSwipeComplete={() => {
+                  handleMarkSevaDone();
+                }} />
+              </>
             ) : (
               <div
                 className="w-full mt-4 py-3 rounded-[14px] text-[13px] font-bold text-center border-2 border-dashed"

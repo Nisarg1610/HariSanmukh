@@ -1,8 +1,9 @@
 'use client';
 
-import { BottomNav } from '@/components/BottomNav';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
+import { ChevronLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // House fallback configurations just in case DB is missing
 const FALLBACK_CONFIGS: Record<string, { wifiName: string, wifiPass: string, lock: string }> = {
@@ -15,6 +16,7 @@ const FALLBACK_CONFIGS: Record<string, { wifiName: string, wifiPass: string, loc
 
 export default function LinksPage() {
   const [houseConfig, setHouseConfig] = useState(FALLBACK_CONFIGS['HariSanmukh']);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchHouse = async () => {
@@ -52,11 +54,21 @@ export default function LinksPage() {
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>General Info</h1>
-          
+      <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-1)' }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>General Info</h1>
         </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         <div className="card p-5">
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-3)' }}>
@@ -109,7 +121,6 @@ export default function LinksPage() {
           </div>
         </div>
       </div>
-      <BottomNav isAdmin={true} />
     </main>
   );
 }

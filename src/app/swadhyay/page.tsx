@@ -1,8 +1,8 @@
 'use client';
 
-import { BottomNav } from '@/components/BottomNav';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ChevronLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type DailyContent = {
   siksha: any;
@@ -12,6 +12,7 @@ type DailyContent = {
 export default function SwadhyayPage() {
   const [dailyContent, setDailyContent] = useState<DailyContent>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const run = async () => {
@@ -35,11 +36,21 @@ export default function SwadhyayPage() {
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-1)' }}>Swadhyay of the Day</h1>
-         
+      <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-1)' }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Swadhyay of the Day</h1>
         </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {loading ? (
           <div className="card p-5">
@@ -102,7 +113,6 @@ export default function SwadhyayPage() {
           </>
         )}
       </div>
-      <BottomNav isAdmin={true} />
     </main>
   );
 }

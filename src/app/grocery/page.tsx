@@ -188,13 +188,27 @@ export default function GroceryPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: pasteText }),
       });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        setError(err?.error || 'AI processing failed.');
+        return;
+      }
       const data = await response.json();
-      const text = data.content ?? '';
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) { setError('AI could not parse the list. Try again.'); return; }
-      const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = Array.isArray(data.items)
+        ? data.items
+        : Array.isArray(data.content)
+          ? data.content
+          : [];
       if (Array.isArray(parsed) && parsed.length > 0) {
-        setEditItems([...items, ...parsed]);
+        setEditItems([
+          ...items,
+          ...parsed
+            .filter((item: any) => item?.name)
+            .map((item: any) => ({
+              name: String(item.name).trim(),
+              quantity: String(item.quantity ?? '').trim(),
+            })),
+        ]);
         setEditMode(true);
         setPasteMode(false);
         setPasteText('');

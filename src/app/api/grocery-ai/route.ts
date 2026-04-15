@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  const { text } = await request.json();
+  try {
+    const { text } = await request.json();
+    if (!text || typeof text !== 'string') {
+      return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+    }
 
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [{
-        role: 'system',
-        content: `You are a multilingual grocery list parser (English, Hindi, Gujarati).
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json({ error: 'GROQ_API_KEY is not configured' }, { status: 500 });
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{
+          role: 'system',
+          content: `You are a multilingual grocery list parser (English, Hindi, Gujarati).
         
 ### Rules:
 1. Identify the item even if it is transliterated (e.g., "Dhana", "Bataka", "Aloo").
@@ -27,22 +35,45 @@ export async function POST(request: Request) {
 - Input: "2L Dudh" -> Output: {"name": "Milk", "category": "Dairy", "quantity": "2L"}
 - Input: "Chana Dal" -> Output: {"name": "Split Chickpeas", "category": "Grains & Pulses", "quantity": ""}
 
-Return ONLY a raw JSON array. No markdown, no explanations.`
-      },
-      {
-        role: 'user',
-        content: `Input: ${text}`
-      }],
-      max_tokens: 1000,
-      temperature: 0, // Crucial for consistency
-      response_format: { type: "json_object" } 
-    }),
-  });
+Return ONLY JSON in this exact format:
+{"items":[{"name":"Milk","quantity":"2L"}]}
+No markdown, no explanations.`
+        },
+        {
+          role: 'user',
+          content: `Input: ${text}`
+        }],
+        max_tokens: 1000,
+        temperature: 0,
+        response_format: { type: 'json_object' }
+      }),
+    });
 
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content ?? '';
-  
-  // Note: Some models return a JSON object wrapping the array. 
-  // You may need to parse and return content.items if you change the schema.
-  return NextResponse.json({ content: JSON.parse(content) });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('grocery-ai upstream error', response.status, errText);
+      return NextResponse.json({ error: 'AI service unavailable' }, { status: 502 });
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content ?? '';
+    const parsed = JSON.parse(content);
+    const items = Array.isArray(parsed) ? parsed : parsed?.items;
+
+    if (!Array.isArray(items)) {
+      return NextResponse.json({ error: 'Invalid AI response format' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      items: items
+        .filter((item: any) => item?.name)
+        .map((item: any) => ({
+          name: String(item.name).trim(),
+          quantity: String(item.quantity ?? '').trim(),
+        })),
+    });
+  } catch (error) {
+    console.error('grocery-ai route failed', error);
+    return NextResponse.json({ error: 'Failed to process grocery list' }, { status: 500 });
+  }
 }

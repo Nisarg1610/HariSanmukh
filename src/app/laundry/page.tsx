@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { BottomNav } from '@/components/BottomNav';
-import { X, Bell, Check } from 'lucide-react';
+import { X, Bell, Check, ChevronLeft } from 'lucide-react';
 import {
   DAYS,
   getLaundryAssignments,
@@ -11,9 +10,10 @@ import {
   removeLaundryAssignment,
 } from '@/utils/laundry';
 import { getHouseholdMembers } from '@/utils/members';
-import { AppHeader } from '@/components/AppHeader';
+import { useRouter } from 'next/navigation';
 
 export default function LaundryPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [householdId, setHouseholdId] = useState('');
   const [userRole, setUserRole] = useState('user');
@@ -129,8 +129,20 @@ export default function LaundryPage() {
         className="min-h-screen pb-28"
         style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
       >
+        <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-1)' }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry List</h1>
+          </div>
+        </header>
         <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
-          <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-1)' }}>Laundry List</h1>
 
           <div className="card rounded-[24px] border border-[var(--separator)] overflow-hidden shadow-sm bg-[var(--bg-card)]">
             {DAYS.map((day, idx) => {
@@ -204,7 +216,6 @@ export default function LaundryPage() {
             </div>
           </div>
         </div>
-        <BottomNav isAdmin={false} />
       </main>
     );
   }
@@ -220,6 +231,19 @@ export default function LaundryPage() {
       className="min-h-screen pb-28"
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
+      <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-1)' }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry Schedule</h1>
+        </div>
+      </header>
       <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
         <div className="flex items-center justify-between mb-2">
@@ -404,7 +428,6 @@ export default function LaundryPage() {
         </div>
 
       </div>
-      <BottomNav isAdmin={true} />
     </main>
   );
 }

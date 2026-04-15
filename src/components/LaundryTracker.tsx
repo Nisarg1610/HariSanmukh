@@ -85,16 +85,11 @@ function WaitingBanner({ label, minsLeft }: { label: string; minsLeft: number })
 function ActionButton({
   label,
   onClick,
-  variant,
 }: {
   label: string;
   onClick: () => void;
-  variant: 'green' | 'blue';
 }) {
-  const styles =
-    variant === 'green'
-      ? { bg: 'var(--green-bg)', color: '#1a6340' }
-      : { bg: 'var(--accent-bg)', color: 'var(--accent)' };
+  const styles = { bg: 'var(--green-bg)', color: '#1a6340' };
 
   return (
     <div className="mt-3" onClick={stopProp}>
@@ -229,7 +224,7 @@ export function LaundryTracker({
     }
     // Dryer is free → let me start it
     return (
-      <ActionButton label="Start Dryer" onClick={() => handleStart('dryer')} variant="blue" />
+      <ActionButton label="Start Dryer" onClick={() => handleStart('dryer')} />
     );
   }
 
@@ -242,7 +237,7 @@ export function LaundryTracker({
     }
     // Washer is free → let me start it
     return (
-      <ActionButton label="Start Washer" onClick={() => handleStart('washer')} variant="green" />
+      <ActionButton label="Start Washer" onClick={() => handleStart('washer')} />
     );
   }
 

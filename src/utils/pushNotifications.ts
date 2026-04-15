@@ -9,8 +9,9 @@ export async function registerPushNotifications(userId: string, householdId: str
     const registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
 
-    // Request permission
-    const permission = await Notification.requestPermission();
+    // Only subscribe when permission is already granted.
+    // Permission request should happen from an explicit user action.
+    const permission = Notification.permission;
     if (permission !== 'granted') return false;
 
     // Subscribe to push
