@@ -37,7 +37,7 @@ export default function SwadhyayPage() {
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => router.back()}
             aria-label="Go back"
@@ -50,7 +50,17 @@ export default function SwadhyayPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+        <section
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, #f97316 0%, #fb923c 100%)' }}
+        >
+          <p className="text-xl font-extrabold">Swadhyay of the Day</p>
+          <p className="text-sm font-medium text-white/85 mt-1">
+            Read today&apos;s Sikshapatri and Swamini Vato.
+          </p>
+        </section>
 
         {loading ? (
           <div className="card p-5">

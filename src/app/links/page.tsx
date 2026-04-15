@@ -55,7 +55,7 @@ export default function LinksPage() {
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => router.back()}
             aria-label="Go back"
@@ -68,7 +68,17 @@ export default function LinksPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+        <section
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%)' }}
+        >
+          <p className="text-xl font-extrabold">General Info</p>
+          <p className="text-sm font-medium text-white/85 mt-1">
+            Essential house details and quick daily links.
+          </p>
+        </section>
 
         <div className="card p-5">
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-3)' }}>

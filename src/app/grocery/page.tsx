@@ -441,7 +441,16 @@ export default function GroceryPage() {
           </div>
         )}
 
-        <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+          <section
+            className="rounded-3xl p-5 text-white shadow-sm"
+            style={{ background: 'linear-gradient(140deg, var(--green) 0%, #248256 100%)' }}
+          >
+            <p className="text-xl font-extrabold">Grocery Run</p>
+            <p className="text-sm font-medium text-white/85 mt-1">
+              Check items as you shop and sync with everyone.
+            </p>
+          </section>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-1)' }}>Grocery Run</h1>
@@ -550,8 +559,16 @@ export default function GroceryPage() {
   if (userRole === 'user') {
     return (
       <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
-          <h1 className="text-4xl font-extrabold tracking-tight" style={{ color: 'var(--text-1)' }}>Grocery</h1>
+        <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+          <section
+            className="rounded-3xl p-5 text-white shadow-sm"
+            style={{ background: 'linear-gradient(140deg, var(--green) 0%, #248256 100%)' }}
+          >
+            <p className="text-xl font-extrabold">Grocery</p>
+            <p className="text-sm font-medium text-white/85 mt-1">
+              View weekly or monthly items and suggest additions.
+            </p>
+          </section>
           <TabBar />
 
           <div className="card shadow-sm">
@@ -644,10 +661,19 @@ export default function GroceryPage() {
   // ── ADMIN VIEW ─────────────────────────────────────────────
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+        <section
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, var(--green) 0%, #248256 100%)' }}
+        >
+          <p className="text-xl font-extrabold">List Hub</p>
+          <p className="text-sm font-medium text-white/85 mt-1">
+            Manage lists, AI paste, and member suggestions.
+          </p>
+        </section>
 
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-4xl font-extrabold tracking-tight" style={{ color: 'var(--text-1)' }}>List Hub</h1>
+          <h1 className="text-lg font-extrabold tracking-tight" style={{ color: 'var(--text-1)' }}>List Hub</h1>
           <button
             onClick={handleShowSuggestions}
             className="relative p-2.5 rounded-xl transition-all shadow-sm"

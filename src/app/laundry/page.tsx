@@ -130,7 +130,7 @@ export default function LaundryPage() {
         style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
       >
         <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-          <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
             <button
               onClick={() => router.back()}
               aria-label="Go back"
@@ -142,7 +142,16 @@ export default function LaundryPage() {
             <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry List</h1>
           </div>
         </header>
-        <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+          <section
+            className="rounded-3xl p-5 text-white shadow-sm"
+            style={{ background: 'linear-gradient(140deg, #0ea5e9 0%, #2563eb 100%)' }}
+          >
+            <p className="text-xl font-extrabold">Laundry List</p>
+            <p className="text-sm font-medium text-white/85 mt-1">
+              See your assigned day and shared weekly schedule.
+            </p>
+          </section>
 
           <div className="card rounded-[24px] border border-[var(--separator)] overflow-hidden shadow-sm bg-[var(--bg-card)]">
             {DAYS.map((day, idx) => {
@@ -232,7 +241,7 @@ export default function LaundryPage() {
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => router.back()}
             aria-label="Go back"
@@ -244,7 +253,16 @@ export default function LaundryPage() {
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Laundry Schedule</h1>
         </div>
       </header>
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+        <section
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, #0ea5e9 0%, #2563eb 100%)' }}
+        >
+          <p className="text-xl font-extrabold">Laundry Schedule</p>
+          <p className="text-sm font-medium text-white/85 mt-1">
+            Assign days, remind members, and keep flow smooth.
+          </p>
+        </section>
 
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-3xl font-extrabold" style={{ color: 'var(--text-1)' }}>Laundry Schedule</h1>

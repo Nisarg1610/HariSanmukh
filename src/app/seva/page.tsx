@@ -212,7 +212,7 @@ export default function SevaPage() {
         style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
       >
         <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-          <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
             <button
               onClick={() => router.back()}
               aria-label="Go back"
@@ -224,7 +224,16 @@ export default function SevaPage() {
             <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
           </div>
         </header>
-        <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
+          <section
+            className="rounded-3xl p-5 text-white shadow-sm"
+            style={{ background: 'linear-gradient(140deg, #7c3aed 0%, #a855f7 100%)' }}
+          >
+            <p className="text-xl font-extrabold">Seva Section</p>
+            <p className="text-sm font-medium text-white/85 mt-1">
+              Track and complete your assigned seva.
+            </p>
+          </section>
 
           {error && (
             <div className="p-4 rounded-[20px] shadow-sm flex gap-3 items-center" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5' }}>
@@ -331,7 +340,7 @@ export default function SevaPage() {
       style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-2">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
           <button
             onClick={() => router.back()}
             aria-label="Go back"
@@ -343,7 +352,16 @@ export default function SevaPage() {
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>Seva Section</h1>
         </div>
       </header>
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 py-5 space-y-8">
+        <section
+          className="rounded-3xl p-5 text-white shadow-sm"
+          style={{ background: 'linear-gradient(140deg, #7c3aed 0%, #a855f7 100%)' }}
+        >
+          <p className="text-xl font-extrabold">Seva Section</p>
+          <p className="text-sm font-medium text-white/85 mt-1">
+            Manage assignments, balancing, and completion status.
+          </p>
+        </section>
 
         {/* Header */}
         <div className="flex items-center justify-between">
