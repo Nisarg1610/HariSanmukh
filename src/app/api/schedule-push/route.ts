@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       // We pass householdId = 'all' or we find the right members.
       // Wait, we can just call the push-notification logic here, or fetch the push-notify endpoint.
       
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://hari-sanmukh.vercel.app/';
       
       // We need to fetch the assigned members today to notify them
       // But Since we are server side, we can just fetch /api/push-notify for each user, 
