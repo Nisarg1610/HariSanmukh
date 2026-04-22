@@ -66,7 +66,7 @@ export default function Home() {
   const [houseCodeInput, setHouseCodeInput] = useState('');
   const [houseCodeError, setHouseCodeError] = useState('');
   const [submittingCode, setSubmittingCode] = useState(false);
-  const [houseName, setHouseName] = useState<string>('Hariprabodham');
+  const [houseName, setHouseName] = useState<string>('HariPrabodham');
   const [dailyContent, setDailyContent] = useState<{
     siksha: any;
     swamini: any;
@@ -384,7 +384,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: newDbUser.id,
-          title: 'Welcome to Hariprabodham!',
+          title: 'Welcome to HariPrabodham!',
           body: 'ðŸ™ Jay Swaminarayan ðŸ™  You\'re all set. Wait for admin to assign seva and laundry. ðŸ˜Š',
         }),
       });
@@ -855,7 +855,7 @@ export default function Home() {
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
             <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-4">
-              <img src="/icon-256.png" alt="Hariprabodham" className="w-full h-full object-cover" />
+              <img src="/icon-256.png" alt="HariPrabodham" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
               HariPrabodham
@@ -1274,11 +1274,11 @@ export default function Home() {
           </Link>
         </section>
 
-        <SabhaRideCard 
-          householdId={dbUser?.household_id} 
-          memberId={memberId} 
-          isAdmin={dbUser?.role === 'admin'} 
-          isDark={isDark} 
+        <SabhaRideCard
+          householdId={dbUser?.household_id}
+          memberId={memberId}
+          isAdmin={dbUser?.role === 'admin'}
+          isDark={isDark}
         />
 
         {/* ══════════════════════════════════════════════════════════════

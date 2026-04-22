@@ -6,7 +6,7 @@ import { ProfilePanel } from '@/components/ProfilePanel';
 interface AppHeaderProps {
   user?: any;
   dbUser?: any;
-   displayName?: string;
+  displayName?: string;
   onLogout?: () => void;
 }
 
@@ -35,10 +35,10 @@ export function AppHeader({ user, dbUser, displayName, onLogout }: AppHeaderProp
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden">
-              <img src="/icon-192.png" alt="Hariprabodham" className="w-full h-full object-cover" />
+              <img src="/icon-192.png" alt="HariPrabodham" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>
-              Hariprabodham
+              HariPrabodham
             </h1>
           </div>
 
@@ -70,15 +70,15 @@ export function AppHeader({ user, dbUser, displayName, onLogout }: AppHeaderProp
       </header>
 
       {user && onLogout && (
-      <ProfilePanel
-  user={user}
-  dbUser={dbUser}
-  displayName={displayName ?? ''}
-  isOpen={profileOpen}
-  onClose={() => setProfileOpen(false)}
-  onLogout={onLogout!}
-  onSwitchAccount={onLogout!}
-/>
+        <ProfilePanel
+          user={user}
+          dbUser={dbUser}
+          displayName={displayName ?? ''}
+          isOpen={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          onLogout={onLogout!}
+          onSwitchAccount={onLogout!}
+        />
       )}
     </>
   );

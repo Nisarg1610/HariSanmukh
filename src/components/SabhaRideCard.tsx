@@ -156,6 +156,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
     if (vote === 'yes') return 'Needs Ride';
     if (vote === 'no') return 'Not Coming';
     if (vote === 'coming_directly') return 'Coming Directly';
+    if (vote === 'provide_ride') return 'Can Provide Ride';
     return 'Pending';
   };
 
@@ -277,7 +278,8 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
               {[
                 { id: 'yes', label: 'Yes', icon: '👍' },
                 { id: 'no', label: 'No', icon: '👎' },
-                { id: 'coming_directly', label: 'Coming Directly', icon: '🚶' }
+                { id: 'coming_directly', label: 'Coming Directly', icon: '🚶' },
+                { id: 'provide_ride', label: 'Can Provide Ride', icon: '🚗' }
               ].map((opt) => {
                 const isSelected = hasVoted === opt.id;
                 return (
@@ -314,6 +316,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
               <div className="space-y-4">
                 {[
                   { id: 'yes', label: 'Needs Ride', color: '#ef4444' }, // Red for needing ride (since it needs action usually) or maybe green? Let's use blue/green
+                  { id: 'provide_ride', label: 'Can Provide Ride', color: '#3b82f6' },
                   { id: 'coming_directly', label: 'Coming Directly', color: '#10b981' },
                   { id: 'no', label: 'Not Coming', color: '#6b7280' },
                 ].map((group) => {
