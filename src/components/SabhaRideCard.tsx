@@ -224,6 +224,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         <SheetContent 
           side="bottom" 
           className="rounded-t-[32px] px-6 pb-8 pt-6 h-auto"
+          style={{ backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border-color)' }}
           onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
           onTouchEnd={(e) => {
             if (e.changedTouches[0].clientY - touchStartY > 60) setIsOpen(false);
