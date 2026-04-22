@@ -928,7 +928,11 @@ export default function Home() {
             </button>
 
             <div className="pt-6 text-center">
-              <Link href="/privacy-policy" className="text-xs hover:underline" style={{ color: 'var(--text-3)' }}>
+              <Link
+                href="/privacy-policy"
+                className="text-xs font-semibold hover:underline px-3 py-1.5 rounded-lg transition-colors"
+                style={{ color: 'var(--text-2)', backgroundColor: 'var(--bg-card-2)' }}
+              >
                 Privacy Policy
               </Link>
             </div>
@@ -1349,10 +1353,10 @@ export default function Home() {
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-center" style={{ color: 'var(--text-3)' }}>
+                <p className="text-sm font-semibold text-center" style={{ color: 'var(--text-2)' }}>
                   No active seva
                 </p>
-                <p className="text-xs text-center mt-0.5" style={{ color: 'var(--text-4)' }}>
+                <p className="text-xs text-center mt-0.5" style={{ color: 'var(--text-3)' }}>
                   You're all caught up! 🎉
                 </p>
               </>
@@ -1407,7 +1411,10 @@ export default function Home() {
               {myLaundryDays?.[0] || 'No schedule'}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
-              Don't forget — it's your laundry day!
+              {myLaundryDays?.[0] &&
+                myLaundryDays[0].toLowerCase().includes(new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase())
+                ? "Today is your laundry day! Don't forget 🧺"
+                : myLaundryDays?.[0] ? 'Your assigned laundry day' : 'No laundry schedule yet'}
             </p>
           </div>
 
@@ -1499,7 +1506,7 @@ export default function Home() {
                                 key={idx}
                                 className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
                                 style={{
-                                  backgroundColor: 'rgba(0,0,0,0.05)',
+                                  backgroundColor: 'var(--bg-card-2)',
                                   color: 'var(--text-2)',
                                   border: '1px solid var(--separator)'
                                 }}
