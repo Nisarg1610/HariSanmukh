@@ -168,19 +168,20 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         <div style={{
           position: 'absolute', top: -18, right: -18,
           width: 80, height: 80, borderRadius: '50%',
-          background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', pointerEvents: 'none',
+          backgroundColor: 'var(--separator)', pointerEvents: 'none',
         }} />
         <div style={{
           position: 'absolute', bottom: -24, left: -10,
           width: 60, height: 60, borderRadius: '50%',
-          background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', pointerEvents: 'none',
+          backgroundColor: 'var(--separator)', pointerEvents: 'none',
+          opacity: 0.5,
         }} />
 
         <div className="flex justify-between items-center relative z-10">
           <div>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
               style={{
-                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                backgroundColor: 'var(--separator)',
               }}>
               <span style={{ fontSize: 20 }}>🚗</span>
             </div>
@@ -193,8 +194,8 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
             {hasVoted ? (
               <span className="text-xs font-bold px-3 py-1.5 rounded-full"
                 style={{ 
-                  backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe', 
-                  color: isDark ? '#38bdf8' : '#0284c7' 
+                  backgroundColor: 'var(--accent-bg)', 
+                  color: 'var(--accent)' 
                 }}>
                 {getVoteText(hasVoted)}
               </span>
@@ -209,7 +210,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
             ) : (
               <span className="text-xs font-bold px-3 py-1.5 rounded-full"
                 style={{ 
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', 
+                  backgroundColor: 'var(--separator)', 
                   color: 'var(--text-3)' 
                 }}>
                 OFF
