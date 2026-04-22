@@ -40,7 +40,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         .select('*')
         .eq('household_id', householdId)
         .maybeSingle();
-      
+
       setIsEnabled(statusData?.is_enabled ?? false);
 
       // Fetch user's vote
@@ -51,7 +51,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           .eq('household_id', householdId)
           .eq('member_id', memberId)
           .maybeSingle();
-        
+
         if (myVote) {
           setHasVoted(myVote.vote);
         } else {
@@ -86,7 +86,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           vote: choice,
           updated_at: new Date().toISOString()
         }, { onConflict: 'household_id,member_id' });
-      
+
       if (!error) {
         setHasVoted(choice);
         loadState();
@@ -106,7 +106,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         setVotes([]);
         setHasVoted(null);
       }
-      
+
       await supabase
         .from('sabha_ride_status')
         .upsert({
@@ -114,7 +114,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           is_enabled: nextState,
           updated_at: new Date().toISOString()
         }, { onConflict: 'household_id' });
-        
+
       setIsEnabled(nextState);
     } catch (err) {
       console.error('Error toggling feature:', err);
@@ -160,7 +160,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
 
   return (
     <>
-      <div 
+      <div
         onClick={() => setIsOpen(true)}
         className="mt-3 block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden cursor-pointer"
         style={{
@@ -180,20 +180,20 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           width: 60, height: 60, borderRadius: '50%',
           background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
         }} />
-        
+
         <div className="flex justify-between items-center relative z-10">
-          <div>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
-                style={{
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.20)',
-                }}>
-              <span style={{ fontSize: 20 }}>🚗</span>
-            </div>
+
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
+            style={{
+              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.20)',
+            }}>
+            <span style={{ fontSize: 20 }}>🚗</span>
             <p className="text-sm font-extrabold leading-tight text-white">
               Do you need ride for upcoming Seva?
             </p>
           </div>
-          
+
+
           <div className="ml-3 flex-shrink-0">
             {hasVoted ? (
               <span className="text-xs font-bold px-3 py-1.5 rounded-full"
@@ -222,8 +222,8 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
             <SheetTitle className="text-2xl font-bold flex items-center justify-between" style={{ color: 'var(--text-1)' }}>
               <span>Sabha Ride</span>
               {isAdmin && (
-                <button 
-                  onClick={notifyAll} 
+                <button
+                  onClick={notifyAll}
                   disabled={notifying || !isEnabled}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-50"
                   style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
@@ -239,8 +239,8 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           </SheetHeader>
 
           {isAdmin && (
-            <div className="flex items-center justify-between mb-6 p-4 rounded-2xl" 
-                 style={{ backgroundColor: 'var(--bg-card-2)' }}>
+            <div className="flex items-center justify-between mb-6 p-4 rounded-2xl"
+              style={{ backgroundColor: 'var(--bg-card-2)' }}>
               <span className="font-semibold" style={{ color: 'var(--text-1)' }}>Enable Voting Session</span>
               <button
                 onClick={toggleEnabled}
