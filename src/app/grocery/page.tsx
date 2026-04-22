@@ -370,7 +370,7 @@ export default function GroceryPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="w-16 h-16 rounded-3xl overflow-hidden animate-pulse shadow-lg">
-          <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+          <img src="/icon-256.png" alt="HariPrabodham" className="w-full h-full object-cover" />
         </div>
         <p className="text-[15px] font-medium animate-pulse" style={{ color: 'var(--text-3)' }}>Loading your list...</p>
       </main>

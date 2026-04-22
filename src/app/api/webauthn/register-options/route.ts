@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     .eq('user_id', userId);
 
   const options = await generateRegistrationOptions({
-    rpName: 'HariSanmukh',
+    rpName: 'HariPrabodham',
     rpID: process.env.NEXT_PUBLIC_APP_DOMAIN!,
     userID: new TextEncoder().encode(userId),
     userName: email,

@@ -346,7 +346,7 @@ export function ProfilePanel({
           style={{ borderTop: '0.5px solid var(--separator)' }}
         >
           <p className="text-xs text-center" style={{ color: 'var(--text-4)' }}>
-            HariSanmukh v1.0 · Made with 🙏
+            HariPrabodham v1.0 · Made with 🙏
           </p>
         </div>
       </div>
@@ -402,8 +402,8 @@ export function ProfilePanel({
               style={{ backgroundColor: 'var(--bg-card-2)' }}
             >
               {[
-                { platform: 'iPhone / iPad', steps: 'Settings → HariSanmukh → Notifications → Allow' },
-                { platform: 'Android',       steps: 'Settings → Apps → HariSanmukh → Notifications → On' },
+                { platform: 'iPhone / iPad', steps: 'Settings → HariPrabodham → Notifications → Allow' },
+                { platform: 'Android',       steps: 'Settings → Apps → HariPrabodham → Notifications → On' },
                 { platform: 'Chrome',        steps: 'Tap the lock icon in address bar → Notifications → Allow' },
               ].map(({ platform, steps }) => (
                 <div key={platform}>

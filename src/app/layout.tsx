@@ -75,14 +75,7 @@ export default function RootLayout({
         <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
         <link rel="icon" href="/icon-512.png" sizes="512x512" type="image/png" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
-        <script dangerouslySetInnerHTML={{
-          __html: `
-    const theme = localStorage.getItem('hs_theme');
-    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    }
-  `
-        }} />
+
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {

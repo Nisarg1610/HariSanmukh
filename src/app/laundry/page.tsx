@@ -115,7 +115,7 @@ export default function LaundryPage() {
         style={{ backgroundColor: 'var(--bg)' }}
       >
         <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
-          <img src="/icon-256.png" alt="HariSanmukh" className="w-full h-full object-cover" />
+          <img src="/icon-256.png" alt="HariPrabodham" className="w-full h-full object-cover" />
         </div>
         <p className="text-sm" style={{ color: 'var(--text-3)' }}>Loading...</p>
       </main>
