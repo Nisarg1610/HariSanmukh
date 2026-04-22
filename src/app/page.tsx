@@ -860,8 +860,10 @@ export default function Home() {
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
               HariPrabodham
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-3)' }}>
-              Manage ghar-mandir nicely and effectively
+            <p className="text-sm mt-3" style={{ color: 'var(--text-3)' }}>
+              HariPrabodham is a dedicated household coordination platform designed to help families seamlessly manage daily sevas, organize laundry schedules, and track shared grocery lists.
+              <br /><br />
+              Log in to join your household and stay coordinated!
             </p>
           </div>
 

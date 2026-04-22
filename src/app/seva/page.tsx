@@ -73,7 +73,7 @@ export default function SevaPage() {
     });
     lines.push('');
     lines.push('Bhaio please ensure these are completed in a timely manner.');
-    lines.push('Update it on HariSanmukh app after you do your seva 🙏 https://hari-sanmukh.vercel.app/');
+    lines.push('Update it on HariSanmukh app after you do your seva 🙏 https://brampton-youths.vercel.app/');
     navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
