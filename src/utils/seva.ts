@@ -152,7 +152,7 @@ export async function refreshSevaAssignments(householdId: string) {
     }
   }
 
-  // 5. Delete only UNLOCKED assignments
+  // 5. Delete only UNLOCKED assignments, and reset complete status for locked ones
   const unlockedIds = (existingAssignments ?? [])
     .filter((a) => !a.is_locked)
     .map((a) => a.id);
@@ -162,6 +162,14 @@ export async function refreshSevaAssignments(householdId: string) {
       .from('seva_assignments')
       .delete()
       .in('id', unlockedIds);
+  }
+
+  const lockedIds = lockedAssignments.map((a) => a.id);
+  if (lockedIds.length > 0) {
+    await supabase
+      .from('seva_assignments')
+      .update({ is_completed: false, completed_at: null })
+      .in('id', lockedIds);
   }
 
   // 6. Build new assignments for unlocked slots only

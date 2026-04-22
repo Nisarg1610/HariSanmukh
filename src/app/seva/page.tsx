@@ -43,7 +43,9 @@ export default function SevaPage() {
     .reduce((sum, s) => sum + (s.cap || 0), 0);
 
   // How many slots are still free
-  const maxAllowedCap = Math.max(0, members.length - totalCapUsed);
+  const activeMembers = members.filter((m: any) => m.status === 'active');
+  const activeMembersCount = activeMembers.length;
+  const maxAllowedCap = Math.max(0, activeMembersCount - totalCapUsed);
   // ──────────────────────────────────────────────────────────────────────────
 
   const fetchAll = async (hId: string) => {
@@ -118,7 +120,7 @@ export default function SevaPage() {
     if (form.cap > maxAllowedCap) {
       setError(
         `Only ${maxAllowedCap} member slot${maxAllowedCap !== 1 ? 's' : ''} available. ` +
-        `Total active members: ${members.length}, already assigned: ${totalCapUsed}.`
+        `Total active members: ${activeMembersCount}, already assigned: ${totalCapUsed}.`
       );
       return;
     }
@@ -520,14 +522,14 @@ export default function SevaPage() {
             <div className="flex flex-col gap-1 flex-1">
               <div className="flex justify-between text-[11px] font-bold mb-1" style={{ color: 'var(--text-3)' }}>
                 <span>Slots used</span>
-                <span>{totalCapUsed} / {members.length}</span>
+                <span>{totalCapUsed} / {activeMembersCount}</span>
               </div>
               <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--separator)' }}>
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
-                    width: members.length > 0 ? `${(totalCapUsed / members.length) * 100}%` : '0%',
-                    backgroundColor: totalCapUsed >= members.length ? 'var(--red)' : 'var(--green)',
+                    width: activeMembersCount > 0 ? `${(totalCapUsed / activeMembersCount) * 100}%` : '0%',
+                    backgroundColor: totalCapUsed >= activeMembersCount ? 'var(--red)' : 'var(--green)',
                   }}
                 />
               </div>
@@ -535,11 +537,11 @@ export default function SevaPage() {
             <span
               className="text-[11px] font-extrabold px-2.5 py-1 rounded-[8px] flex-shrink-0"
               style={{
-                backgroundColor: totalCapUsed >= members.length ? 'var(--red-bg)' : 'var(--green-bg)',
-                color: totalCapUsed >= members.length ? 'var(--red)' : 'var(--green)',
+                backgroundColor: totalCapUsed >= activeMembersCount ? 'var(--red-bg)' : 'var(--green-bg)',
+                color: totalCapUsed >= activeMembersCount ? 'var(--red)' : 'var(--green)',
               }}
             >
-              {members.length - totalCapUsed} free
+              {activeMembersCount - totalCapUsed} free
             </span>
           </div>
         </section>
@@ -650,11 +652,11 @@ export default function SevaPage() {
                   <div className="mt-2 px-1">
                     {maxAllowedCap === 0 ? (
                       <p className="text-[11px] font-bold" style={{ color: 'var(--red)' }}>
-                        ⚠ All {members.length} members are already assigned across other sevas.
+                        ⚠ All {activeMembersCount} members are already assigned across other sevas.
                       </p>
                     ) : (
                       <p className="text-[11px]" style={{ color: 'var(--text-4)' }}>
-                        {totalCapUsed} of {members.length} members assigned to other sevas. Max you can set: {maxAllowedCap}.
+                        {totalCapUsed} of {activeMembersCount} members assigned to other sevas. Max you can set: {maxAllowedCap}.
                       </p>
                     )}
                   </div>

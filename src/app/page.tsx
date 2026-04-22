@@ -460,11 +460,11 @@ export default function Home() {
     setHouseCodeError('');
 
     const HOUSE_CODES: Record<string, string> = {
-      '11111': 'HariSanmukh',
-      '22222': 'HariSharan',
-      '33333': 'HariNaman',
-      '44444': 'HariChintan',
-      '55555': 'SuhradVihar',
+      '17853': 'HariSanmukh',
+      '10672': 'HariSharan',
+      '08672': 'HariNaman',
+      '91996': 'HariChintan',
+      '26079': 'SuhradVihar',
     };
 
     const houseName = HOUSE_CODES[houseCodeInput];
