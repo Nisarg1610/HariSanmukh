@@ -1391,7 +1391,7 @@ export default function Home() {
                   color: isDark ? '#e8b84b' : '#f97316',
                   border: isDark ? '1px solid rgba(232,184,75,0.22)' : 'none',
                 }}>
-                Today
+                Your Day
               </span>
             </div>
           </Link>
@@ -1442,9 +1442,7 @@ export default function Home() {
             <p className="text-lg font-extrabold" style={{ color: 'var(--text-1)' }}>
               Collection Roadmap 🗺️
             </p>
-            <Link href="/calendar" className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
-              See all
-            </Link>
+
           </div>
 
           {garbageDateGroups.length === 0 ? (
