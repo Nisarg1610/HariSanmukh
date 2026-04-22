@@ -23,6 +23,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifying, setNotifying] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(0);
 
   useEffect(() => {
     if (householdId) {
@@ -162,14 +163,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
     <>
       <div
         onClick={() => setIsOpen(true)}
-        className="mt-3 block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden cursor-pointer shadow-sm"
-        style={{
-          backgroundColor: isDark ? 'rgba(30, 30, 30, 0.4)' : 'rgba(255, 255, 255, 0.65)',
-          backdropFilter: 'blur(24px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-          border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.4)',
-          boxShadow: isDark ? '0 4px 30px rgba(0, 0, 0, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.05)',
-        }}
+        className="mt-3 block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden cursor-pointer shadow-sm glass-card"
       >
         <div style={{
           position: 'absolute', top: -18, right: -18,
@@ -226,7 +220,18 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
       </div>
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-8 pt-6 h-auto">
+        <SheetContent 
+          side="bottom" 
+          className="rounded-t-[32px] px-6 pb-8 pt-6 h-auto"
+          onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
+          onTouchEnd={(e) => {
+            if (e.changedTouches[0].clientY - touchStartY > 60) setIsOpen(false);
+          }}
+          onMouseDown={(e) => setTouchStartY(e.clientY)}
+          onMouseUp={(e) => {
+            if (e.clientY - touchStartY > 60) setIsOpen(false);
+          }}
+        >
           <div className="w-12 h-1.5 rounded-full mx-auto mb-6" style={{ backgroundColor: 'var(--separator)' }} />
           <SheetHeader className="p-0 mb-6 text-left relative">
             <SheetTitle className="text-2xl font-bold flex items-center justify-between" style={{ color: 'var(--text-1)' }}>

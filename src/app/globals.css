@@ -160,6 +160,18 @@ html.dark .glass-bottom {
   background: rgba(10, 12, 16, 0.94);
 }
 
+/* Glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--border-color);
+}
+html.dark .glass-card {
+  background: rgba(30, 32, 40, 0.4);
+}
+
+
 /* iOS grouped list */
 .list-group {
   background: var(--bg-card);
