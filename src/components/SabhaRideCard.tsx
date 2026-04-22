@@ -162,34 +162,35 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
     <>
       <div
         onClick={() => setIsOpen(true)}
-        className="mt-3 block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden cursor-pointer"
+        className="mt-3 block rounded-3xl p-4 transition-transform active:scale-[0.97] relative overflow-hidden cursor-pointer shadow-sm"
         style={{
-          background: isDark
-            ? 'linear-gradient(140deg, #1e3a8a 0%, #3b82f6 100%)'
-            : 'linear-gradient(140deg, #3b82f6 0%, #60a5fa 100%)',
-          border: isDark ? '1px solid rgba(59,130,246,0.25)' : 'none',
+          backgroundColor: isDark ? 'rgba(30, 30, 30, 0.4)' : 'rgba(255, 255, 255, 0.65)',
+          backdropFilter: 'blur(24px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+          border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.4)',
+          boxShadow: isDark ? '0 4px 30px rgba(0, 0, 0, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.05)',
         }}
       >
         <div style={{
           position: 'absolute', top: -18, right: -18,
           width: 80, height: 80, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+          background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', pointerEvents: 'none',
         }} />
         <div style={{
           position: 'absolute', bottom: -24, left: -10,
           width: 60, height: 60, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
+          background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', pointerEvents: 'none',
         }} />
 
         <div className="flex justify-between items-center relative z-10">
           <div>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
               style={{
-                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.20)',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
               }}>
               <span style={{ fontSize: 20 }}>🚗</span>
             </div>
-            <p className="text-sm font-extrabold leading-tight text-white">
+            <p className="text-sm font-extrabold leading-tight" style={{ color: 'var(--text-1)' }}>
               Do you need ride for upcoming Sabha?
             </p>
           </div>
@@ -197,17 +198,26 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           <div className="ml-3 flex-shrink-0">
             {hasVoted ? (
               <span className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe', 
+                  color: isDark ? '#38bdf8' : '#0284c7' 
+                }}>
                 {getVoteText(hasVoted)}
               </span>
             ) : isEnabled ? (
-              <span className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: 'white', color: '#3b82f6' }}>
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full shadow-sm"
+                style={{ 
+                  backgroundColor: 'var(--accent)', 
+                  color: '#fff' 
+                }}>
                 Vote
               </span>
             ) : (
               <span className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', 
+                  color: 'var(--text-3)' 
+                }}>
                 OFF
               </span>
             )}
