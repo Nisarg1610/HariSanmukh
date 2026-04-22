@@ -182,17 +182,17 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         }} />
 
         <div className="flex justify-between items-center relative z-10">
-
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
-            style={{
-              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.20)',
-            }}>
-            <span style={{ fontSize: 20 }}>🚗</span>
+          <div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
+              style={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.20)',
+              }}>
+              <span style={{ fontSize: 20 }}>🚗</span>
+            </div>
             <p className="text-sm font-extrabold leading-tight text-white">
-              Do you need ride for upcoming Seva?
+              Do you need ride for upcoming Sabha?
             </p>
           </div>
-
 
           <div className="ml-3 flex-shrink-0">
             {hasVoted ? (
