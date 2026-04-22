@@ -861,7 +861,7 @@ export default function Home() {
               HariPrabodham
             </h1>
             <p className="text-sm mt-3" style={{ color: 'var(--text-3)' }}>
-              HariPrabodham is a dedicated household coordination platform designed to help families seamlessly manage daily sevas, organize laundry schedules, and track shared grocery lists.
+              HariPrabodham is a dedicated household coordination platform designed to manage daily sevas, organize laundry schedules, and track shared grocery lists of our ghar-mandirs.
               <br /><br />
               Log in to join your household and stay coordinated!
             </p>

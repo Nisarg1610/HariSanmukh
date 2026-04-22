@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -6,24 +7,42 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/push-notify`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    householdId: 'all',
-    title: '🗑️ Garbage Day Tomorrow!',
-    body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
-  }),
-});
+  const { searchParams } = new URL(request.url);
+  const day = searchParams.get('day') || 'wednesday'; // ?day=wednesday or ?day=thursday
 
-  // Check if response is actually JSON before parsing
-  const contentType = res.headers.get('content-type');
-  if (!contentType?.includes('application/json')) {
-    const text = await res.text();
-    console.error('Non-JSON response:', res.status, text);
-    return NextResponse.json({ error: 'Unexpected response', status: res.status, body: text }, { status: 500 });
+  // Determine which households to notify
+  const targetHouseholds = day === 'thursday' 
+    ? ['HariNaman', 'HariChintan']
+    : ['HariSanmukh', 'HariSharan', 'SuhradVihar'];
+
+  const { data: households, error } = await supabase
+    .from('households')
+    .select('id, name');
+
+  if (error || !households) {
+    return NextResponse.json({ error: 'Failed to fetch households' }, { status: 500 });
   }
 
-  const data = await res.json();
-  return NextResponse.json(data);
+  const householdsToNotify = households.filter((h: any) => targetHouseholds.includes(h.name));
+  
+  if (householdsToNotify.length === 0) {
+    return NextResponse.json({ message: 'No matching households for this day' });
+  }
+
+  // Promise.all to fetch the push notification endpoint for each matching household
+  const results = await Promise.allSettled(
+    householdsToNotify.map((h: any) => 
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/push-notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          householdId: h.id,
+          title: '🗑️ Garbage Day Tomorrow!',
+          body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
+        }),
+      }).then(res => res.json())
+    )
+  );
+
+  return NextResponse.json({ notifiedCount: householdsToNotify.length, day, results });
 }

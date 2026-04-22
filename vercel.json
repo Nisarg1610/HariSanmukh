@@ -1,8 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron/garbage-reminder",
+      "path": "/api/cron/garbage-reminder?day=wednesday",
       "schedule": "0 23 * * 2"
+    },
+    {
+      "path": "/api/cron/garbage-reminder?day=thursday",
+      "schedule": "0 23 * * 3"
     },
     {
       "path": "/api/cron/laundry-reminder?type=reminder",
