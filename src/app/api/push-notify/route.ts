@@ -14,7 +14,7 @@ webpush.setVapidDetails(
 );
 
 export async function POST(request: Request) {
-  const { householdId, userId, title, body } = await request.json();
+  const { householdId, userId, title, body, url } = await request.json();
 
   let query = supabase.from('push_subscriptions').select('subscription');
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'No subscribers' });
   }
 
-  const payload = JSON.stringify({ title, body });
+  const payload = JSON.stringify({ title, body, url });
 
   const results = await Promise.allSettled(
     subscriptions.map((row) =>

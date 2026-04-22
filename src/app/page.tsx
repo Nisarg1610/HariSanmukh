@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { LaundryTracker } from '@/components/LaundryTracker';
 import { getTodayLaundrySessions } from '@/utils/laundry';
 import { SwipeToComplete } from '@/components/SwipeToComplete';
+import { SabhaRideCard } from '@/components/SabhaRideCard';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MAX_ATTEMPTS = 3;
@@ -1270,6 +1271,13 @@ export default function Home() {
             </p>
           </Link>
         </section>
+
+        <SabhaRideCard 
+          householdId={dbUser?.household_id} 
+          memberId={memberId} 
+          isAdmin={dbUser?.role === 'admin'} 
+          isDark={isDark} 
+        />
 
         {/* ══════════════════════════════════════════════════════════════
           THIS WEEK YOU HAVE
