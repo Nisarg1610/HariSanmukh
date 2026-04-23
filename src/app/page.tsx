@@ -756,6 +756,7 @@ export default function Home() {
   // NEW: no .slice() â€” show the FULL upcoming month worth of dates.
   // Dates are grouped by day (multiple event types on same day merge into one row).
   // garbageDates is already filtered to today-onwards in fetchDashboardData.
+
   const garbageDateGroups = useMemo(() => {
     const grouped = garbageDates.reduce((acc: Record<string, any[]>, event: any) => {
       if (!acc[event.date]) acc[event.date] = [];
