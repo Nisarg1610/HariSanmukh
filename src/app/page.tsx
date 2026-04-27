@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
 import { getSevaAssignments, markSevaComplete } from '@/utils/seva';
 import { getLaundryAssignments } from '@/utils/laundry';
+import { getPickupDropAssignments } from '@/utils/pickupDrop';
 import { registerPushNotifications } from '@/utils/pushNotifications';
 import {
   browserSupportsWebAuthn,
@@ -54,6 +55,7 @@ export default function Home() {
   const [myLaundryDays, setMyLaundryDays] = useState<string[]>([]);
   const [allLaundryDays, setAllLaundryDays] = useState<any[]>([]);
   const [todaySessions, setTodaySessions] = useState<any[]>([]);
+  const [myPickupDropDays, setMyPickupDropDays] = useState<string[]>([]);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [garbageDates, setGarbageDates] = useState<any[]>([]);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -239,17 +241,22 @@ export default function Home() {
       setDisplayName(nextDisplayName);
 
       try {
-        const [assignments, laundryAssignments, sessions] = await Promise.all([
+        const [assignments, laundryAssignments, sessions, pickupDropAssignments] = await Promise.all([
           getSevaAssignments(hId),
           getLaundryAssignments(hId),
           getTodayLaundrySessions(hId),
+          getPickupDropAssignments(hId),
         ]);
         nextSevas = assignments.filter((a: any) => a.member_id === memberCard.id);
         nextLaundryDays = laundryAssignments
           .filter((a: any) => a.member_id === memberCard.id)
           .map((a: any) => a.day_of_week);
+        const nextPickupDropDays = pickupDropAssignments
+          .filter((a: any) => a.member_id === memberCard.id)
+          .map((a: any) => a.day_of_week);
         setMySevas(nextSevas);
         setMyLaundryDays(nextLaundryDays);
+        setMyPickupDropDays(nextPickupDropDays);
         setMemberId(memberCard.id);
         setAllLaundryDays(laundryAssignments);
         setTodaySessions(sessions);
@@ -1433,6 +1440,72 @@ export default function Home() {
           {(myLaundryDays?.length ?? 0) > 1 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {myLaundryDays.slice(1, 4).map((day) => (
+                <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold leading-none"
+                  style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
+                  {day.substring(0, 3).toUpperCase()}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── My Pick & Drop card ── */}
+        <section
+          className="rounded-3xl p-5 shadow-sm"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            border: isDark ? '1px solid rgba(120,180,160,0.10)' : '1px solid var(--separator)',
+          }}
+        >
+          <Link href="/pickup-drop" className="block">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: isDark
+                      ? 'linear-gradient(135deg, #2a1608, #4a2508)'
+                      : 'linear-gradient(135deg, #f97316, #f59e0b)',
+                    border: isDark ? '1px solid rgba(249,115,22,0.30)' : 'none',
+                  }}>
+                  <span style={{ fontSize: 20 }}>🚗</span>
+                </div>
+                <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
+                  Pick &amp; Drop 🚗
+                </span>
+              </div>
+
+              <span className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{
+                  backgroundColor: isDark ? '#201808' : '#fff3e0',
+                  color: isDark ? '#e8b84b' : '#f97316',
+                  border: isDark ? '1px solid rgba(232,184,75,0.22)' : 'none',
+                }}>
+                Your Day
+              </span>
+            </div>
+          </Link>
+
+          <div className="rounded-2xl px-4 py-4"
+            style={{
+              backgroundColor: isDark ? '#1a130a' : '#fff8f5',
+              border: isDark
+                ? '1px solid rgba(232,184,75,0.10)'
+                : '1px solid rgba(249,115,22,0.12)',
+            }}>
+            <p className="text-sm font-extrabold" style={{ color: 'var(--text-1)' }}>
+              {myPickupDropDays?.[0] || 'No schedule'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+              {myPickupDropDays?.[0] &&
+                myPickupDropDays[0].toLowerCase().includes(new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase())
+                ? "Today is your pick & drop day! Don't forget 🚗"
+                : myPickupDropDays?.[0] ? 'Your assigned pick & drop day' : 'No pick & drop schedule yet'}
+            </p>
+          </div>
+
+          {(myPickupDropDays?.length ?? 0) > 1 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {myPickupDropDays.slice(1, 4).map((day) => (
                 <span key={day} className="px-2.5 py-1.5 rounded-[10px] text-[11px] font-extrabold leading-none"
                   style={{ backgroundColor: 'var(--bg-card-2)', color: 'var(--text-2)' }}>
                   {day.substring(0, 3).toUpperCase()}

@@ -25,6 +25,14 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
   const [notifying, setNotifying] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
 
+  // Reason flow state
+  const [showReasonInput, setShowReasonInput] = useState(false);
+  const [reasonText, setReasonText] = useState('');
+  const [submittingReason, setSubmittingReason] = useState(false);
+
+  // Absence reasons for admin
+  const [absenceReasons, setAbsenceReasons] = useState<any[]>([]);
+
   useEffect(() => {
     if (householdId) {
       loadState();
@@ -60,7 +68,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         }
       }
 
-      // If admin, fetch all votes and members
+      // If admin, fetch all votes, members, and absence reasons
       if (isAdmin) {
         const [{ data: votesData }, { data: membersData }] = await Promise.all([
           supabase.from('sabha_ride_votes').select('*').eq('household_id', householdId),
@@ -68,6 +76,17 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         ]);
         setVotes(votesData || []);
         setMembers(membersData || []);
+
+        // Fetch absence reasons from the last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { data: reasons } = await supabase
+          .from('sabha_absence_reasons')
+          .select('*')
+          .eq('household_id', householdId)
+          .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+          .order('created_at', { ascending: false });
+        setAbsenceReasons(reasons || []);
       }
     } catch (err) {
       console.error('Failed to load Sabha ride state:', err);
@@ -78,6 +97,13 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
 
   const handleVote = async (choice: string) => {
     if (!memberId || !householdId) return;
+
+    // If user selects "no", show reason input instead of voting immediately
+    if (choice === 'no') {
+      setShowReasonInput(true);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('sabha_ride_votes')
@@ -91,10 +117,62 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
       if (!error) {
         setHasVoted(choice);
         loadState();
-        setTimeout(() => setIsOpen(false), 500); // Close after brief success indicator
+        setTimeout(() => setIsOpen(false), 500);
       }
     } catch (err) {
       console.error('Error voting:', err);
+    }
+  };
+
+  const handleSubmitNoWithReason = async () => {
+    if (!memberId || !householdId || !reasonText.trim()) return;
+
+    try {
+      setSubmittingReason(true);
+
+      // Get member info for the reason record
+      const { data: memberData } = await supabase
+        .from('household_members')
+        .select('first_name, last_name, email')
+        .eq('id', memberId)
+        .maybeSingle();
+
+      // 1. Record the vote as "no"
+      const { error: voteError } = await supabase
+        .from('sabha_ride_votes')
+        .upsert({
+          household_id: householdId,
+          member_id: memberId,
+          vote: 'no',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'household_id,member_id' });
+
+      if (voteError) throw voteError;
+
+      // 2. Record the absence reason
+      const { error: reasonError } = await supabase
+        .from('sabha_absence_reasons')
+        .insert({
+          household_id: householdId,
+          member_id: memberId,
+          member_name: memberData
+            ? `${memberData.first_name} ${memberData.last_name}`
+            : 'Unknown',
+          member_email: memberData?.email || null,
+          reason: reasonText.trim(),
+        });
+
+      if (reasonError) throw reasonError;
+
+      setHasVoted('no');
+      setShowReasonInput(false);
+      setReasonText('');
+      loadState();
+      setTimeout(() => setIsOpen(false), 500);
+    } catch (err) {
+      console.error('Error submitting reason:', err);
+    } finally {
+      setSubmittingReason(false);
     }
   };
 
@@ -221,11 +299,17 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
         </div>
       </div>
 
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) {
+          setShowReasonInput(false);
+          setReasonText('');
+        }
+      }}>
         <SheetContent 
           side="bottom" 
           className="rounded-t-[32px] px-6 pb-8 pt-6 h-auto"
-          style={{ backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border-color)' }}
+          style={{ backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border-color)', maxHeight: '90vh', overflowY: 'auto' }}
           onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
           onTouchEnd={(e) => {
             if (e.changedTouches[0].clientY - touchStartY > 60) setIsOpen(false);
@@ -274,34 +358,84 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           )}
 
           {isEnabled ? (
-            <div className="flex flex-col gap-3">
-              {[
-                { id: 'yes', label: 'Yes', icon: '👍' },
-                { id: 'no', label: 'No', icon: '👎' },
-                { id: 'coming_directly', label: 'Coming Directly', icon: '🚶' },
-                { id: 'provide_ride', label: 'Can Provide Ride', icon: '🚗' }
-              ].map((opt) => {
-                const isSelected = hasVoted === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => handleVote(opt.id)}
-                    className="w-full p-4 rounded-2xl flex items-center justify-between transition-all"
-                    style={{
-                      backgroundColor: isSelected ? 'var(--accent)' : 'var(--bg-card)',
-                      color: isSelected ? 'white' : 'var(--text-1)',
-                      border: isSelected ? 'none' : '1px solid var(--border-color)'
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span style={{ fontSize: 20 }}>{opt.icon}</span>
-                      <span className="font-bold">{opt.label}</span>
+            <>
+              {/* Reason input overlay when user clicks "No" */}
+              {showReasonInput ? (
+                <div className="flex flex-col gap-4">
+                  <div className="p-5 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span style={{ fontSize: 20 }}>📝</span>
+                      <p className="font-bold text-[15px]" style={{ color: 'var(--text-1)' }}>
+                        Why can&apos;t you make it?
+                      </p>
                     </div>
-                    {isSelected && <span>✓</span>}
-                  </button>
-                );
-              })}
-            </div>
+                    <textarea
+                      value={reasonText}
+                      onChange={(e) => setReasonText(e.target.value)}
+                      placeholder="e.g. Out of town, have an exam, work shift..."
+                      rows={3}
+                      className="w-full rounded-xl p-4 text-[14px] resize-none outline-none transition-all"
+                      style={{
+                        backgroundColor: 'var(--bg-card-2)',
+                        color: 'var(--text-1)',
+                        border: '1px solid var(--border-color)',
+                      }}
+                      autoFocus
+                    />
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        onClick={() => { setShowReasonInput(false); setReasonText(''); }}
+                        className="flex-1 py-3.5 rounded-xl text-[14px] font-bold transition-all"
+                        style={{
+                          backgroundColor: 'var(--bg-card-2)',
+                          color: 'var(--text-2)',
+                          border: '1px solid var(--separator)',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSubmitNoWithReason}
+                        disabled={submittingReason || !reasonText.trim()}
+                        className="flex-1 py-3.5 rounded-xl text-[14px] font-bold text-white transition-all disabled:opacity-50"
+                        style={{ backgroundColor: '#6b7280' }}
+                      >
+                        {submittingReason ? 'Submitting...' : 'Submit'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {[
+                    { id: 'yes', label: 'Yes', icon: '👍' },
+                    { id: 'no', label: 'No', icon: '👎' },
+                    { id: 'coming_directly', label: 'Coming Directly', icon: '🚶' },
+                    { id: 'provide_ride', label: 'Can Provide Ride', icon: '🚗' }
+                  ].map((opt) => {
+                    const isSelected = hasVoted === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => handleVote(opt.id)}
+                        className="w-full p-4 rounded-2xl flex items-center justify-between transition-all"
+                        style={{
+                          backgroundColor: isSelected ? 'var(--accent)' : 'var(--bg-card)',
+                          color: isSelected ? 'white' : 'var(--text-1)',
+                          border: isSelected ? 'none' : '1px solid var(--border-color)'
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span style={{ fontSize: 20 }}>{opt.icon}</span>
+                          <span className="font-bold">{opt.label}</span>
+                        </div>
+                        {isSelected && <span>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : (
             <div className="p-6 text-center rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
               <span className="text-4xl block mb-2">😴</span>
@@ -315,7 +449,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
               <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-1)' }}>Live Status</h3>
               <div className="space-y-4">
                 {[
-                  { id: 'yes', label: 'Needs Ride', color: '#ef4444' }, // Red for needing ride (since it needs action usually) or maybe green? Let's use blue/green
+                  { id: 'yes', label: 'Needs Ride', color: '#ef4444' },
                   { id: 'provide_ride', label: 'Can Provide Ride', color: '#3b82f6' },
                   { id: 'coming_directly', label: 'Coming Directly', color: '#10b981' },
                   { id: 'no', label: 'Not Coming', color: '#6b7280' },
@@ -330,11 +464,29 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
                         {filtered.length > 0 ? (
                           filtered.map(v => {
                             const member = members.find(m => m.id === v.member_id);
+                            const memberName = member ? `${member.first_name} ${member.last_name}` : 'Unknown';
+                            
+                            // If this is the "Not Coming" group, find the latest reason
+                            let reason: string | null = null;
+                            if (group.id === 'no') {
+                              const memberReason = absenceReasons.find(
+                                r => r.member_id === v.member_id
+                              );
+                              reason = memberReason?.reason || null;
+                            }
+
                             return (
-                              <span key={v.id} className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>
-                                • {member ? `${member.first_name} ${member.last_name}` : 'Unknown'}
-                                {member?.phone ? ` (${member.phone})` : ''}
-                              </span>
+                              <div key={v.id}>
+                                <span className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>
+                                  • {memberName}
+                                  {member?.phone ? ` (${member.phone})` : ''}
+                                </span>
+                                {reason && (
+                                  <p className="text-xs ml-3 mt-0.5 italic" style={{ color: 'var(--text-3)' }}>
+                                    &quot;{reason}&quot;
+                                  </p>
+                                )}
+                              </div>
                             );
                           })
                         ) : (
