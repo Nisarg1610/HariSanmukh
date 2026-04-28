@@ -308,8 +308,16 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
       }}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-[32px] px-6 pb-8 pt-6 h-auto"
-          style={{ backgroundColor: 'var(--bg)', borderTop: '1px solid var(--border-color)', maxHeight: '90vh', overflowY: 'auto' }}
+          className="rounded-t-[32px] px-6 pb-8 h-auto"
+          style={{ 
+            backgroundColor: 'var(--bg)', 
+            borderTop: '1px solid var(--border-color)', 
+            maxHeight: 'calc(90vh - env(safe-area-inset-top))', 
+            display: 'flex',
+            flexDirection: 'column',
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)'
+          }}
           onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
           onTouchEnd={(e) => {
             if (e.changedTouches[0].clientY - touchStartY > 60) setIsOpen(false);
@@ -319,26 +327,30 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
             if (e.clientY - touchStartY > 60) setIsOpen(false);
           }}
         >
-          <div className="w-12 h-1.5 rounded-full mx-auto mb-6" style={{ backgroundColor: 'var(--separator)' }} />
-          <SheetHeader className="p-0 mb-6 text-left relative">
-            <SheetTitle className="text-2xl font-bold flex items-center justify-between" style={{ color: 'var(--text-1)' }}>
-              <span>Sabha Ride</span>
-              {isAdmin && (
-                <button
-                  onClick={notifyAll}
-                  disabled={notifying || !isEnabled}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
-                  aria-label="Send notification"
-                >
-                  <span style={{ fontSize: 20 }}>🔔</span>
-                </button>
-              )}
-            </SheetTitle>
-            <SheetDescription className="text-base" style={{ color: 'var(--text-3)' }}>
-              Do you need ride for the upcoming Sabha??
-            </SheetDescription>
-          </SheetHeader>
+          <div className="flex-shrink-0 px-6 pt-4">
+            <div className="w-12 h-1.5 rounded-full mx-auto mb-6" style={{ backgroundColor: 'var(--separator)' }} />
+            <SheetHeader className="p-0 mb-6 text-left relative">
+              <SheetTitle className="text-2xl font-bold flex items-center justify-between" style={{ color: 'var(--text-1)' }}>
+                <span>Sabha Ride</span>
+                {isAdmin && (
+                  <button
+                    onClick={notifyAll}
+                    disabled={notifying || !isEnabled}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-50"
+                    style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
+                    aria-label="Send notification"
+                  >
+                    <span style={{ fontSize: 20 }}>🔔</span>
+                  </button>
+                )}
+              </SheetTitle>
+              <SheetDescription className="text-base" style={{ color: 'var(--text-3)' }}>
+                Do you need ride for the upcoming Sabha??
+              </SheetDescription>
+            </SheetHeader>
+          </div>
+
+          <div className="flex-grow overflow-y-auto px-6 pb-10" style={{ WebkitOverflowScrolling: 'touch' }}>
 
           {isAdmin && (
             <div className="flex items-center justify-between mb-6 p-4 rounded-2xl"
@@ -499,6 +511,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
               </div>
             </div>
           )}
+          </div>
         </SheetContent>
       </Sheet>
     </>
