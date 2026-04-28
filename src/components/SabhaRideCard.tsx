@@ -312,7 +312,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
           style={{ 
             backgroundColor: 'var(--bg)', 
             borderTop: '1px solid var(--border-color)', 
-            maxHeight: 'calc(90vh - env(safe-area-inset-top))', 
+            maxHeight: showReasonInput ? '60dvh' : 'calc(85vh - env(safe-area-inset-top))', 
             display: 'flex',
             flexDirection: 'column',
             paddingTop: 'env(safe-area-inset-top)',
@@ -327,8 +327,8 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
             if (e.clientY - touchStartY > 60) setIsOpen(false);
           }}
         >
-          <div className="flex-shrink-0 px-6 pt-4">
-            <div className="w-12 h-1.5 rounded-full mx-auto mb-6" style={{ backgroundColor: 'var(--separator)' }} />
+          <div className="flex-shrink-0 px-6" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}>
+            <div className="w-12 h-1.5 rounded-full mx-auto mb-6 opacity-40" style={{ backgroundColor: 'var(--separator)' }} />
             <SheetHeader className="p-0 mb-6 text-left relative">
               <SheetTitle className="text-2xl font-bold flex items-center justify-between" style={{ color: 'var(--text-1)' }}>
                 <span>Sabha Ride</span>
@@ -352,7 +352,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
 
           <div className="flex-grow overflow-y-auto px-6 pb-10" style={{ WebkitOverflowScrolling: 'touch' }}>
 
-          {isAdmin && (
+          {isAdmin && !showReasonInput && (
             <div className="flex items-center justify-between mb-6 p-4 rounded-2xl"
               style={{ backgroundColor: 'var(--bg-card-2)' }}>
               <span className="font-semibold" style={{ color: 'var(--text-1)' }}>Enable Voting Session</span>
@@ -456,7 +456,7 @@ export function SabhaRideCard({ householdId, memberId, isAdmin, isDark }: SabhaR
             </div>
           )}
 
-          {isAdmin && isEnabled && (
+          {isAdmin && isEnabled && !showReasonInput && (
             <div className="mt-8">
               <h3 className="font-bold text-lg mb-4" style={{ color: 'var(--text-1)' }}>Live Status</h3>
               <div className="space-y-4">
