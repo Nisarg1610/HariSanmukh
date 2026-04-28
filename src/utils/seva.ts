@@ -103,6 +103,16 @@ export async function toggleSevaLock(assignmentId: string, lock: boolean) {
   return true;
 }
 
+export async function reassignSevaMember(assignmentId: string, newMemberId: string) {
+  const { error } = await supabase
+    .from('seva_assignments')
+    .update({ member_id: newMemberId, is_locked: true }) // Auto-lock when manually assigned
+    .eq('id', assignmentId);
+
+  if (error) { console.error('reassignSevaMember error:', error); return false; }
+  return true;
+}
+
 export async function refreshSevaAssignments(householdId: string) {
   // 1. Get all sevas for this household
   const { data: sevasList } = await supabase
