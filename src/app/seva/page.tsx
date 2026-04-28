@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2, Lock, Unlock, ChevronLeft } from 'lucide-react';
+import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2, Lock, Unlock, ChevronLeft, X } from 'lucide-react';
+import { BottomNav } from '@/components/BottomNav';
 import {
   getSevas, getSevaAssignments, getPendingSevas,
   createSeva, updateSeva, deleteSeva,
@@ -10,6 +11,12 @@ import {
 } from '@/utils/seva';
 import { getHouseholdMembers } from '@/utils/members';
 import { sendSevaNotification } from '@/utils/pushNotifications';
+import {
+  DAYS,
+  getPickupDropAssignments,
+  assignPickupDrop,
+  removePickupDropAssignment,
+} from '@/utils/pickupDrop';
 import { useRouter } from 'next/navigation';
 
 export default function SevaPage() {
@@ -36,6 +43,10 @@ export default function SevaPage() {
   const [copied, setCopied] = useState(false);
   const [togglingLockId, setTogglingLockId] = useState<string | null>(null);
 
+  // Pick & Drop state
+  const [pickupDropAssignments, setPickupDropAssignments] = useState<any[]>([]);
+  const [selectedPickupMemberId, setSelectedPickupMemberId] = useState<string | null>(null);
+
   // ── Quota calculation ──────────────────────────────────────────────────────
   // Total caps already used by OTHER sevas (exclude current if editing)
   const totalCapUsed = sevas
@@ -49,16 +60,18 @@ export default function SevaPage() {
   // ──────────────────────────────────────────────────────────────────────────
 
   const fetchAll = async (hId: string) => {
-    const [s, a, m, p] = await Promise.all([
+    const [s, a, m, p, pd] = await Promise.all([
       getSevas(hId),
       getSevaAssignments(hId),
       getHouseholdMembers(hId),
       getPendingSevas(hId),
+      getPickupDropAssignments(hId),
     ]);
     setSevas(s);
     setAssignments(a);
     setMembers(m);
     setPendingSevas(p);
+    setPickupDropAssignments(pd);
   };
 
   const handleCopySevaList = () => {
@@ -192,6 +205,27 @@ export default function SevaPage() {
     }
   };
 
+  // ─── Pick & Drop handlers ──────────────────────────────────────────────────
+  const handlePickupMemberTap = (mId: string) => {
+    setSelectedPickupMemberId(prev => prev === mId ? null : mId);
+  };
+
+  const handlePickupDayTap = async (day: string) => {
+    if (!selectedPickupMemberId) return;
+    const alreadyAssigned = pickupDropAssignments.some(
+      (a) => a.member_id === selectedPickupMemberId && a.day_of_week === day
+    );
+    if (alreadyAssigned) { setSelectedPickupMemberId(null); return; }
+    const result = await assignPickupDrop(householdId, selectedPickupMemberId, day);
+    if (result) await fetchAll(householdId);
+    setSelectedPickupMemberId(null);
+  };
+
+  const handleRemovePickup = async (assignmentId: string) => {
+    await removePickupDropAssignment(assignmentId);
+    await fetchAll(householdId);
+  };
+
   if (loading) {
     return (
       <main
@@ -208,10 +242,12 @@ export default function SevaPage() {
 
   // ─── USER VIEW ──────────────────────────────────────────────
   if (userRole === 'user') {
+    const myPickupDay = pickupDropAssignments.find(a => a.member_id === memberId)?.day_of_week;
+
     return (
       <main
         className="min-h-screen pb-28"
-        style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ backgroundColor: 'var(--bg)' }}
       >
         <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
@@ -330,16 +366,56 @@ export default function SevaPage() {
               })}
             </div>
           )}
+
+          {/* ── My Pick & Drop card ── */}
+          <section
+            className="rounded-3xl p-5 shadow-sm mt-8"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--separator)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #f97316, #f59e0b)',
+                  }}>
+                  <span style={{ fontSize: 20 }}>🚗</span>
+                </div>
+                <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
+                  My Pick & Drop 🚗
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl px-4 py-4"
+              style={{
+                backgroundColor: '#fff8f5',
+                border: '1px solid rgba(249,115,22,0.12)',
+              }}>
+              <p className="text-sm font-extrabold" style={{ color: 'var(--text-1)' }}>
+                {myPickupDay || 'No schedule'}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                {myPickupDay ? 'Your assigned pick & drop day' : 'No pick & drop schedule yet'}
+              </p>
+            </div>
+          </section>
         </div>
+        <BottomNav isAdmin={false} />
       </main>
     );
   }
 
-  // ─── ADMIN VIEW ──────────────────────────────────────────────
+  const unassignedMembers = members.filter(
+    (member) => member.status === 'active' && !pickupDropAssignments.some((a) => a.member_id === member.id)
+  );
+
   return (
     <main
       className="min-h-screen pb-28"
-      style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+      style={{ backgroundColor: 'var(--bg)' }}
     >
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
@@ -737,7 +813,84 @@ export default function SevaPage() {
           </div>
         </section>
 
+        {/* Pick & Drop Schedule */}
+        <section>
+          <div className="flex items-center gap-2 mb-3 px-1 mt-6">
+            <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--accent)' }} />
+            <h2 className="text-[14px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Pick & Drop Schedule</h2>
+          </div>
+
+          <div className="card rounded-[24px] p-5 border border-[var(--separator)] bg-[var(--bg-card)] shadow-sm mb-4">
+            {unassignedMembers.length === 0 ? (
+              <div className="text-center py-2">
+                <p className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>
+                  Everyone has a pick & drop day!
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-3 text-center opacity-40">
+                  {selectedPickupMemberId ? 'Tap a day below to assign' : 'Tap a member to assign'}
+                </p>
+                <div className="flex justify-center flex-wrap gap-2">
+                  {unassignedMembers.map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() => handlePickupMemberTap(member.id)}
+                      className="px-3 py-2 rounded-xl text-[12px] font-bold transition-all shadow-sm"
+                      style={{
+                        backgroundColor: selectedPickupMemberId === member.id ? 'var(--accent)' : 'var(--bg-card-2)',
+                        color: selectedPickupMemberId === member.id ? 'var(--bg)' : 'var(--text-2)',
+                        border: selectedPickupMemberId === member.id ? 'none' : '1px solid var(--separator)',
+                      }}
+                    >
+                      {member.first_name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="card rounded-[24px] border border-[var(--separator)] bg-[var(--bg-card)] shadow-sm overflow-hidden">
+            {DAYS.map((day, idx) => {
+              const dayAssignments = pickupDropAssignments.filter((a) => a.day_of_week === day);
+              const canAssign = selectedPickupMemberId !== null;
+
+              return (
+                <div
+                  key={day}
+                  onClick={() => handlePickupDayTap(day)}
+                  className="flex items-center justify-between px-5 py-3.5 transition-all"
+                  style={{
+                    borderBottom: idx !== DAYS.length - 1 ? '1px solid var(--separator)' : 'none',
+                    cursor: canAssign ? 'pointer' : 'default',
+                    backgroundColor: canAssign ? 'var(--accent-bg)' : 'transparent',
+                    opacity: canAssign ? 0.9 : 1,
+                  }}
+                >
+                  <span className="font-bold text-[14px] w-24" style={{ color: 'var(--text-1)' }}>{day}</span>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {dayAssignments.length === 0 ? (
+                      <span className="text-[12px] italic opacity-40" style={{ color: 'var(--text-4)' }}>Empty</span>
+                    ) : (
+                      dayAssignments.map((a) => (
+                        <div key={a.id} className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-[var(--bg-card-2)] border border-[var(--separator)]">
+                          {a.household_members?.first_name}
+                          <button onClick={(e) => { e.stopPropagation(); handleRemovePickup(a.id); }} className="text-[var(--red)] ml-0.5">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
+      <BottomNav isAdmin={true} />
     </main>
   );
 }

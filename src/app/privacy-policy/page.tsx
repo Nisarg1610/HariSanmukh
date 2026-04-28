@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export default function PrivacyPolicy() {
   return (
-    <main className="min-h-screen py-10 px-6 max-w-3xl mx-auto" style={{ color: 'var(--text-1)' }}>
+    <main className="min-h-screen pb-28 px-6 max-w-3xl mx-auto" style={{ color: 'var(--text-1)', paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="mb-8">
         <Link href="/" className="text-sm font-semibold mb-6 inline-block" style={{ color: 'var(--accent)' }}>
           &larr; Back to Home

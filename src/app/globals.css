@@ -110,9 +110,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
-  /* Safe area insets — pushes content inside the safe zone on all sides */
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  /* Safe area insets — pushes content inside the safe zone on sides */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.safe-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 main {
