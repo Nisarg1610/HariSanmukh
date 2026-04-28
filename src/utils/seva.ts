@@ -103,13 +103,44 @@ export async function toggleSevaLock(assignmentId: string, lock: boolean) {
   return true;
 }
 
-export async function reassignSevaMember(assignmentId: string, newMemberId: string) {
-  const { error } = await supabase
+export async function swapSevaMembers(assignmentId: string, newMemberId: string) {
+  // 1. Get current assignment details to know the "old" member
+  const { data: currentAssignment } = await supabase
     .from('seva_assignments')
-    .update({ member_id: newMemberId, is_locked: true }) // Auto-lock when manually assigned
+    .select('member_id')
+    .eq('id', assignmentId)
+    .single();
+
+  if (!currentAssignment) return false;
+  const oldMemberId = currentAssignment.member_id;
+
+  // 2. Find if the target member (newMemberId) is currently assigned elsewhere
+  const { data: targetMemberAssignment } = await supabase
+    .from('seva_assignments')
+    .select('id')
+    .eq('member_id', newMemberId)
+    .limit(1)
+    .maybeSingle();
+
+  // 3. Perform the swap
+  // Update the original slot to the new member
+  const { error: err1 } = await supabase
+    .from('seva_assignments')
+    .update({ member_id: newMemberId })
     .eq('id', assignmentId);
 
-  if (error) { console.error('reassignSevaMember error:', error); return false; }
+  if (err1) { console.error('swap err1:', err1); return false; }
+
+  // If the new member was already somewhere else, move the old member to THAT slot
+  if (targetMemberAssignment) {
+    const { error: err2 } = await supabase
+      .from('seva_assignments')
+      .update({ member_id: oldMemberId })
+      .eq('id', targetMemberAssignment.id);
+    
+    if (err2) { console.error('swap err2:', err2); return false; }
+  }
+
   return true;
 }
 

@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2, Lock, Unlock, ChevronLeft, X, Car } from 'lucide-react';
+import { Plus, Check, Copy, Trash2, RotateCcw, Bell, Edit2, Lock, Unlock, ChevronLeft, X } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import {
   getSevas, getSevaAssignments, getPendingSevas,
   createSeva, updateSeva, deleteSeva,
   markSevaComplete, refreshSevaAssignments, toggleSevaLock,
-  reassignSevaMember,
+  swapSevaMembers,
 } from '@/utils/seva';
 import { getHouseholdMembers } from '@/utils/members';
 import { sendSevaNotification } from '@/utils/pushNotifications';
@@ -143,19 +143,6 @@ export default function SevaPage() {
     }
   };
 
-  const handleQuickAddPickup = async () => {
-    const hasPickup = sevas.some(s => s.name.toLowerCase().includes('pick'));
-    if (hasPickup) {
-      alert('"Pick up & Drop" seva already exists.');
-      return;
-    }
-    const cap = Math.min(1, maxAllowedCap);
-    setFormLoading(true);
-    await createSeva(householdId, 'Pick up & Drop', 'Taking members to/from Sabha', cap);
-    await fetchAll(householdId);
-    setFormLoading(false);
-  };
-
   const handleDelete = async (sevaId: string) => {
     if (!window.confirm('Delete this seva?')) return;
     await deleteSeva(sevaId);
@@ -208,12 +195,12 @@ export default function SevaPage() {
     if (!selectedAssignmentId) return;
     try {
       setReassigning(true);
-      await reassignSevaMember(selectedAssignmentId, newMemberId);
+      await swapSevaMembers(selectedAssignmentId, newMemberId);
       await fetchAll(householdId);
       setShowReassignModal(false);
       setSelectedAssignmentId(null);
     } catch {
-      setError('Failed to reassign member');
+      setError('Failed to swap members');
     } finally {
       setReassigning(false);
     }
@@ -319,16 +306,6 @@ export default function SevaPage() {
             <button onClick={handleNotify} disabled={notifying} className="p-2.5 rounded-xl" style={{ color: 'var(--text-3)' }}><Bell size={20} /></button>
             <button onClick={handleRefresh} disabled={refreshing} className="p-2.5 rounded-xl" style={{ color: 'var(--text-3)' }}><RotateCcw size={20} className={refreshing ? 'animate-spin' : ''} /></button>
           </div>
-          {/* Quick Add Pick & Drop if missing */}
-          {!sevas.some(s => s.name.toLowerCase().includes('pick')) && (
-            <button
-              onClick={handleQuickAddPickup}
-              disabled={formLoading || maxAllowedCap === 0}
-              className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-[var(--yellow-bg)] text-[var(--yellow)] border border-[var(--yellow)] transition-transform active:scale-95 disabled:opacity-50"
-            >
-              <Car size={14} /> + Pick up & Drop
-            </button>
-          )}
         </div>
 
         {error && <div className="p-4 rounded-xl bg-[var(--red-bg)] text-[var(--red)] border border-[var(--red)] text-sm">{error}</div>}
@@ -336,7 +313,7 @@ export default function SevaPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="section-header">Current Assignments</h2>
-            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Tap name to reassign</p>
+            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Tap name to swap</p>
           </div>
           <div className="list-group shadow-sm">
             {sevas.length === 0 ? (
@@ -356,9 +333,6 @@ export default function SevaPage() {
                             <button onClick={() => handleToggleLock(a.id, a.is_locked)} disabled={togglingLockId === a.id} className="ml-1 p-0.5 rounded-full bg-white/20">{togglingLockId === a.id ? '...' : a.is_locked ? <Unlock size={10} /> : <Lock size={10} />}</button>
                           </div>
                         ))}
-                        {sa.length < seva.cap && (
-                          <span className="text-[10px] font-bold opacity-30 italic self-center">({seva.cap - sa.length} open slots)</span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -420,8 +394,8 @@ export default function SevaPage() {
             <div className="w-full max-w-lg bg-[var(--bg-card)] rounded-[32px] p-6 pb-10 shadow-2xl animate-in slide-in-from-bottom duration-300">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 className="text-xl font-extrabold">Change Member</h3>
-                  <p className="text-[11px] font-bold opacity-40 uppercase tracking-widest mt-1">Select a new Bhai for this slot</p>
+                  <h3 className="text-xl font-extrabold">Swap Member</h3>
+                  <p className="text-[11px] font-bold opacity-40 uppercase tracking-widest mt-1">Select a Bhai to swap with</p>
                 </div>
                 <button onClick={() => { setShowReassignModal(false); setSelectedAssignmentId(null); }} className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg-card-2)] active:scale-90 transition-transform"><X size={20} /></button>
               </div>
@@ -433,7 +407,7 @@ export default function SevaPage() {
                   </button>
                 ))}
               </div>
-              {reassigning && <p className="text-center text-[11px] font-bold mt-4 animate-pulse" style={{ color: 'var(--accent)' }}>Updating assignment...</p>}
+              {reassigning && <p className="text-center text-[11px] font-bold mt-4 animate-pulse" style={{ color: 'var(--accent)' }}>Swapping members...</p>}
             </div>
           </div>
         )}
