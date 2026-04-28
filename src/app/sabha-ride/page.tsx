@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ChevronLeft, Bell, Check, Info, MessageSquare, User, Car, ThumbsUp, ThumbsDown, Walking } from 'lucide-react';
+import { ChevronLeft, Bell, Check, Info, MessageSquare, User, Car, ThumbsUp, ThumbsDown, Footprints } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SabhaRidePage() {
@@ -364,7 +364,7 @@ export default function SabhaRidePage() {
                 {[
                   { id: 'yes', label: 'Needs Ride', icon: <ThumbsUp size={20} />, color: 'var(--accent)' },
                   { id: 'no', label: 'Not Coming', icon: <ThumbsDown size={20} />, color: '#6b7280' },
-                  { id: 'coming_directly', label: 'Coming Directly', icon: <Walking size={20} />, color: 'var(--green)' },
+                  { id: 'coming_directly', label: 'Coming Directly', icon: <Footprints size={20} />, color: 'var(--green)' },
                   { id: 'provide_ride', label: 'Can Provide Ride', icon: <Car size={20} />, color: '#3b82f6' }
                 ].map((opt) => {
                   const isSelected = hasVoted === opt.id;
@@ -408,12 +408,12 @@ export default function SabhaRidePage() {
               <div className="w-1 h-5 rounded-full" style={{ backgroundColor: 'var(--text-1)' }} />
               <h2 className="text-[14px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-1)' }}>Live Status</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 gap-4">
               {[
                 { id: 'yes', label: 'Needs Ride', color: '#ef4444', icon: <ThumbsUp size={14} /> },
                 { id: 'provide_ride', label: 'Can Provide Ride', color: '#3b82f6', icon: <Car size={14} /> },
-                { id: 'coming_directly', label: 'Coming Directly', color: '#10b981', icon: <Walking size={14} /> },
+                { id: 'coming_directly', label: 'Coming Directly', color: '#10b981', icon: <Footprints size={14} /> },
                 { id: 'no', label: 'Not Coming', color: '#6b7280', icon: <ThumbsDown size={14} /> },
               ].map((group) => {
                 const filtered = votes.filter(v => v.vote === group.id);
@@ -431,7 +431,7 @@ export default function SabhaRidePage() {
                         filtered.map(v => {
                           const member = members.find(m => m.id === v.member_id);
                           const memberName = member ? `${member.first_name} ${member.last_name}` : 'Unknown';
-                          
+
                           let reason: string | null = null;
                           if (group.id === 'no') {
                             const memberReason = absenceReasons.find(
