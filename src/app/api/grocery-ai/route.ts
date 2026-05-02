@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { text } = await request.json();
-
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
     }
@@ -22,36 +21,30 @@ export async function POST(request: Request) {
         model: 'llama-3.1-8b-instant',
         messages: [{
           role: 'system',
-          content: `You are a strict, highly accurate multilingual grocery list parser (English, Hindi, Gujarati).
+          content: `You are a multilingual grocery list parser (English, Hindi, Gujarati).
         
-### Strict Rules:
-1. Parse the user's input and extract EVERY item mentioned. DO NOT skip or remove any items.
-2. DO NOT add any extra items that are not present in the user's input.
-3. Identify the item even if it is transliterated in English script (e.g., "Dhana", "Bataka", "Aloo"). Translate recognized items to a standard English name.
-4. Categorize the item into ONLY ONE of these: [Vegetables, Fruits, Dairy, Spices, Grains & Pulses, Snacks, Household, Uncategorized].
-5. CRITICAL: If you are unable to understand or translate an item, DO NOT remove it. Keep the original exact text as the "name" and set its category to "Uncategorized".
+### Rules:
+1. Identify the item even if it is transliterated (e.g., "Dhana", "Bataka", "Aloo").
+2. Translate the item to a standard English name first.
+3. Categorize the item into ONLY: [Vegetables, Fruits, Dairy, Spices, Grains & Pulses, Snacks, Household].
+4. If an item is ambiguous (like Dhana), default to "Vegetables" if it sounds like a fresh herb or "Spices" if it sounds like a dry seed.
 
 ### Examples for Training:
-- Input: "500g Dhana, 1kg Bataka, 2L Dudh, Chana Dal, some randomstuff" 
-- Output: 
-{
-  "items": [
-    {"name": "Coriander", "category": "Vegetables", "quantity": "500g"},
-    {"name": "Potato", "category": "Vegetables", "quantity": "1kg"},
-    {"name": "Milk", "category": "Dairy", "quantity": "2L"},
-    {"name": "Split Chickpeas", "category": "Grains & Pulses", "quantity": ""},
-    {"name": "some randomstuff", "category": "Uncategorized", "quantity": ""}
-  ]
-}
+- Input: "500g Dhana" -> Output: {"name": "Coriander", "category": "Vegetables", "quantity": "500g"}
+- Input: "1kg Bataka" -> Output: {"name": "Potato", "category": "Vegetables", "quantity": "1kg"}
+- Input: "2L Dudh" -> Output: {"name": "Milk", "category": "Dairy", "quantity": "2L"}
+- Input: "Chana Dal" -> Output: {"name": "Split Chickpeas", "category": "Grains & Pulses", "quantity": ""}
 
-Return ONLY a JSON object with an "items" array in this exact format. No markdown, no conversational text, no explanations.`
+Return ONLY JSON in this exact format:
+{"items":[{"name":"Milk","quantity":"2L"}]}
+No markdown, no explanations.`
         },
         {
           role: 'user',
           content: `Input: ${text}`
         }],
         max_tokens: 1000,
-        temperature: 0, // Keep at 0 for strict, deterministic output
+        temperature: 0,
         response_format: { type: 'json_object' }
       }),
     });
@@ -64,28 +57,18 @@ Return ONLY a JSON object with an "items" array in this exact format. No markdow
 
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content ?? '';
-
-    let parsed;
-    try {
-      parsed = JSON.parse(content);
-    } catch (parseError) {
-      console.error('Failed to parse JSON from AI:', content);
-      return NextResponse.json({ error: 'Invalid JSON returned from AI' }, { status: 500 });
-    }
-
+    const parsed = JSON.parse(content);
     const items = Array.isArray(parsed) ? parsed : parsed?.items;
 
     if (!Array.isArray(items)) {
-      return NextResponse.json({ error: 'Invalid AI response format: missing items array' }, { status: 500 });
+      return NextResponse.json({ error: 'Invalid AI response format' }, { status: 500 });
     }
 
-    // Clean and validate the final mapped data
     return NextResponse.json({
       items: items
-        .filter((item: any) => item?.name) // Ensure the item at least has a name
+        .filter((item: any) => item?.name)
         .map((item: any) => ({
           name: String(item.name).trim(),
-          category: String(item.category ?? 'Uncategorized').trim(), // Added category mapping
           quantity: String(item.quantity ?? '').trim(),
         })),
     });

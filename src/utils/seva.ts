@@ -83,13 +83,108 @@ export async function deleteSeva(sevaId: string) {
 }
 
 export async function markSevaComplete(assignmentId: string) {
+  // 1. Fetch assignment to get member_id and seva household_id
+  const { data: assignment, error: fetchErr } = await supabase
+    .from('seva_assignments')
+    .select('member_id, sevas(household_id)')
+    .eq('id', assignmentId)
+    .single();
+
+  if (fetchErr || !assignment) {
+    console.error('markSevaComplete fetch error:', fetchErr);
+    return false;
+  }
+
+  // 2. Mark the seva assignment as complete
   const { error } = await supabase
     .from('seva_assignments')
     .update({ is_completed: true, completed_at: new Date().toISOString() })
     .eq('id', assignmentId);
 
   if (error) { console.error('markSevaComplete error:', error); return false; }
+
+  // 3. Update streak
+  const memberId = assignment.member_id;
+  const householdId = (assignment.sevas as any)?.household_id;
+  if (memberId && householdId) {
+    await updateMemberStreak(householdId, memberId);
+  }
+
   return true;
+}
+
+/**
+ * Upserts the streak for a member after they complete a seva.
+ * Logic mirrors Snapchat: completing on consecutive calendar days keeps the streak alive.
+ * Completing on the same day doesn't double-count.
+ * Missing a day resets streak to 1.
+ */
+export async function updateMemberStreak(householdId: string, memberId: string) {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // Fetch existing streak record
+  const { data: existing } = await supabase
+    .from('seva_streaks')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('member_id', memberId)
+    .maybeSingle();
+
+  let newStreak = 1;
+  let longest = 1;
+
+  if (existing) {
+    const lastDate = existing.last_completed_date;
+    longest = existing.longest_streak ?? 1;
+
+    if (lastDate === todayStr) {
+      // Already completed today — no change needed
+      return;
+    }
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    if (lastDate === yesterdayStr) {
+      // Consecutive day — extend streak
+      newStreak = (existing.current_streak ?? 0) + 1;
+    } else {
+      // Missed a day — reset
+      newStreak = 1;
+    }
+
+    longest = Math.max(longest, newStreak);
+  }
+
+  await supabase.from('seva_streaks').upsert(
+    {
+      household_id: householdId,
+      member_id: memberId,
+      current_streak: newStreak,
+      longest_streak: longest,
+      last_completed_date: todayStr,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'household_id,member_id' }
+  );
+}
+
+export async function getSevaStreaks(householdId: string): Promise<Record<string, { current: number; longest: number }>> {
+  if (!householdId) return {};
+  const { data, error } = await supabase
+    .from('seva_streaks')
+    .select('member_id, current_streak, longest_streak')
+    .eq('household_id', householdId);
+
+  if (error) { console.error('getSevaStreaks error:', error); return {}; }
+
+  const map: Record<string, { current: number; longest: number }> = {};
+  for (const row of data ?? []) {
+    map[row.member_id] = { current: row.current_streak, longest: row.longest_streak };
+  }
+  return map;
 }
 
 // ── NEW: toggle lock on a single assignment ───────────────────────────────────

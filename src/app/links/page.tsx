@@ -52,7 +52,7 @@ export default function LinksPage() {
   return (
     <main
       className="min-h-screen pb-28"
-      style={{ backgroundColor: 'var(--bg)' }}
+      style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
