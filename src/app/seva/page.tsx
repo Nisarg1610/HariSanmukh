@@ -353,7 +353,7 @@ export default function SevaPage() {
                         ) : (
                           sevaAssignments.map((a) => {
                             const streak = streaks[a.member_id];
-                            const showStreak = streak && streak.current >= 2;
+                            const showStreak = streak && streak.current >= 1;
                             return (
                               <span
                                 key={a.id}
@@ -566,7 +566,7 @@ export default function SevaPage() {
                         ) : (
                           sa.map((a) => {
                             const streak = streaks[a.member_id];
-                            const showStreak = streak && streak.current >= 2;
+                            const showStreak = streak && streak.current >= 1;
                             return (
                               <div
                                 key={a.id}
