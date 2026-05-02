@@ -13,11 +13,21 @@ CREATE TABLE IF NOT EXISTS public.seva_streaks (
   UNIQUE(household_id, member_id)
 );
 
--- RLS: allow all authenticated users to read streaks in their household
+-- Enable RLS
 ALTER TABLE public.seva_streaks ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "seva_streaks_select" ON public.seva_streaks
-  FOR SELECT USING (true);
+-- Allow anyone authenticated to read streaks
+CREATE POLICY "seva_streaks_select"
+  ON public.seva_streaks FOR SELECT
+  USING (true);
 
-CREATE POLICY "seva_streaks_upsert" ON public.seva_streaks
-  FOR ALL USING (true) WITH CHECK (true);
+-- Allow INSERT (needed for upsert when row doesn't exist yet)
+CREATE POLICY "seva_streaks_insert"
+  ON public.seva_streaks FOR INSERT
+  WITH CHECK (true);
+
+-- Allow UPDATE (needed for upsert when row already exists)
+CREATE POLICY "seva_streaks_update"
+  ON public.seva_streaks FOR UPDATE
+  USING (true)
+  WITH CHECK (true);

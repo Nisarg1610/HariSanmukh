@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { BottomNav } from '@/components/BottomNav';
-import { getSevaAssignments, markSevaComplete } from '@/utils/seva';
+import { getSevaAssignments, markSevaComplete, getSevaStreaks } from '@/utils/seva';
 import { getLaundryAssignments } from '@/utils/laundry';
 import { getPickupDropAssignments } from '@/utils/pickupDrop';
 import { registerPushNotifications } from '@/utils/pushNotifications';
@@ -58,6 +58,7 @@ export default function Home() {
   const [myPickupDropDays, setMyPickupDropDays] = useState<string[]>([]);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [garbageDates, setGarbageDates] = useState<any[]>([]);
+  const [myStreak, setMyStreak] = useState<{ current: number; longest: number } | null>(null);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [biometricAttempts, setBiometricAttempts] = useState(0);
@@ -260,6 +261,12 @@ export default function Home() {
         setMemberId(memberCard.id);
         setAllLaundryDays(laundryAssignments);
         setTodaySessions(sessions);
+
+        // Fetch streak for this member
+        try {
+          const streakMap = await getSevaStreaks(hId);
+          setMyStreak(streakMap[memberCard.id] ?? null);
+        } catch (e) { /* non-critical */ }
       } catch (err) {
         console.error('fetchDashboardData: seva/laundry failed', err);
       }
@@ -818,10 +825,18 @@ export default function Home() {
 
         return next;
       });
+
+      // Refresh streak after completion
+      if (dbUser?.household_id && memberId) {
+        try {
+          const streakMap = await getSevaStreaks(dbUser.household_id);
+          setMyStreak(streakMap[memberId] ?? null);
+        } catch (e) { /* non-critical */ }
+      }
     } catch (err) {
       console.error('handleMarkSevaDone failed', err);
     }
-  }, [firstPendingSeva, user]);
+  }, [firstPendingSeva, user, dbUser, memberId]);
 
   // ─── Render: loading ──────────────────────────────────────────────────────────
   if (loading) {
@@ -1355,7 +1370,14 @@ export default function Home() {
                 <p className="text-sm font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
                   {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name}
                 </p>
-                <div className="mt-3">
+                {myStreak && (
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[8px] mb-2"
+                    style={{ background: 'linear-gradient(135deg, #ff6b00, #ffb347)' }}>
+                    <span style={{ fontSize: 12 }}>🔥</span>
+                    <span className="text-[11px] font-black text-white">{myStreak.current} day streak</span>
+                  </div>
+                )}
+                <div className="mt-1">
                   <SwipeToComplete onSwipeComplete={handleMarkSevaDone} />
                 </div>
               </>
@@ -1367,6 +1389,22 @@ export default function Home() {
                 <p className="text-xs text-center mt-0.5" style={{ color: 'var(--text-3)' }}>
                   You're all caught up! 🎉
                 </p>
+                {myStreak && myStreak.current >= 1 && (
+                  <div className="mt-3 flex items-center gap-3 px-3 py-2.5 rounded-[12px]"
+                    style={{ background: myStreak.current >= 3 ? 'linear-gradient(135deg, #ff4500, #ffd700)' : 'linear-gradient(135deg, #ff6b00, #ffb347)' }}>
+                    <span style={{ fontSize: 22 }}>🔥</span>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-black text-white leading-none">{myStreak.current} Day{myStreak.current !== 1 ? 's' : ''}</p>
+                      <p className="text-[11px] text-white/75 mt-0.5">
+                        {myStreak.current >= 3 ? "You're on fire! Keep it going 🔥" : "Seva streak — complete daily!"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Best</p>
+                      <p className="text-[16px] font-black text-white/90">{myStreak.longest}</p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
