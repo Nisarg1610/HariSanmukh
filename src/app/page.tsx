@@ -1337,8 +1337,13 @@ export default function Home() {
                   }}>
                   <span style={{ fontSize: 20 }}>✨</span>
                 </div>
-                <span className="text-base font-extrabold" style={{ color: 'var(--text-1)' }}>
+                <span className="text-base font-extrabold flex items-center gap-1.5" style={{ color: 'var(--text-1)' }}>
                   My Seva 🙏
+                  {myStreak && myStreak.current > 0 && (
+                    <span className="text-sm font-black tracking-tight flex items-center" style={{ color: '#ff6b00' }}>
+                      {myStreak.current} <span className="text-sm ml-[1px]">🔥</span>
+                    </span>
+                  )}
                 </span>
               </div>
 
@@ -1370,13 +1375,6 @@ export default function Home() {
                 <p className="text-sm font-extrabold mb-1" style={{ color: 'var(--text-1)' }}>
                   {firstPendingSeva?.sevas?.name || mySevas?.[0]?.sevas?.name}
                 </p>
-                {myStreak && (
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[8px] mb-2"
-                    style={{ background: 'linear-gradient(135deg, #ff6b00, #ffb347)' }}>
-                    <span style={{ fontSize: 12 }}>🔥</span>
-                    <span className="text-[11px] font-black text-white">{myStreak.current} day streak</span>
-                  </div>
-                )}
                 <div className="mt-1">
                   <SwipeToComplete onSwipeComplete={handleMarkSevaDone} />
                 </div>
@@ -1389,22 +1387,6 @@ export default function Home() {
                 <p className="text-xs text-center mt-0.5" style={{ color: 'var(--text-3)' }}>
                   You're all caught up! 🎉
                 </p>
-                {myStreak && myStreak.current >= 1 && (
-                  <div className="mt-3 flex items-center gap-3 px-3 py-2.5 rounded-[12px]"
-                    style={{ background: myStreak.current >= 3 ? 'linear-gradient(135deg, #ff4500, #ffd700)' : 'linear-gradient(135deg, #ff6b00, #ffb347)' }}>
-                    <span style={{ fontSize: 22 }}>🔥</span>
-                    <div className="flex-1">
-                      <p className="text-[14px] font-black text-white leading-none">{myStreak.current} Day{myStreak.current !== 1 ? 's' : ''}</p>
-                      <p className="text-[11px] text-white/75 mt-0.5">
-                        {myStreak.current >= 3 ? "You're on fire! Keep it going 🔥" : "Seva streak — complete daily!"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Best</p>
-                      <p className="text-[16px] font-black text-white/90">{myStreak.longest}</p>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
