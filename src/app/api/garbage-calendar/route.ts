@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 const DEFAULT_RECYCLE_CALENDAR_ID = '5sfp0o5al962uod59qlfp7sssmtrgehm@import.calendar.google.com';
 const DEFAULT_GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.google.com';
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     let garbageId = DEFAULT_GARBAGE_CALENDAR_ID;
 
     if (householdId) {
-       const { data: config } = await supabase
+       const { data: config } = await supabaseAdmin
          .from('house_configs')
          .select('garbage_calendar_id, recycle_calendar_id')
          .eq('household_id', householdId)

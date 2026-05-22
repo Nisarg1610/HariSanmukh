@@ -1,19 +1,12 @@
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 webpush.setVapidDetails(
   process.env.VAPID_EMAIL!,
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 async function getSubscriptionsForToday() {
 const today = new Intl.DateTimeFormat('en-US', {
@@ -22,7 +15,7 @@ const today = new Intl.DateTimeFormat('en-US', {
 }).format(new Date()); // "Monday", "Tuesday", etc.
 
   // Get members assigned to laundry today
-  const { data: assignments } = await supabase
+  const { data: assignments } = await supabaseAdmin
     .from('laundry_assignments')
     .select('member_id')
     .eq('day_of_week', today);
@@ -32,7 +25,7 @@ const today = new Intl.DateTimeFormat('en-US', {
   const memberIds = assignments.map((a) => a.member_id);
 
   // Get linked_user_id from household_members
-  const { data: members } = await supabase
+  const { data: members } = await supabaseAdmin
     .from('household_members')
     .select('linked_user_id')
     .in('id', memberIds)
@@ -43,7 +36,7 @@ const today = new Intl.DateTimeFormat('en-US', {
   const userIds = members.map((m) => m.linked_user_id);
 
   // Get push subscriptions
-  const { data: subscriptions } = await supabase
+  const { data: subscriptions } = await supabaseAdmin
     .from('push_subscriptions')
     .select('subscription')
     .in('user_id', userIds);

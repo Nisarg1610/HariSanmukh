@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 webpush.setVapidDetails(
   process.env.VAPID_EMAIL!,
@@ -16,7 +11,7 @@ webpush.setVapidDetails(
 export async function POST(request: Request) {
   const { householdId, userId, title, body, url } = await request.json();
 
-  let query = supabase.from('push_subscriptions').select('subscription');
+  let query = supabaseAdmin.from('push_subscriptions').select('subscription');
 
   if (userId) {
     // Target specific user only (e.g. welcome notification)

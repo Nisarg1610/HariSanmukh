@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
   const { subscription, userId, householdId } = await request.json();
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('push_subscriptions')
     .upsert({ user_id: userId, household_id: householdId, subscription },
       { onConflict: 'user_id' });

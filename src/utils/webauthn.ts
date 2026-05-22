@@ -45,18 +45,13 @@ export async function registerPasskey(userId: string, email: string) {
       body: JSON.stringify({ userId, email }),
     });
 
-    console.log('register-options status:', optionsRes.status);
     const options = await optionsRes.json();
-    console.log('register-options response:', JSON.stringify(options));
 
     if (!options.challenge) {
-      console.log('No challenge in options — aborting');
       return false;
     }
-    
 
     const registration = await startRegistration({ optionsJSON: options });
-    console.log('startRegistration completed');
 
     const verifyRes = await fetch('/api/webauthn/register-verify', {
       method: 'POST',
@@ -64,13 +59,10 @@ export async function registerPasskey(userId: string, email: string) {
       body: JSON.stringify({
         userId,
         response: registration,
-        challenge: options.challenge,
       }),
     });
 
-    console.log('register-verify status:', verifyRes.status);
     const verifyData = await verifyRes.json();
-    console.log('register-verify response:', JSON.stringify(verifyData));
 
     return verifyData.verified ?? false;
   } catch (err) {
@@ -99,7 +91,6 @@ export async function authenticateWithPasskey(userId: string) {
       body: JSON.stringify({
         userId,
         response: authentication,
-        challenge: options.challenge,
       }),
     });
 
