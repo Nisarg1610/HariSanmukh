@@ -105,6 +105,10 @@ export default function RootLayout({
         }} />
       </head>
       <body>
+        {/* Floating gradient orbs — visible through glass-nav / glass-card blur */}
+        <div className="bubble-bg" aria-hidden="true">
+          <span /><span /><span /><span /><span />
+        </div>
         <OAuthCallback />
         {children}
       </body>
