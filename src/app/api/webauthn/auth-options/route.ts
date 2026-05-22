@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import { generateAuthenticationOptions } from '@simplewebauthn/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
 
-  const { data: passkeys } = await supabase
+  const { data: passkeys } = await supabaseAdmin
     .from('passkeys')
     .select('credential_id')
     .eq('user_id', userId);
@@ -27,6 +22,14 @@ export async function POST(request: Request) {
       type: 'public-key' as const,
     })),
   });
+
+  // Store challenge server-side — never trust the client with it
+  await supabaseAdmin.from('webauthn_challenges').upsert({
+    user_id: userId,
+    challenge: options.challenge,
+    type: 'authentication',
+    created_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,type' });
 
   return NextResponse.json(options);
 }

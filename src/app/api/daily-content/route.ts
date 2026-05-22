@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function GET() {
   try {
@@ -16,8 +11,8 @@ export async function GET() {
 
     // Get total counts
     const [{ count: sikshaCount }, { count: swaminiCount }] = await Promise.all([
-      supabase.from('sikshapatri').select('*', { count: 'exact', head: true }),
-      supabase.from('swaminivato').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('sikshapatri').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('swaminivato').select('*', { count: 'exact', head: true }),
     ]);
 
     // Calculate which row to show using modulo
@@ -26,12 +21,12 @@ export async function GET() {
 
     // Fetch the specific rows
     const [{ data: siksha }, { data: swamini }] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from('sikshapatri')
         .select('*')
         .eq('id', sikshaIndex)
         .single(),
-      supabase
+      supabaseAdmin
         .from('swaminivato')
         .select('*')
         .eq('id', swaminiIndex)
@@ -39,8 +34,9 @@ export async function GET() {
     ]);
 
     return NextResponse.json({ siksha, swamini });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('daily-content error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

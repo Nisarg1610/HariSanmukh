@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     ? ['HariNaman', 'HariChintan']
     : ['HariSanmukh', 'HariSharan', 'SuhradVihar'];
 
-  const { data: households, error } = await supabase
+  const { data: households, error } = await supabaseAdmin
     .from('households')
     .select('id, name');
 
