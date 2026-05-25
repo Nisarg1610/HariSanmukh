@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { getExpectedOrigin, getRpId } from '@/lib/webauthn-config';
+import { getWebAuthnFromRequest } from '@/lib/webauthn-config';
 
 const CHALLENGE_MAX_AGE_MS = 5 * 60 * 1000;
 
@@ -9,6 +9,11 @@ export async function POST(request: Request) {
   const { userId, response } = await request.json();
   if (!userId) {
     return NextResponse.json({ verified: false, error: 'userId required' });
+  }
+
+  const { origin, rpID } = getWebAuthnFromRequest(request);
+  if (!origin || !rpID) {
+    return NextResponse.json({ verified: false, error: 'WebAuthn origin/rpID not configured' });
   }
 
   const supabase = getSupabaseAdmin();
@@ -46,8 +51,8 @@ export async function POST(request: Request) {
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge: challengeRow.challenge,
-      expectedOrigin: getExpectedOrigin(),
-      expectedRPID: getRpId(),
+      expectedOrigin: origin,
+      expectedRPID: rpID,
       credential: {
         id: passkey.credential_id,
         publicKey: Buffer.from(passkey.public_key, 'base64url'),

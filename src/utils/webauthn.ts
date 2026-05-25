@@ -11,6 +11,8 @@ const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
 const LAST_ACTIVE_KEY = 'hs_last_active';
 const USER_ID_KEY = 'hs_user_id';
 
+export type PasskeyResult = { ok: boolean; error?: string };
+
 export function saveLastActive() {
   localStorage.setItem(LAST_ACTIVE_KEY, Date.now().toString());
 }
@@ -38,20 +40,31 @@ export function isSessionExpired(): boolean {
   return Date.now() - parseInt(lastActive) > SESSION_TIMEOUT_MS;
 }
 
-export async function registerPasskey(userId: string, email: string) {
+export async function registerPasskey(userId: string, email: string): Promise<PasskeyResult> {
   try {
     const headers = await getAuthHeaders();
+    if (!headers.Authorization) {
+      return { ok: false, error: 'You must be signed in with Google before enabling Face ID.' };
+    }
+
     const optionsRes = await fetch('/api/webauthn/register-options', {
       method: 'POST',
       headers,
       body: JSON.stringify({ userId, email }),
     });
 
-    if (!optionsRes.ok) return false;
-    const options = await optionsRes.json();
-    if (!options.challenge) return false;
+    const optionsBody = await optionsRes.json().catch(() => ({}));
+    if (!optionsRes.ok) {
+      return {
+        ok: false,
+        error: optionsBody.error || `Could not start Face ID setup (${optionsRes.status})`,
+      };
+    }
+    if (!optionsBody.challenge) {
+      return { ok: false, error: 'Invalid registration options from server' };
+    }
 
-    const registration = await startRegistration({ optionsJSON: options });
+    const registration = await startRegistration({ optionsJSON: optionsBody });
 
     const verifyRes = await fetch('/api/webauthn/register-verify', {
       method: 'POST',
@@ -62,16 +75,29 @@ export async function registerPasskey(userId: string, email: string) {
       }),
     });
 
-    if (!verifyRes.ok) return false;
-    const verifyData = await verifyRes.json();
-    return verifyData.verified ?? false;
-  } catch (err) {
+    const verifyData = await verifyRes.json().catch(() => ({}));
+    if (!verifyRes.ok) {
+      return {
+        ok: false,
+        error: verifyData.error || `Verification failed (${verifyRes.status})`,
+      };
+    }
+    if (!verifyData.verified) {
+      return { ok: false, error: verifyData.error || 'Face ID verification failed' };
+    }
+
+    return { ok: true };
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'NotAllowedError') {
+      return { ok: false, error: 'Face ID was cancelled or not allowed.' };
+    }
+    const message = err instanceof Error ? err.message : 'Passkey registration failed';
     console.error('Passkey registration error:', err);
-    return false;
+    return { ok: false, error: message };
   }
 }
 
-export async function authenticateWithPasskey(userId: string) {
+export async function authenticateWithPasskey(userId: string): Promise<boolean> {
   try {
     const optionsRes = await fetch('/api/webauthn/auth-options', {
       method: 'POST',

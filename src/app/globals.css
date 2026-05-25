@@ -104,16 +104,27 @@ html, body {
   transition: background-color 0.3s ease;
 }
 
-body {
+html {
   background-color: var(--bg);
+  min-height: 100%;
+}
+
+body {
+  background-color: transparent;
   color: var(--text-1);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
-  /* Safe area insets — pushes content inside the safe zone on sides */
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
   position: relative;
+  min-height: 100dvh;
+}
+
+/* Content sits above bubble layer */
+.app-shell {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
 }
 
@@ -134,8 +145,8 @@ body {
 .bubble-bg span {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.35;
+  filter: blur(72px);
+  opacity: 0.5;
   will-change: transform;
 }
 
@@ -258,12 +269,15 @@ main {
    COMPONENT CLASSES
 ══════════════════════════════════════ */
 
-/* Cards */
+/* Cards — slight translucency so bubbles peek through margins */
 .card {
-  background: var(--bg-card);
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
   border-radius: var(--radius-lg);
   border: 0.5px solid var(--border-color);
   overflow: hidden;
+}
+html.dark .card {
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
 }
 
 .card-inset {

@@ -355,20 +355,18 @@ export default function Home() {
     try {
       passkeyRegistrationRef.current = true;
       setRegisteringPasskey(true);
-      const registered = await registerPasskey(dbUser.id, user.email!);
+      const result = await registerPasskey(dbUser.id, user.email!);
 
-      if (registered) {
+      if (result.ok) {
         setBiometricAvailable(true);
         saveUserId(dbUser.id);
         localStorage.setItem(`hs_passkey_${dbUser.id}`, 'true');
         dismissPrompt();
       } else {
-        setError('Could not set up Face ID. Please try again.');
-        dismissPrompt();
+        setError(result.error ?? 'Could not set up Face ID. Please try again.');
       }
     } catch (err: any) {
       setError(err.message ?? 'Face ID setup failed. Please try again.');
-      dismissPrompt();
     } finally {
       setRegisteringPasskey(false);
       passkeyRegistrationRef.current = false;
