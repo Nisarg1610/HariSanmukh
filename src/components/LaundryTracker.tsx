@@ -14,6 +14,13 @@ interface LaundryTrackerProps {
 const WASHER_MINS = 45;
 const DRYER_MINS = 60;
 
+/** Only auth user IDs (users table) — not household_members.id */
+function linkedUserIds(rows: { household_members?: { linked_user_id?: string | null } | null }[]): string[] {
+  return rows
+    .map((u) => u.household_members?.linked_user_id)
+    .filter((id): id is string => Boolean(id));
+}
+
 function getElapsedMins(startAt: string | null, now: Date): number {
   if (!startAt) return 0;
   return (now.getTime() - new Date(startAt).getTime()) / 60000;
@@ -271,15 +278,10 @@ export function LaundryTracker({
       assignedToday.find((u) => u.member_id === memberId)?.household_members?.first_name ??
       'Someone';
     const otherAssigned = assignedToday.filter((u) => u.member_id !== memberId);
-    const otherUserIds = otherAssigned.map(
-      (u) => u.household_members?.linked_user_id ?? u.member_id
-    );
-    const myLinkedId =
-      assignedToday.find((u) => u.member_id === memberId)?.household_members?.linked_user_id ??
-      memberId;
-    const allLinkedIds = assignedToday.map(
-      (u) => u.household_members?.linked_user_id ?? u.member_id
-    );
+    const otherUserIds = linkedUserIds(otherAssigned);
+    const myLinkedId = assignedToday.find((u) => u.member_id === memberId)?.household_members
+      ?.linked_user_id;
+    const allLinkedIds = linkedUserIds(assignedToday);
 
     const authHeaders = await getAuthHeaders();
 
@@ -300,7 +302,7 @@ export function LaundryTracker({
       );
     }
 
-    if (type === 'washer') {
+    if (type === 'washer' && myLinkedId) {
       fetch('/api/schedule-push', {
         method: 'POST',
         headers: authHeaders,
@@ -322,7 +324,7 @@ export function LaundryTracker({
           }),
         }).catch(console.error);
       }
-    } else {
+    } else if (allLinkedIds.length > 0) {
       fetch('/api/schedule-push', {
         method: 'POST',
         headers: authHeaders,
