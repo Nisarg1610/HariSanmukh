@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendPushNotifications } from '@/lib/send-push';
+=======
+import { supabaseAdmin } from '@/lib/supabase-server';
+>>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -15,7 +19,11 @@ export async function GET(request: Request) {
     ? ['HariNaman', 'HariChintan']
     : ['HariSanmukh', 'HariSharan', 'SuhradVihar'];
 
+<<<<<<< HEAD
   const { data: households, error } = await getSupabaseAdmin()
+=======
+  const { data: households, error } = await supabaseAdmin
+>>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
     .from('households')
     .select('id, name');
 

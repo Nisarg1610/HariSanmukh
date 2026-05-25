@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+=======
+import { supabaseAdmin } from '@/lib/supabase-server';
+>>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
 export async function GET() {
   try {
@@ -10,20 +14,20 @@ export async function GET() {
     const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     const [{ count: sikshaCount }, { count: swaminiCount }] = await Promise.all([
-      supabase.from('sikshapatri').select('*', { count: 'exact', head: true }),
-      supabase.from('swaminivato').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('sikshapatri').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('swaminivato').select('*', { count: 'exact', head: true }),
     ]);
 
     const sikshaIndex = (dayOfYear % (sikshaCount ?? 1)) + 1;
     const swaminiIndex = (dayOfYear % (swaminiCount ?? 1)) + 1;
 
     const [{ data: siksha }, { data: swamini }] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from('sikshapatri')
         .select('*')
         .eq('id', sikshaIndex)
         .single(),
-      supabase
+      supabaseAdmin
         .from('swaminivato')
         .select('*')
         .eq('id', swaminiIndex)
