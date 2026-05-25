@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
 
 export async function POST(request: Request) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   try {
     const { text } = await request.json();
     if (!text || typeof text !== 'string') {
@@ -15,7 +19,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
@@ -66,8 +70,8 @@ No markdown, no explanations.`
 
     return NextResponse.json({
       items: items
-        .filter((item: any) => item?.name)
-        .map((item: any) => ({
+        .filter((item: { name?: string }) => item?.name)
+        .map((item: { name: string; quantity?: string }) => ({
           name: String(item.name).trim(),
           quantity: String(item.quantity ?? '').trim(),
         })),

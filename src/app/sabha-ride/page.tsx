@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft, Bell, Check, Info, MessageSquare, User, Car, ThumbsUp, ThumbsDown, Footprints } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getAuthHeaders } from '@/utils/api';
 
 export default function SabhaRidePage() {
   const router = useRouter();
@@ -217,7 +218,7 @@ export default function SabhaRidePage() {
     try {
       const res = await fetch('/api/push-notify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           householdId: householdId,
           title: 'Upcoming Sabha',

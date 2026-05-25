@@ -1,46 +1,52 @@
 import { NextResponse } from 'next/server';
+import {
+  assertSameHousehold,
+  getAuthUser,
+  unauthorized,
+  forbidden,
+} from '@/lib/api-auth';
+import { sendPushNotifications } from '@/lib/send-push';
 
-// This is a simple background scheduler that works if the Next.js app 
-// is running on a long-lived Node.js server (like a VPS or local PC).
-// It will NOT work reliably on serverless platforms (like Vercel) which kill functions after a few seconds.
+const MAX_DELAY_MINS = 120;
+const MAX_TARGET_USERS = 20;
 
 export async function POST(request: Request) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const body = await request.json();
-  const { householdId, memberId, msg, delayMins } = body;
+  const { delayMins, targetUserIds, msg } = body;
 
-  const delayMs = delayMins * 60 * 1000;
+  if (!Array.isArray(targetUserIds) || targetUserIds.length === 0) {
+    return NextResponse.json({ error: 'targetUserIds required' }, { status: 400 });
+  }
 
-  // We immediately return success to the client
-  // But we leave a background timer running in the Node process.
-  setTimeout(async () => {
-    try {
-      // Create a simulated request to our existing push-notify endpoint
-      // We pass householdId = 'all' or we find the right members.
-      // Wait, we can just call the push-notification logic here, or fetch the push-notify endpoint.
-      
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://brampton-youths.vercel.app/';
-      
-      // We need to fetch the assigned members today to notify them
-      // But Since we are server side, we can just fetch /api/push-notify for each user, 
-      // or to make it simpler, the client already passed all target userIds or memberIds.
-      
-      if (body.targetUserIds && Array.isArray(body.targetUserIds)) {
-         for (const userId of body.targetUserIds) {
-           await fetch(`${baseUrl}/api/push-notify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId,
-                title: 'Laundry Tracker',
-                body: msg,
-              })
-           }).catch(() => {});
-         }
-      }
-    } catch (err) {
-      console.error('Scheduled push failed', err);
-    }
+  if (targetUserIds.length > MAX_TARGET_USERS) {
+    return NextResponse.json({ error: 'Too many targets' }, { status: 400 });
+  }
+
+  const delay = Number(delayMins);
+  if (!Number.isFinite(delay) || delay < 1 || delay > MAX_DELAY_MINS) {
+    return NextResponse.json(
+      { error: `delayMins must be between 1 and ${MAX_DELAY_MINS}` },
+      { status: 400 }
+    );
+  }
+
+  const sameHouse = await assertSameHousehold(authUser.id, targetUserIds);
+  if (!sameHouse) return forbidden('Invalid notification targets');
+
+  const delayMs = delay * 60 * 1000;
+  const title = 'Laundry Tracker';
+  const message = typeof msg === 'string' ? msg : 'Laundry reminder';
+
+  setTimeout(() => {
+    Promise.all(
+      targetUserIds.map((userId: string) =>
+        sendPushNotifications({ userId, title, body: message }).catch(() => {})
+      )
+    ).catch((err) => console.error('Scheduled push failed', err));
   }, delayMs);
 
-  return NextResponse.json({ scheduled: true, delayMins });
+  return NextResponse.json({ scheduled: true, delayMins: delay });
 }

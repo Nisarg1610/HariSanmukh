@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { upsertLaundrySession, getTodayLaundrySessions } from '@/utils/laundry';
+import { getAuthHeaders } from '@/utils/api';
 
 interface LaundryTrackerProps {
   householdId: string;
@@ -280,14 +281,15 @@ export function LaundryTracker({
       (u) => u.household_members?.linked_user_id ?? u.member_id
     );
 
-    // Notify others that I started this machine
+    const authHeaders = await getAuthHeaders();
+
     if (otherUserIds.length > 0) {
       const machineName = type === 'washer' ? 'Washer' : 'Dryer';
       Promise.all(
         otherUserIds.map((userId) =>
           fetch('/api/push-notify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders,
             body: JSON.stringify({
               userId,
               title: 'Laundry Tracking',
@@ -299,10 +301,9 @@ export function LaundryTracker({
     }
 
     if (type === 'washer') {
-      // → Me: clothes washed, time to move to dryer
       fetch('/api/schedule-push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           delayMins: WASHER_MINS,
           targetUserIds: [myLinkedId],
@@ -310,11 +311,10 @@ export function LaundryTracker({
         }),
       }).catch(console.error);
 
-      // → Others: washer is now free
       if (otherUserIds.length > 0) {
         fetch('/api/schedule-push', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify({
             delayMins: WASHER_MINS,
             targetUserIds: otherUserIds,
@@ -323,10 +323,9 @@ export function LaundryTracker({
         }).catch(console.error);
       }
     } else {
-      // Dryer done → notify everyone, dryer is free
       fetch('/api/schedule-push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           delayMins: DRYER_MINS,
           targetUserIds: allLinkedIds,

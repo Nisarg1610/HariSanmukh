@@ -8,6 +8,7 @@ import { getSevaAssignments, markSevaComplete, getSevaStreaks } from '@/utils/se
 import { getLaundryAssignments } from '@/utils/laundry';
 import { getPickupDropAssignments } from '@/utils/pickupDrop';
 import { registerPushNotifications } from '@/utils/pushNotifications';
+import { getAuthHeaders } from '@/utils/api';
 import {
   browserSupportsWebAuthn,
   registerPasskey,
@@ -74,6 +75,7 @@ export default function Home() {
     siksha: any;
     swamini: any;
   } | null>(null);
+  const [showNotifDialog, setShowNotifDialog] = useState(false);
   // ── Refs ──────────────────────────────────────────────────────────────────────
   const dbUserRef = useRef<any>(null);
   const setupInProgressRef = useRef(false);
@@ -342,10 +344,7 @@ export default function Home() {
     const skipped = localStorage.getItem(`hs_passkey_skip_${userId}`);
     if (skipped) return;
 
-    if (passkeyPromptTimerRef.current) clearTimeout(passkeyPromptTimerRef.current);
-    passkeyPromptTimerRef.current = setTimeout(() => {
-      if (!abortedRef.current) enqueuePrompt('passkey');
-    }, 2500);
+    enqueuePrompt('passkey');
   }, [enqueuePrompt]);
 
   // ─── handleSetupPasskey ───────────────────────────────────────────────────────
@@ -395,7 +394,7 @@ export default function Home() {
 
       const res = await fetch('/api/push-notify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           userId: newDbUser.id,
           title: 'Welcome to HariPrabodham!',
@@ -418,6 +417,50 @@ export default function Home() {
     }
   }, [supportsNotifications]);
 
+  const runNotificationOnboarding = useCallback(async (profileUser: any, isNewSignup: boolean) => {
+    if (!supportsNotifications()) {
+      await tryRegisterPasskey(profileUser.id);
+      return;
+    }
+
+    if (isNewSignup && Notification.permission !== 'granted') {
+      setShowNotifDialog(true);
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      await registerPushNotifications(profileUser.id, profileUser.household_id);
+      if (isNewSignup && !profileUser.welcome_sent) {
+        await sendWelcomeNotification(profileUser);
+      }
+    } else {
+      maybeEnqueueNotificationPrompt();
+    }
+
+    await tryRegisterPasskey(profileUser.id);
+  }, [
+    supportsNotifications,
+    tryRegisterPasskey,
+    maybeEnqueueNotificationPrompt,
+    sendWelcomeNotification,
+  ]);
+
+  const handleNotifDialogEnable = async () => {
+    if (!dbUser) return;
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      await registerPushNotifications(dbUser.id, dbUser.household_id);
+      if (!dbUser.welcome_sent) await sendWelcomeNotification(dbUser);
+    }
+    setShowNotifDialog(false);
+    await tryRegisterPasskey(dbUser.id);
+  };
+
+  const handleNotifDialogLater = async () => {
+    setShowNotifDialog(false);
+    if (dbUser) await tryRegisterPasskey(dbUser.id);
+  };
+
   // ─── loadUser ────────────────────────────────────────────────────────────────
   const loadUser = useCallback(async (authUser: any) => {
     if (abortedRef.current) return;
@@ -435,9 +478,11 @@ export default function Home() {
       saveUserId(authUser.id);
       // fetchDashboardData also sets displayName from household_members
       await fetchDashboardData(data.household_id, authUser.email!);
-      await registerPushNotifications(data.id, data.household_id);
-      await tryRegisterPasskey(data.id);
       maybeEnqueueNotificationPrompt();
+      if (Notification.permission === 'granted') {
+        await registerPushNotifications(data.id, data.household_id);
+      }
+      await tryRegisterPasskey(data.id);
     } else if (!setupInProgressRef.current) {
       setUser(authUser);
 
@@ -451,9 +496,7 @@ export default function Home() {
         if (abortedRef.current) return;
         if (newDbUser) {
           await fetchDashboardData(newDbUser.household_id, authUser.email!);
-          if (!newDbUser.welcome_sent) await sendWelcomeNotification(newDbUser);
-          await tryRegisterPasskey(newDbUser.id);
-          maybeEnqueueNotificationPrompt();
+          await runNotificationOnboarding(newDbUser, !newDbUser.welcome_sent);
         }
       } else {
         // User needs a house code
@@ -461,8 +504,7 @@ export default function Home() {
       }
     }
   }, [
-    fetchDashboardData, tryRegisterPasskey, setupProfile,
-    sendWelcomeNotification, maybeEnqueueNotificationPrompt,
+    fetchDashboardData, setupProfile, runNotificationOnboarding,
   ]);
 
   const handleHouseCodeSubmit = async () => {
@@ -493,11 +535,7 @@ export default function Home() {
       if (newDbUser) {
         setNeedsHouseCode(false);
         await fetchDashboardData(newDbUser.household_id, user.email!);
-        if (!newDbUser.welcome_sent) {
-          await sendWelcomeNotification(newDbUser);
-        }
-        await tryRegisterPasskey(newDbUser.id);
-        maybeEnqueueNotificationPrompt();
+        await runNotificationOnboarding(newDbUser, !newDbUser.welcome_sent);
       } else {
         setHouseCodeError('Failed to join house. Please try again.');
       }
@@ -702,12 +740,18 @@ export default function Home() {
               return;
             }
           }
-          setError(
-            'Your login session has fully expired. ' +
-            'Face ID confirmed your identity, but please sign in with Google once to renew it.'
-          );
-          setBiometricAvailable(false);
-          clearUserId();
+          const { error: oauthError } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : '/',
+              queryParams: { prompt: 'none' },
+            },
+          });
+          if (oauthError) {
+            setError('Session expired. Please sign in with Google to continue.');
+            setBiometricAvailable(false);
+            clearUserId();
+          }
         }
       } else {
         const newAttempts = biometricAttempts + 1;
@@ -1041,6 +1085,37 @@ export default function Home() {
 
   return (
     <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
+
+      {showNotifDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6">
+          <div
+            className="rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
+            style={{ background: 'var(--bg-card)' }}
+          >
+            <div className="text-4xl">🔔</div>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>
+              Stay Updated
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--text-3)' }}>
+              Get notified about your seva assignments, laundry reminders, and garbage pickup days.
+            </p>
+            <button
+              onClick={handleNotifDialogEnable}
+              className="w-full py-3 rounded-2xl font-semibold"
+              style={{ background: 'var(--accent)', color: 'white' }}
+            >
+              Enable Notifications
+            </button>
+            <button
+              onClick={handleNotifDialogLater}
+              className="w-full py-2 text-sm"
+              style={{ color: 'var(--text-3)' }}
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Header ── */}
       <header className="glass-nav sticky top-0 z-30"
@@ -1468,9 +1543,7 @@ export default function Home() {
             </div>
           )}
         </section>
-
-
-
+        
         {/* ══════════════════════════════════════════════════════════════
           GARBAGE TIMELINE (unchanged content, updated styling)
       ══════════════════════════════════════════════════════════════ */}

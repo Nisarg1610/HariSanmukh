@@ -3,10 +3,11 @@ import {
   startAuthentication,
   browserSupportsWebAuthn,
 } from '@simplewebauthn/browser';
+import { getAuthHeaders } from '@/utils/api';
 
 export { browserSupportsWebAuthn };
 
-const SESSION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
 const LAST_ACTIVE_KEY = 'hs_last_active';
 const USER_ID_KEY = 'hs_user_id';
 
@@ -39,39 +40,30 @@ export function isSessionExpired(): boolean {
 
 export async function registerPasskey(userId: string, email: string) {
   try {
+    const headers = await getAuthHeaders();
     const optionsRes = await fetch('/api/webauthn/register-options', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ userId, email }),
     });
 
-    console.log('register-options status:', optionsRes.status);
+    if (!optionsRes.ok) return false;
     const options = await optionsRes.json();
-    console.log('register-options response:', JSON.stringify(options));
-
-    if (!options.challenge) {
-      console.log('No challenge in options — aborting');
-      return false;
-    }
-    
+    if (!options.challenge) return false;
 
     const registration = await startRegistration({ optionsJSON: options });
-    console.log('startRegistration completed');
 
     const verifyRes = await fetch('/api/webauthn/register-verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         userId,
         response: registration,
-        challenge: options.challenge,
       }),
     });
 
-    console.log('register-verify status:', verifyRes.status);
+    if (!verifyRes.ok) return false;
     const verifyData = await verifyRes.json();
-    console.log('register-verify response:', JSON.stringify(verifyData));
-
     return verifyData.verified ?? false;
   } catch (err) {
     console.error('Passkey registration error:', err);
@@ -99,7 +91,6 @@ export async function authenticateWithPasskey(userId: string) {
       body: JSON.stringify({
         userId,
         response: authentication,
-        challenge: options.challenge,
       }),
     });
 

@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
 
 export async function POST(request: Request) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const { items } = await request.json();
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',

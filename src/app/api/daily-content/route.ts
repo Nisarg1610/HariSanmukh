@@ -1,30 +1,22 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET() {
   try {
-    // Use day of year to cycle through content
+    const supabase = getSupabaseAdmin();
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
     const diff = now.getTime() - start.getTime();
     const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    // Get total counts
     const [{ count: sikshaCount }, { count: swaminiCount }] = await Promise.all([
       supabase.from('sikshapatri').select('*', { count: 'exact', head: true }),
       supabase.from('swaminivato').select('*', { count: 'exact', head: true }),
     ]);
 
-    // Calculate which row to show using modulo
     const sikshaIndex = (dayOfYear % (sikshaCount ?? 1)) + 1;
     const swaminiIndex = (dayOfYear % (swaminiCount ?? 1)) + 1;
 
-    // Fetch the specific rows
     const [{ data: siksha }, { data: swamini }] = await Promise.all([
       supabase
         .from('sikshapatri')
@@ -39,8 +31,9 @@ export async function GET() {
     ]);
 
     return NextResponse.json({ siksha, swamini });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('daily-content error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

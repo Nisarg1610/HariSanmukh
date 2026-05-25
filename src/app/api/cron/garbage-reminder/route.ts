@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { sendPushNotifications } from '@/lib/send-push';
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -8,14 +9,13 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const day = searchParams.get('day') || 'wednesday'; // ?day=wednesday or ?day=thursday
+  const day = searchParams.get('day') || 'wednesday';
 
-  // Determine which households to notify
-  const targetHouseholds = day === 'thursday' 
+  const targetHouseholds = day === 'thursday'
     ? ['HariNaman', 'HariChintan']
     : ['HariSanmukh', 'HariSharan', 'SuhradVihar'];
 
-  const { data: households, error } = await supabase
+  const { data: households, error } = await getSupabaseAdmin()
     .from('households')
     .select('id, name');
 
@@ -23,24 +23,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Failed to fetch households' }, { status: 500 });
   }
 
-  const householdsToNotify = households.filter((h: any) => targetHouseholds.includes(h.name));
-  
+  const householdsToNotify = households.filter((h) => targetHouseholds.includes(h.name));
+
   if (householdsToNotify.length === 0) {
     return NextResponse.json({ message: 'No matching households for this day' });
   }
 
-  // Promise.all to fetch the push notification endpoint for each matching household
   const results = await Promise.allSettled(
-    householdsToNotify.map((h: any) => 
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/push-notify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          householdId: h.id,
-          title: '🗑️ Garbage Day Tomorrow!',
-          body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
-        }),
-      }).then(res => res.json())
+    householdsToNotify.map((h) =>
+      sendPushNotifications({
+        householdId: h.id,
+        title: '🗑️ Garbage Day Tomorrow!',
+        body: "Hey! Don't forget to put your garbage bin out. Better out than forgotten! 😄",
+      })
     )
   );
 

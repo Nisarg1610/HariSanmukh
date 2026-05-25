@@ -1,17 +1,35 @@
 import { NextResponse } from 'next/server';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { getExpectedOrigin, getRpId } from '@/lib/webauthn-config';
 
-const origin = process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, ''); 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const CHALLENGE_MAX_AGE_MS = 5 * 60 * 1000;
 
 export async function POST(request: Request) {
-  const { userId, response, challenge } = await request.json();
+  const { userId, response } = await request.json();
+  if (!userId) {
+    return NextResponse.json({ verified: false, error: 'userId required' });
+  }
 
+  const supabase = getSupabaseAdmin();
   const credentialId = response.id;
+
+  const { data: challengeRow } = await supabase
+    .from('webauthn_challenges')
+    .select('challenge, created_at')
+    .eq('user_id', userId)
+    .eq('type', 'authentication')
+    .maybeSingle();
+
+  if (!challengeRow) {
+    return NextResponse.json({ verified: false, error: 'No pending challenge' });
+  }
+
+  const age = Date.now() - new Date(challengeRow.created_at).getTime();
+  if (age > CHALLENGE_MAX_AGE_MS) {
+    await supabase.from('webauthn_challenges').delete().eq('user_id', userId).eq('type', 'authentication');
+    return NextResponse.json({ verified: false, error: 'Challenge expired' });
+  }
 
   const { data: passkey } = await supabase
     .from('passkeys')
@@ -27,9 +45,9 @@ export async function POST(request: Request) {
   try {
     const verification = await verifyAuthenticationResponse({
       response,
-      expectedChallenge: challenge,
-      expectedOrigin: origin,
-      expectedRPID: process.env.NEXT_PUBLIC_APP_DOMAIN!,
+      expectedChallenge: challengeRow.challenge,
+      expectedOrigin: getExpectedOrigin(),
+      expectedRPID: getRpId(),
       credential: {
         id: passkey.credential_id,
         publicKey: Buffer.from(passkey.public_key, 'base64url'),
@@ -43,12 +61,15 @@ export async function POST(request: Request) {
         .update({ counter: verification.authenticationInfo.newCounter })
         .eq('id', passkey.id);
 
+      await supabase.from('webauthn_challenges').delete().eq('user_id', userId).eq('type', 'authentication');
+
       return NextResponse.json({ verified: true });
     }
 
     return NextResponse.json({ verified: false });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Verification failed';
     console.error('auth-verify error:', err);
-    return NextResponse.json({ verified: false, error: err.message });
+    return NextResponse.json({ verified: false, error: message });
   }
 }

@@ -1,3 +1,5 @@
+import { getAuthHeaders } from '@/utils/api';
+
 export async function registerPushNotifications(userId: string, householdId: string) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.log('Push not supported');
@@ -5,16 +7,12 @@ export async function registerPushNotifications(userId: string, householdId: str
   }
 
   try {
-    // Register service worker
     const registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
 
-    // Only subscribe when permission is already granted.
-    // Permission request should happen from an explicit user action.
     const permission = Notification.permission;
     if (permission !== 'granted') return false;
 
-    // Subscribe to push
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(
@@ -22,10 +20,10 @@ export async function registerPushNotifications(userId: string, householdId: str
       ),
     });
 
-    // Save subscription to Supabase
+    const headers = await getAuthHeaders();
     await fetch('/api/push-subscribe', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         subscription,
         userId,
@@ -41,9 +39,10 @@ export async function registerPushNotifications(userId: string, householdId: str
 }
 
 export async function sendSevaNotification(householdId: string) {
+  const headers = await getAuthHeaders();
   const response = await fetch('/api/push-notify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       householdId,
       title: '🙏 New Seva Assigned!',

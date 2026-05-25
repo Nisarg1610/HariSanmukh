@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
 
 export async function POST(request: Request) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   try {
     const body = await request.json();
     const { phone } = body;
 
-    // Validate input
     if (!phone) {
       return NextResponse.json(
         { error: 'Phone number is required' },
@@ -13,35 +16,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get environment variables
     const phoneId = process.env.WHATSAPP_PHONE_ID;
     const token = process.env.WHATSAPP_TOKEN;
 
     if (!phoneId || !token) {
       return NextResponse.json(
-        {
-          error: 'Missing WhatsApp credentials',
-          details: {
-            phoneId: phoneId ? 'Set' : 'Missing',
-            token: token ? 'Set' : 'Missing',
-          },
-        },
+        { error: 'Missing WhatsApp credentials' },
         { status: 500 }
       );
     }
 
-    console.log('=== WhatsApp Message Request ===');
-    console.log('To:', phone);
-    console.log('Phone ID:', phoneId);
-    console.log('Time:', new Date().toISOString());
-
-    // Send to WhatsApp API
     const whatsappResponse = await fetch(
       `https://graph.facebook.com/v18.0/${phoneId}/messages`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -58,26 +48,15 @@ export async function POST(request: Request) {
 
     const result = await whatsappResponse.json();
 
-    console.log('=== WhatsApp Response ===');
-    console.log(JSON.stringify(result, null, 2));
-
-    // Return response
     return NextResponse.json({
       success: whatsappResponse.ok && !result.error,
       status: whatsappResponse.status,
       phone,
       whatsappResponse: result,
     });
-  } catch (err: any) {
-    console.error('=== Error ===');
-    console.error(err);
-
-    return NextResponse.json(
-      {
-        error: err.message,
-        type: 'Server Error',
-      },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server Error';
+    console.error('laundry-whatsapp error:', err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

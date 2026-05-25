@@ -11,6 +11,7 @@ import {
   addGrocerySuggestion,
   markSuggestionsRead,
 } from '@/utils/grocery';
+import { getAuthHeaders } from '@/utils/api';
 
 interface GroceryItem {
   id?: string;
@@ -185,7 +186,7 @@ export default function GroceryPage() {
       setError(null);
       const response = await fetch('/api/grocery-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ text: pasteText }),
       });
       if (!response.ok) {
@@ -236,7 +237,7 @@ export default function GroceryPage() {
       setError(null);
       const response = await fetch('/api/grocery-categorize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ items }),
       });
       const data = await response.json();

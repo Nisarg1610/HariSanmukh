@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
 import { generateRegistrationOptions } from '@simplewebauthn/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getAuthUser, unauthorized } from '@/lib/api-auth';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { getRpId } from '@/lib/webauthn-config';
 
 export async function POST(request: Request) {
+  const authUser = await getAuthUser(request);
+  if (!authUser) return unauthorized();
+
   const { userId, email } = await request.json();
+  if (!userId || authUser.id !== userId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const supabase = getSupabaseAdmin();
+  const rpID = getRpId();
 
   const { data: existingPasskeys } = await supabase
     .from('passkeys')
@@ -17,7 +23,7 @@ export async function POST(request: Request) {
 
   const options = await generateRegistrationOptions({
     rpName: 'HariPrabodham',
-    rpID: process.env.NEXT_PUBLIC_APP_DOMAIN!,
+    rpID,
     userID: new TextEncoder().encode(userId),
     userName: email,
     attestationType: 'none',
@@ -30,6 +36,16 @@ export async function POST(request: Request) {
       userVerification: 'required',
     },
   });
+
+  await supabase.from('webauthn_challenges').upsert(
+    {
+      user_id: userId,
+      challenge: options.challenge,
+      type: 'registration',
+      created_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,type' }
+  );
 
   return NextResponse.json(options);
 }
