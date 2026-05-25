@@ -26,28 +26,54 @@ export type SendPushParams = {
   url?: string;
 };
 
-export async function sendPushNotifications(params: SendPushParams) {
+export type SendPushResult = {
+  sent: number;
+  failed: number;
+  message?: string;
+};
+
+export async function sendPushNotifications(params: SendPushParams): Promise<SendPushResult> {
   if (!ensureVapidConfigured()) {
-    return { sent: 0, failed: 0, message: 'Push not configured' };
+    return { sent: 0, failed: 0, message: 'Push not configured on server (VAPID keys)' };
   }
 
   const { userId, householdId, title, body, url } = params;
   const supabase = getSupabaseAdmin();
 
-  let query = supabase.from('push_subscriptions').select('subscription');
+  let subscriptions: { subscription: webpush.PushSubscription }[] | null = null;
 
   if (userId) {
-    query = query.eq('user_id', userId);
+    const { data } = await supabase
+      .from('push_subscriptions')
+      .select('subscription')
+      .eq('user_id', userId);
+    subscriptions = data;
   } else if (householdId) {
-    query = query.eq('household_id', householdId);
+    const { data: householdUsers } = await supabase
+      .from('users')
+      .select('id')
+      .eq('household_id', householdId);
+
+    const userIds = householdUsers?.map((u) => u.id) ?? [];
+    if (userIds.length === 0) {
+      return { sent: 0, failed: 0, message: 'No users found in this household' };
+    }
+
+    const { data } = await supabase
+      .from('push_subscriptions')
+      .select('subscription')
+      .in('user_id', userIds);
+    subscriptions = data;
   } else {
     return { sent: 0, failed: 0, message: 'No target specified' };
   }
 
-  const { data: subscriptions } = await query;
-
   if (!subscriptions || subscriptions.length === 0) {
-    return { sent: 0, failed: 0, message: 'No subscribers' };
+    return {
+      sent: 0,
+      failed: 0,
+      message: 'No members have push notifications enabled yet. Ask them to enable notifications in the app.',
+    };
   }
 
   const payload = JSON.stringify({ title, body, url });
@@ -60,6 +86,10 @@ export async function sendPushNotifications(params: SendPushParams) {
 
   const sent = results.filter((r) => r.status === 'fulfilled').length;
   const failed = results.filter((r) => r.status === 'rejected').length;
+
+  if (sent === 0 && failed > 0) {
+    return { sent, failed, message: 'Push delivery failed for all subscribers' };
+  }
 
   return { sent, failed };
 }

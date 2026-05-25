@@ -180,7 +180,15 @@ export default function SevaPage() {
     try {
       setNotifying(true);
       const result = await sendSevaNotification(householdId);
-      alert(`Notification sent to ${result.sent} members!`);
+      if (!result.ok) {
+        alert(result.error ?? 'Could not send notification.');
+        return;
+      }
+      if (!result.sent) {
+        alert(result.message ?? 'No members have notifications enabled yet.');
+        return;
+      }
+      alert(`Notification sent to ${result.sent} member${result.sent === 1 ? '' : 's'}!`);
     } finally {
       setNotifying(false);
     }

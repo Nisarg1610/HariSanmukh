@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft, Bell, Check, Info, MessageSquare, User, Car, ThumbsUp, ThumbsDown, Footprints } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getAuthHeaders } from '@/utils/api';
+import { sendHouseholdPush } from '@/utils/pushNotifications';
 
 export default function SabhaRidePage() {
   const router = useRouter();
@@ -213,24 +213,27 @@ export default function SabhaRidePage() {
   };
 
   const notifyAll = async () => {
-    if (notifying) return;
+    if (notifying || !householdId) return;
     setNotifying(true);
     try {
-      const res = await fetch('/api/push-notify', {
-        method: 'POST',
-        headers: await getAuthHeaders(),
-        body: JSON.stringify({
-          householdId: householdId,
-          title: 'Upcoming Sabha',
-          body: 'Do you need ride for the upcoming Sabha??',
-        })
-      });
-      if (res.ok) {
-        setNotified(true);
-        setTimeout(() => setNotified(false), 3000);
+      const result = await sendHouseholdPush(
+        householdId,
+        'Upcoming Sabha',
+        'Do you need ride for the upcoming Sabha??'
+      );
+      if (!result.ok) {
+        alert(result.error ?? 'Could not send notification.');
+        return;
       }
+      if (!result.sent) {
+        alert(result.message ?? 'No members have notifications enabled yet.');
+        return;
+      }
+      setNotified(true);
+      setTimeout(() => setNotified(false), 3000);
     } catch (err) {
       console.error('Failed to send notification:', err);
+      alert('Failed to send notification. Please try again.');
     } finally {
       setNotifying(false);
     }
