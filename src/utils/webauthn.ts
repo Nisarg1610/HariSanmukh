@@ -47,17 +47,9 @@ export async function registerPasskey(userId: string, email: string) {
       body: JSON.stringify({ userId, email }),
     });
 
-<<<<<<< HEAD
     if (!optionsRes.ok) return false;
     const options = await optionsRes.json();
     if (!options.challenge) return false;
-=======
-    const options = await optionsRes.json();
-
-    if (!options.challenge) {
-      return false;
-    }
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
     const registration = await startRegistration({ optionsJSON: options });
 
@@ -70,13 +62,8 @@ export async function registerPasskey(userId: string, email: string) {
       }),
     });
 
-<<<<<<< HEAD
     if (!verifyRes.ok) return false;
     const verifyData = await verifyRes.json();
-=======
-    const verifyData = await verifyRes.json();
-
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
     return verifyData.verified ?? false;
   } catch (err) {
     console.error('Passkey registration error:', err);

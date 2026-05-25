@@ -84,8 +84,8 @@ export default function PickupDropPage() {
   if (loading) {
     return (
       <main
-        className="min-h-screen flex flex-col items-center justify-center gap-4"
-        style={{ backgroundColor: 'var(--bg)' }}
+        className="min-h-screen flex flex-col items-center justify-center gap-4 app-page"
+       
       >
         <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
           <img src="/icon-256.png" alt="HariPrabodham" className="w-full h-full object-cover" />
@@ -98,7 +98,7 @@ export default function PickupDropPage() {
   // ── USER VIEW ───────────────────────────────────────────────
   if (userRole === 'user') {
     return (
-      <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
+      <main className="min-h-screen pb-28 app-page">
         <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
             <button
@@ -182,7 +182,7 @@ export default function PickupDropPage() {
   );
 
   return (
-    <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
+    <main className="min-h-screen pb-28 app-page">
       <header className="glass-nav sticky top-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-2">
           <button

@@ -369,7 +369,7 @@ export default function GroceryPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ backgroundColor: 'var(--bg)' }}>
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 app-page">
         <div className="w-16 h-16 rounded-3xl overflow-hidden animate-pulse shadow-lg">
           <img src="/icon-256.png" alt="HariPrabodham" className="w-full h-full object-cover" />
         </div>
@@ -407,7 +407,7 @@ export default function GroceryPage() {
     }, {} as Record<string, CategorizedItem[]>);
 
     return (
-      <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}>
+      <main className="min-h-screen pb-28 app-page" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         {showEndModal && (
           <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
             <div className="w-full max-w-lg rounded-t-[32px] p-6 pb-12 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
@@ -559,7 +559,7 @@ export default function GroceryPage() {
   // ── USER VIEW ──────────────────────────────────────────────
   if (userRole === 'user') {
     return (
-      <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}>
+      <main className="min-h-screen pb-28 app-page" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
           <section
             className="rounded-3xl p-5 text-white shadow-sm"
@@ -661,7 +661,7 @@ export default function GroceryPage() {
 
   // ── ADMIN VIEW ─────────────────────────────────────────────
   return (
-    <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}>
+    <main className="min-h-screen pb-28 app-page" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="max-w-4xl mx-auto px-4 py-5 space-y-6">
         <section
           className="rounded-3xl p-5 text-white shadow-sm"

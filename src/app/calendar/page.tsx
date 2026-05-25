@@ -19,8 +19,8 @@ export default function CalendarPage() {
 
   return (
     <main
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+      className="min-h-screen flex flex-col app-page"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* Header */}
       <div

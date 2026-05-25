@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateAuthenticationOptions } from '@simplewebauthn/server';
-<<<<<<< HEAD
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { getRpId } from '@/lib/webauthn-config';
-=======
-import { supabaseAdmin } from '@/lib/supabase-server';
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
 export async function POST(request: Request) {
   const { userId } = await request.json();
@@ -15,7 +11,7 @@ export async function POST(request: Request) {
 
   const supabase = getSupabaseAdmin();
 
-  const { data: passkeys } = await supabaseAdmin
+  const { data: passkeys } = await supabase
     .from('passkeys')
     .select('credential_id')
     .eq('user_id', userId);
@@ -33,7 +29,6 @@ export async function POST(request: Request) {
     })),
   });
 
-<<<<<<< HEAD
   await supabase.from('webauthn_challenges').upsert(
     {
       user_id: userId,
@@ -43,15 +38,6 @@ export async function POST(request: Request) {
     },
     { onConflict: 'user_id,type' }
   );
-=======
-  // Store challenge server-side — never trust the client with it
-  await supabaseAdmin.from('webauthn_challenges').upsert({
-    user_id: userId,
-    challenge: options.challenge,
-    type: 'authentication',
-    created_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,type' });
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
   return NextResponse.json(options);
 }

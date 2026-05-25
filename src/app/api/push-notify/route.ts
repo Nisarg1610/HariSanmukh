@@ -1,29 +1,14 @@
 import { NextResponse } from 'next/server';
-<<<<<<< HEAD
 import { getAuthUser, getDbUser, unauthorized, forbidden } from '@/lib/api-auth';
 import { sendPushNotifications } from '@/lib/send-push';
-=======
-import webpush from 'web-push';
-import { supabaseAdmin } from '@/lib/supabase-server';
-
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
 export async function POST(request: Request) {
   const authUser = await getAuthUser(request);
   if (!authUser) return unauthorized();
 
-<<<<<<< HEAD
   const { householdId, userId, title, body, url } = await request.json();
   const caller = await getDbUser(authUser.id);
   if (!caller?.household_id) return forbidden();
-=======
-  let query = supabaseAdmin.from('push_subscriptions').select('subscription');
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
   if (userId) {
     if (userId !== authUser.id && caller.role !== 'admin') {

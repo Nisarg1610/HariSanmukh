@@ -1,27 +1,29 @@
 import { NextResponse } from 'next/server';
 import webpush from 'web-push';
-<<<<<<< HEAD
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
-const supabase = getSupabaseAdmin();
-=======
-import { supabaseAdmin } from '@/lib/supabase-server';
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
+let vapidReady = false;
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function ensureVapidConfigured() {
+  if (vapidReady) return true;
+  const email = process.env.VAPID_EMAIL;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!email || !publicKey || !privateKey) return false;
+  const subject = email.startsWith('mailto:') ? email : `mailto:${email}`;
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  vapidReady = true;
+  return true;
+}
 
 async function getSubscriptionsForToday() {
-const today = new Intl.DateTimeFormat('en-US', {
-  weekday: 'long',
-  timeZone: 'America/Toronto',
-}).format(new Date()); // "Monday", "Tuesday", etc.
+  const supabase = getSupabaseAdmin();
+  const today = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    timeZone: 'America/Toronto',
+  }).format(new Date());
 
-  // Get members assigned to laundry today
-  const { data: assignments } = await supabaseAdmin
+  const { data: assignments } = await supabase
     .from('laundry_assignments')
     .select('member_id')
     .eq('day_of_week', today);
@@ -30,8 +32,7 @@ const today = new Intl.DateTimeFormat('en-US', {
 
   const memberIds = assignments.map((a) => a.member_id);
 
-  // Get linked_user_id from household_members
-  const { data: members } = await supabaseAdmin
+  const { data: members } = await supabase
     .from('household_members')
     .select('linked_user_id')
     .in('id', memberIds)
@@ -41,8 +42,7 @@ const today = new Intl.DateTimeFormat('en-US', {
 
   const userIds = members.map((m) => m.linked_user_id);
 
-  // Get push subscriptions
-  const { data: subscriptions } = await supabaseAdmin
+  const { data: subscriptions } = await supabase
     .from('push_subscriptions')
     .select('subscription')
     .in('user_id', userIds);
@@ -50,7 +50,10 @@ const today = new Intl.DateTimeFormat('en-US', {
   return subscriptions;
 }
 
-async function sendToSubscriptions(subscriptions: any[], title: string, body: string) {
+async function sendToSubscriptions(subscriptions: { subscription: webpush.PushSubscription }[], title: string, body: string) {
+  if (!ensureVapidConfigured()) {
+    return { sent: 0, failed: 0, message: 'Push not configured' };
+  }
   const payload = JSON.stringify({ title, body });
 
   const results = await Promise.allSettled(
@@ -71,7 +74,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const type = new URL(request.url).searchParams.get('type'); // 'morning' or 'evening'
+  const type = new URL(request.url).searchParams.get('type');
 
   const subscriptions = await getSubscriptionsForToday();
 
@@ -88,7 +91,6 @@ export async function GET(request: Request) {
     return NextResponse.json(result);
   }
 
-  // Default: morning reminder
   const result = await sendToSubscriptions(
     subscriptions,
     '🧺 Laundry Day!',

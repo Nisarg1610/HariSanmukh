@@ -200,8 +200,8 @@ const handleToggleRole = async (member: Member) => {
  if (loading) {
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-center gap-4"
-      style={{ backgroundColor: 'var(--bg)' }}
+      className="min-h-screen flex flex-col items-center justify-center gap-4 app-page"
+     
     >
       <div className="w-12 h-12 rounded-2xl overflow-hidden animate-pulse">
         <img src="/icon-256.png" alt="HariPrabodham" className="w-full h-full object-cover" />
@@ -215,8 +215,8 @@ const handleToggleRole = async (member: Member) => {
 
   return (
   <main
-    className="min-h-screen pb-28"
-    style={{ backgroundColor: 'var(--bg)', paddingTop: 'env(safe-area-inset-top)' }}
+    className="min-h-screen pb-28 app-page"
+    style={{ paddingTop: 'env(safe-area-inset-top)' }}
   >
     
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">

@@ -890,8 +890,7 @@ export default function Home() {
   // ─── Render: timeout ──────────────────────────────────────────────────────────
   if (loadingTimedOut) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-6"
-        style={{ backgroundColor: 'var(--bg)' }}>
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 app-page-solid">
         <div className="w-12 h-12 rounded-2xl overflow-hidden opacity-50">
           <img src="/icon-256.png" alt={houseName} className="w-full h-full object-cover" />
         </div>
@@ -913,12 +912,13 @@ export default function Home() {
   // ─── Render: login ────────────────────────────────────────────────────────────
   if (!user) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-4"
+      <main
+        className="min-h-screen flex items-center justify-center px-4 app-page-solid"
         style={{
-          backgroundColor: 'var(--bg)',
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
-        }}>
+        }}
+      >
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
             <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-4">
@@ -1011,12 +1011,13 @@ export default function Home() {
 
   if (needsHouseCode) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-4"
+      <main
+        className="min-h-screen flex items-center justify-center px-4 app-page-solid"
         style={{
-          backgroundColor: 'var(--bg)',
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
-        }}>
+        }}
+      >
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>
@@ -1084,7 +1085,7 @@ export default function Home() {
     && document.documentElement.classList.contains('dark');
 
   return (
-    <main className="min-h-screen pb-28" style={{ backgroundColor: 'var(--bg)' }}>
+    <main className="min-h-screen pb-28 app-page">
 
       {showNotifDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6">

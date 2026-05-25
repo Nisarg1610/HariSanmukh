@@ -233,6 +233,16 @@ html.dark .bubble-bg span:nth-child(5) {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Transparent page shell — bubble orbs show through gaps between cards */
+.app-page {
+  background-color: transparent;
+}
+
+/* Solid shell for login / error screens (readable over bubbles) */
+.app-page-solid {
+  background-color: var(--bg);
+}
+
 main {
   animation: pageIn 0.2s ease-out;
   position: relative;
@@ -283,15 +293,25 @@ html.dark .glass-bottom {
   background: rgba(10, 12, 16, 0.94);
 }
 
-/* Glass card */
+/* Glass card — frosted; bubble gradients show through */
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border: 1px solid var(--border-color);
 }
 html.dark .glass-card {
-  background: rgba(30, 32, 40, 0.4);
+  background: rgba(15, 18, 24, 0.55);
+}
+
+/* Optional frosted card variant for dashboard sections */
+.card-frosted {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+}
+html.dark .card-frosted {
+  background: rgba(15, 18, 24, 0.72);
 }
 
 

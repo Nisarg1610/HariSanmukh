@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
-<<<<<<< HEAD
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-=======
-import { supabaseAdmin } from '@/lib/supabase-server';
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
 
 const DEFAULT_RECYCLE_CALENDAR_ID = '5sfp0o5al962uod59qlfp7sssmtrgehm@import.calendar.google.com';
 const DEFAULT_GARBAGE_CALENDAR_ID = 'n4l25rmpgor2a1hedeege6ejbuhl3j1t@import.calendar.google.com';
 
 async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycle', apiKey: string) {
   const now = new Date();
-  // Fetch from 30 days in the past to 60 days in the future
   const pastLimit = new Date();
   pastLimit.setDate(now.getDate() - 30);
   const futureLimit = new Date();
@@ -24,7 +19,7 @@ async function fetchCalendarEvents(calendarId: string, type: 'garbage' | 'recycl
   );
 
   const data = await res.json();
-  return (data.items ?? []).map((event: any) => ({
+  return (data.items ?? []).map((event: { summary?: string; start?: { date?: string; dateTime?: string } }) => ({
     title: event.summary,
     date: event.start?.date ?? event.start?.dateTime?.split('T')[0],
     type,
@@ -41,20 +36,16 @@ export async function GET(request: Request) {
     let garbageId = DEFAULT_GARBAGE_CALENDAR_ID;
 
     if (householdId) {
-<<<<<<< HEAD
-       const { data: config } = await getSupabaseAdmin()
-=======
-       const { data: config } = await supabaseAdmin
->>>>>>> 136cd50456ce83be8b9ca80a47e1198b27f02121
-         .from('house_configs')
-         .select('garbage_calendar_id, recycle_calendar_id')
-         .eq('household_id', householdId)
-         .maybeSingle();
-         
-       if (config) {
-          if (config.garbage_calendar_id) garbageId = config.garbage_calendar_id;
-          if (config.recycle_calendar_id) recycleId = config.recycle_calendar_id;
-       }
+      const { data: config } = await getSupabaseAdmin()
+        .from('house_configs')
+        .select('garbage_calendar_id, recycle_calendar_id')
+        .eq('household_id', householdId)
+        .maybeSingle();
+
+      if (config) {
+        if (config.garbage_calendar_id) garbageId = config.garbage_calendar_id;
+        if (config.recycle_calendar_id) recycleId = config.recycle_calendar_id;
+      }
     }
 
     const [garbageEvents, recycleEvents] = await Promise.all([
