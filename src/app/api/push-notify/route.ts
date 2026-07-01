@@ -16,12 +16,12 @@ export async function POST(request: Request) {
     }
     if (userId !== authUser.id) {
       const target = await getDbUser(userId);
-      if (!target || target.household_id !== caller.household_id) {
+      if (!target || (target.household_id !== caller.household_id && caller.role !== 'admin')) {
         return forbidden('Target user not in your household');
       }
     }
   } else if (householdId) {
-    if (householdId !== caller.household_id) {
+    if (householdId !== caller.household_id && caller.role !== 'admin') {
       return forbidden('Cannot notify other households');
     }
   } else {
