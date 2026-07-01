@@ -276,7 +276,7 @@ export async function refreshSevaAssignments(householdId: string) {
     .in('seva_id', sevaIds)
     .order('assigned_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   let startIndex = 0;
   if (lastAssignment) {
