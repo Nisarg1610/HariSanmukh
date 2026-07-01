@@ -8,7 +8,8 @@ export async function POST(request: Request) {
 
   const { householdId, userId, title, body, url } = await request.json();
   const caller = await getDbUser(authUser.id);
-  if (!caller?.household_id) return forbidden();
+  if (!caller) return forbidden('User not found in database. Check if SUPABASE_SERVICE_ROLE_KEY is set in Vercel.');
+  if (!caller.household_id) return forbidden('User does not have a household_id assigned.');
 
   if (userId) {
     if (userId !== authUser.id && caller.role !== 'admin') {
