@@ -1,22 +1,11 @@
 import webpush from 'web-push';
 import { getSupabaseAdmin } from './supabase-admin';
 
-let vapidReady = false;
-
-function ensureVapidConfigured() {
-  if (vapidReady) return true;
-
-  const email = process.env.VAPID_EMAIL;
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-
-  if (!email || !publicKey || !privateKey) return false;
-
-  const subject = email.startsWith('mailto:') ? email : `mailto:${email}`;
-  webpush.setVapidDetails(subject, publicKey, privateKey);
-  vapidReady = true;
-  return true;
-}
+webpush.setVapidDetails(
+  process.env.VAPID_EMAIL!,
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
 
 export type SendPushParams = {
   userId?: string;
@@ -26,54 +15,24 @@ export type SendPushParams = {
   url?: string;
 };
 
-export type SendPushResult = {
-  sent: number;
-  failed: number;
-  message?: string;
-};
-
-export async function sendPushNotifications(params: SendPushParams): Promise<SendPushResult> {
-  if (!ensureVapidConfigured()) {
-    return { sent: 0, failed: 0, message: 'Push not configured on server (VAPID keys)' };
-  }
-
+export async function sendPushNotifications(params: SendPushParams) {
   const { userId, householdId, title, body, url } = params;
   const supabase = getSupabaseAdmin();
 
-  let subscriptions: { subscription: webpush.PushSubscription }[] | null = null;
+  let query = supabase.from('push_subscriptions').select('subscription');
 
   if (userId) {
-    const { data } = await supabase
-      .from('push_subscriptions')
-      .select('subscription')
-      .eq('user_id', userId);
-    subscriptions = data;
+    query = query.eq('user_id', userId);
   } else if (householdId) {
-    const { data: householdUsers } = await supabase
-      .from('users')
-      .select('id')
-      .eq('household_id', householdId);
-
-    const userIds = householdUsers?.map((u) => u.id) ?? [];
-    if (userIds.length === 0) {
-      return { sent: 0, failed: 0, message: 'No users found in this household' };
-    }
-
-    const { data } = await supabase
-      .from('push_subscriptions')
-      .select('subscription')
-      .in('user_id', userIds);
-    subscriptions = data;
+    query = query.eq('household_id', householdId);
   } else {
     return { sent: 0, failed: 0, message: 'No target specified' };
   }
 
+  const { data: subscriptions } = await query;
+
   if (!subscriptions || subscriptions.length === 0) {
-    return {
-      sent: 0,
-      failed: 0,
-      message: 'No members have push notifications enabled yet. Ask them to enable notifications in the app.',
-    };
+    return { sent: 0, failed: 0, message: 'No subscribers' };
   }
 
   const payload = JSON.stringify({ title, body, url });
@@ -86,10 +45,6 @@ export async function sendPushNotifications(params: SendPushParams): Promise<Sen
 
   const sent = results.filter((r) => r.status === 'fulfilled').length;
   const failed = results.filter((r) => r.status === 'rejected').length;
-
-  if (sent === 0 && failed > 0) {
-    return { sent, failed, message: 'Push delivery failed for all subscribers' };
-  }
 
   return { sent, failed };
 }

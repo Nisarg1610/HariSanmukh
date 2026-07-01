@@ -76,7 +76,7 @@ export async function registerPushNotifications(userId: string, householdId: str
     });
 
     const headers = await getAuthHeaders();
-    const res = await fetch('/api/push-subscribe', {
+    await fetch('/api/push-subscribe', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -86,12 +86,6 @@ export async function registerPushNotifications(userId: string, householdId: str
       }),
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error('push-subscribe failed:', err);
-      return false;
-    }
-
     return true;
   } catch (err) {
     console.error('Push registration error:', err);
@@ -100,11 +94,17 @@ export async function registerPushNotifications(userId: string, householdId: str
 }
 
 export async function sendSevaNotification(householdId: string) {
-  return sendHouseholdPush(
-    householdId,
-    '🙏 New Seva Assigned!',
-    'Admin has assigned new sevas. Check your seva list!'
-  );
+  const headers = await getAuthHeaders();
+  const response = await fetch('/api/push-notify', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      householdId,
+      title: '🙏 New Seva Assigned!',
+      body: 'Admin has assigned new sevas. Check your seva list!',
+    }),
+  });
+  return response.json();
 }
 
 function urlBase64ToUint8Array(base64String: string) {
