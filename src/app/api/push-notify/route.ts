@@ -8,11 +8,12 @@ export async function POST(request: Request) {
 
   const { householdId, userId, title, body, url } = await request.json();
   const caller = await getDbUser(authUser.id);
-  if (!caller?.household_id) {
-    return forbidden('User profile not set up yet');
-  }
+  if (!caller?.household_id) return forbidden();
 
   if (userId) {
+    if (userId !== authUser.id && caller.role !== 'admin') {
+      return forbidden('Cannot notify other users');
+    }
     if (userId !== authUser.id) {
       const target = await getDbUser(userId);
       if (!target || target.household_id !== caller.household_id) {
