@@ -94,17 +94,11 @@ export async function registerPushNotifications(userId: string, householdId: str
 }
 
 export async function sendSevaNotification(householdId: string) {
-  const headers = await getAuthHeaders();
-  const response = await fetch('/api/push-notify', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      householdId,
-      title: '🙏 New Seva Assigned!',
-      body: 'Admin has assigned new sevas. Check your seva list!',
-    }),
-  });
-  return response.json();
+  return sendHouseholdPush(
+    householdId,
+    '🙏 New Seva Assigned!',
+    'Admin has assigned new sevas. Check your seva list!'
+  );
 }
 
 function urlBase64ToUint8Array(base64String: string) {
